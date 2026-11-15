@@ -1,0 +1,17 @@
+# Elektron OS files and anything derived from them: never commit
+*.syx
+*.bin
+*.elemod
+*.zip
+
+# Build output
+out/
+build/
+*.o
+*.elf
+
+# Editors / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/

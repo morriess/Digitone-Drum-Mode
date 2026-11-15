@@ -2,22 +2,60 @@
 /* Drum Mode for the Digitone mk1 (core-dn1 5.3): a MIDI track becomes 8 drum lanes, each sending its own note on
  * the track's MIDI channel. See ../docs/design.md.
  *
- * 0.3, live lanes with assignable notes:
+ * 0.4, live lanes with assignable notes, and live recording:
  * - DRUM MODE in the Mod Menu (hold a track key) turns Drum Mode on or off for the active MIDI track (A-D).
  * - While a Drum Mode track is the active track, trig keys 1-8 are pads: each plays its lane's note on the track's
- *   channel, several at once, through the same stock routine KEYBOARD mode uses (fw_note_on). Trig keys 9-16 do
+ *   MIDI channel (SRC's CHAN; nothing while it is off), several at once. Trig keys 9-16 do
  *   nothing yet. FUNC + a trig key is left to the stock.
  * - Hold a pad and turn A: its note (you hear each new note as it changes). Turn B: its velocity. While a pad is
  *   held the knobs are Drum Mode's, so the page underneath does not change. Holding a pad a moment, or turning,
  *   shows its note and velocity in the corner.
  * - The screen's top-right corner shows the 8 lanes; a lane lights while it is held.
  * - Saved with the project (project data "DRUM"): each track's Drum Mode on/off and its 8 notes and velocities.
+ * - Live recording (RECORD + PLAY): each pad hit is written into the pattern at the nearest step as a normal MIDI trig,
+ *   its lane's note added to the step's notes (a step holds up to 8: a note and 7 intervals, the stock's chord), so
+ *   recorded hits play, show, copy, clear and save as stock trigs. The pads bypass the stock's own recorder. A step whose notes are lanes plays at the loudest of their velocities.
  *
- * Not yet: lane steps in the sequencer, lane select, per-lane trig LEDs. */
+ * OS 1.44 only from 0.4: the live-record flag and the stock's step setters are named by address (below).
+ *
+ * Not yet: grid editing of lanes, lane select, per-lane trig LEDs. */
 #include "digitone-mk1/core3.h"
+#include "digitone-mk1/seq.h"
 
 typedef void (*rect_fn)(void *bmp, int x0, int y0, int x1, int y1, int colour);
 typedef void (*text_fn)(void *bmp, const void *font, int x, int y, int maxlen, const char *fmt, ...);
+
+/* OS 1.44's live recording and step editing, found in its disassembly and checked in digiemu:
+ * - REC_OBJ: a global pointing to the recorder's state; byte +0x169 is set while live recording (the stock's own
+ *   getter, 0x400addc8, returns it while the sequencer plays; 0x400addf2 toggles it).
+ * - TRACK_OBJ: each track's edit object, at fw_project + 0x11f4 + 0x58 * track; its method 10 (+40 in the vtable)
+ *   gives the track's pattern data (976 bytes: the step words at +2 * step, the step's 8 note slots at
+ *   +448 + 8 * step, slot 0 the note and 1-7 intervals, 0 none).
+ * - TRIG_SET (track obj, step, mask, on) and STEP_NOTE (track obj, step, note, slot): the stock's setters, which core
+ *   hooks for ev_trig_set and ev_step_note; the stock's live recorder calls them in this order.
+ * - The sequencer's MIDI track state, 158 bytes a MIDI track from 0x419c5b30: the output channel (SRC's CHAN, 0-15) at
+ *   +38, followed live as the knob turns; CHAN on at bit 0 of the long at 0x419c5b10 + 4 * (186 + track).
+ * - MIDI_NOTE_ON (channel, note, velocity) and MIDI_NOTE_OFF (channel, note): the port switch's note senders, which the
+ *   stock KEYBOARD dispatcher uses for its own MIDI out. The pads send through these rather than fw_note_on: the live
+ *   note routine queues every note it plays for the stock's recorder (0x400f050e), which would record the pads again,
+ *   on steps of its own. */
+#define FW_REC_OBJ          (*(uint8_t *volatile *)0x419f0dd8)
+#define REC_LIVE            0x169
+#define TRACK_OBJ_FIRST     0x11f4
+#define TRACK_OBJ_STRIDE    0x58
+#define TRACK_SLOTS         448
+typedef void (*trig_set_fn)(void *obj, int32_t step, int32_t mask, int32_t on);
+typedef void (*step_note_fn)(void *obj, int32_t step, int32_t note, int32_t slot);
+#define FW_TRIG_SET         ((trig_set_fn)0x4003673a)
+#define FW_STEP_NOTE        ((step_note_fn)0x40035858)
+#define MIDI_TRACK_STATE    0x419c5b30
+#define MIDI_TRACK_STRIDE   158
+#define MIDI_TRACK_CHAN     38
+#define MIDI_TRACK_ON       0x419c5b10
+typedef int32_t (*midi_on_fn)(int32_t channel, int32_t note, int32_t velocity);
+typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
+#define FW_MIDI_NOTE_ON     ((midi_on_fn)0x400ee232)
+#define FW_MIDI_NOTE_OFF    ((midi_off_fn)0x400ee29e)
 
 #define DM_TRACKS       4               /* MIDI tracks A-D: firmware tracks 4-7 */
 #define DM_FIRST        4
@@ -29,8 +67,6 @@ typedef void (*text_fn)(void *bmp, const void *font, int x, int y, int maxlen, c
 #define ENC_B           2
 #define COUNTS          4               /* encoder counts a detent */
 
-#define SRC_PANEL       0x40            /* the source KEYBOARD mode passes for the trig keys */
-#define NO_SOUND        (-1)
 
 #define FLASH_TICKS     6               /* how long a lane stays lit after a hit, in UI ticks */
 #define NOTE_TICKS      60              /* how long a corner message shows */
@@ -57,6 +93,7 @@ static struct dm_save dm;
 /* What each trig key is sounding, so its release ends the same note on the same track, whatever changed since. */
 struct dm_held {
     int8_t track;                       /* firmware track 4-7, or -1: nothing held */
+    int8_t channel;                     /* the channel its note went out on, or -1: none (CHAN off) */
     uint8_t note;
     uint8_t lane;
 };
@@ -98,10 +135,159 @@ static int32_t drum_track(int32_t track)
     return track >= DM_FIRST && track < DM_FIRST + DM_TRACKS && ((dm.enabled >> (track - DM_FIRST)) & 1);
 }
 
+/* ---- live recording ------------------------------------------------------------------------- */
+#define TIMELINE_16TH   5400000u        /* fw_timeline units a 16th */
+#define LEAD_STEPS      1               /* the sequencer fires a step this many steps before it plays */
+
+/* Each Drum Mode track's last fired steps, from seq-events' trig stage (interrupt level): the step and the timeline
+ * at its fire, and the one before, for the step's length. */
+struct dm_fire {
+    volatile int32_t step, prev_step;
+    volatile uint32_t time, prev_time;
+};
+static struct dm_fire dm_fire[DM_TRACKS];
+static volatile uint8_t dm_step_vel[DM_TRACKS];        /* the velocity the step being fired plays at, 0 stock's */
+
+volatile int32_t dm_rec_count;          /* hits recorded, for the tests */
+volatile int32_t dm_rec_last_step = -1;
+
+static int32_t live_recording(void)
+{
+    uint8_t *rec = FW_REC_OBJ;
+    return rec && rec[REC_LIVE] && fw_transport == 1;
+}
+
+static void *track_obj(int32_t track)
+{
+    return fw_project + TRACK_OBJ_FIRST + TRACK_OBJ_STRIDE * track;
+}
+
+static uint8_t *track_data(void *obj)
+{
+    void *const *vt = *(void *const *const *)obj;
+    return (uint8_t *)((uint32_t (*)(void *))vt[10])(obj);
+}
+
+/* The step a hit at the timeline's now belongs to: the nearest step to the one playing. The last fired step S
+ * plays LEAD_STEPS steps after its fire, so the playing position is S - LEAD_STEPS + (now - fire) / length. */
+static int32_t hit_step(int32_t track)
+{
+    struct dm_fire *f = &dm_fire[track - DM_FIRST];
+    struct sq_track info;
+    int32_t s = f->step, len, k;
+    uint32_t t = f->time, d = TIMELINE_16TH;
+    int32_t x;
+    if (s < 0 || sq_track_info(track, &info, sizeof info) < 0)
+        return -1;
+    len = info.len < 1 ? 1 : info.len;
+    if (f->prev_step >= 0 && (f->prev_step + 1) % len == s) {
+        uint32_t dd = t - f->prev_time;
+        if (dd > TIMELINE_16TH / 8 && dd < TIMELINE_16TH * 16)
+            d = dd;                     /* the track's speed scale, and swing, as it plays */
+    }
+    x = (int32_t)(fw_timeline - t) - (int32_t)(LEAD_STEPS * d) + (int32_t)(d / 2);
+    k = x >= 0 ? x / (int32_t)d : -((-x + (int32_t)d - 1) / (int32_t)d);
+    s += k;
+    s %= len;
+    if (s < 0)
+        s += len;
+    return s;
+}
+
+/* Add a note to a step of a track as the stock's live recorder does: a trig if there is none (the note in slot 0,
+ * the intervals cleared), else the note as the first free interval, unless the step already plays it or is full. */
+static void record_note(int32_t track, int32_t step, int32_t note)
+{
+    void *obj = track_obj(track);
+    uint8_t *data = track_data(obj), *slots;
+    int32_t base, free_slot = -1;
+    if (!data || step < 0 || step > 63)
+        return;
+    slots = data + TRACK_SLOTS + 8 * step;
+    if (!(*(volatile uint16_t *)(data + 2 * step) & FW_STEP_TRIG)) {
+        FW_TRIG_SET(obj, step, FW_STEP_TRIG, 1);
+        FW_STEP_NOTE(obj, step, note, 0);
+        for (int32_t k = 1; k < 8; k++)
+            FW_STEP_NOTE(obj, step, 0, k);
+    } else {
+        base = slots[0];
+        if (base == note)
+            return;
+        for (int32_t k = 1; k < 8; k++) {
+            int8_t iv = (int8_t)slots[k];
+            if (iv && base + iv == note)
+                return;
+            if (!iv && free_slot < 0)
+                free_slot = k;
+        }
+        if (free_slot < 0 || note - base < -127 || note - base > 127)
+            return;
+        FW_STEP_NOTE(obj, step, note - base, free_slot);
+    }
+    dm_rec_count++;
+    dm_rec_last_step = step;
+}
+
+/* A MIDI track's output channel (0-15), or -1 when its CHAN is off. track: the firmware's, 4-7. */
+static int32_t midi_channel(int32_t track)
+{
+    int32_t m = track - DM_FIRST, ch;
+    if (!(*(volatile uint32_t *)(MIDI_TRACK_ON + 4 * (186 + m)) & 1))
+        return -1;
+    ch = *(volatile int8_t *)(MIDI_TRACK_STATE + MIDI_TRACK_STRIDE * m + MIDI_TRACK_CHAN);
+    return ch >= 0 && ch < 16 ? ch : -1;
+}
+
+/* seq-events, interrupt level. The trig stage: note each Drum Mode track's fired step and its time (first read only;
+ * the trig is left as it is). */
+void dm_gen_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
+{
+    struct dm_fire *f;
+    (void)trig;
+    if (!first || track < DM_FIRST || track >= DM_FIRST + DM_TRACKS)
+        return;
+    f = &dm_fire[track - DM_FIRST];
+    f->prev_step = f->step;
+    f->prev_time = f->time;
+    f->time = fw_timeline;
+    f->step = step;
+}
+
+/* The notes stage: a Drum Mode track's step whose notes are lanes plays at the loudest of their velocities. */
+void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
+{
+    int32_t t = track - DM_FIRST, vel = 0;
+    (void)step;
+    if (!drum_track(track))
+        return;
+    if (notes[0] >= 0)
+        for (int32_t i = 0; i < SQ_NOTES; i++) {
+            int32_t n;
+            if (i && !notes[i])
+                continue;
+            n = i ? notes[0] + notes[i] : notes[0];
+            for (int32_t l = 0; l < DM_LANES; l++)
+                if (dm.note[t][l] == n && dm.velocity[t][l] > vel)
+                    vel = dm.velocity[t][l];
+        }
+    dm_step_vel[t] = (uint8_t)vel;
+}
+
+void dm_fire_vel(int32_t track, int32_t step, int32_t *vel)
+{
+    (void)step;
+    if (drum_track(track) && dm_step_vel[track - DM_FIRST])
+        *vel = dm_step_vel[track - DM_FIRST];
+}
+
 static void lane_on(int32_t key, int32_t track, int32_t lane)
 {
-    int32_t t = track - DM_FIRST;
-    fw_note_on(track, dm.note[t][lane], dm.velocity[t][lane], SRC_PANEL, 0, NO_SOUND);
+    int32_t t = track - DM_FIRST, ch = midi_channel(track);
+    if (ch >= 0)
+        FW_MIDI_NOTE_ON(ch, dm.note[t][lane], dm.velocity[t][lane]);
+    if (live_recording())
+        record_note(track, hit_step(track), dm.note[t][lane]);
+    dm_held[key].channel = (int8_t)ch;
     dm_held[key].track = (int8_t)track;
     dm_held[key].note = dm.note[t][lane];
     dm_held[key].lane = (uint8_t)lane;
@@ -115,7 +301,8 @@ static void lane_off(int32_t key)
     struct dm_held *h = &dm_held[key];
     if (h->track < 0)
         return;
-    fw_note_off(h->track, h->note, SRC_PANEL);
+    if (h->channel >= 0)
+        FW_MIDI_NOTE_OFF(h->channel, h->note);
     dm_lit_held[h->track - DM_FIRST] &= (uint8_t)~(1u << h->lane);
     h->track = -1;
     dm_dirty = 1;
@@ -134,6 +321,8 @@ void dm_boot(void)
 {
     for (int32_t k = 0; k < KEY_STEPS; k++)
         dm_held[k].track = -1;
+    for (int32_t t = 0; t < DM_TRACKS; t++)
+        dm_fire[t].step = dm_fire[t].prev_step = -1;
     if (dm.version != SAVE_VERSION)
         defaults();
 }

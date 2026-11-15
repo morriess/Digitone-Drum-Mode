@@ -9,12 +9,12 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.3, live lanes with assignable notes.** Trig keys 1–8 play 8 drum lanes
-> on a MIDI track; each pad's note and velocity can be set on the unit and are saved
-> with the project. No step sequencing yet. See [docs/design.md](docs/design.md)
+> **Status: 0.4, live lanes and live recording.** Trig keys 1–8 play 8 drum lanes on
+> a MIDI track; each pad's note and velocity can be set on the unit; live recording
+> writes the pads into the pattern. No lane editing on the grid yet. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-## Using it (0.3)
+## Using it (0.4)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -35,12 +35,29 @@ Digitone mk1 core and its sequencer-events mod.
    the pad, not the page underneath.
 5. Pick DRUM MODE again to turn it off.
 
+### Live recording
+
+Start live recording as usual: **hold RECORD and press PLAY**. Play the pads; each hit
+is written into the pattern at the nearest step (a hit in the first half of a step lands
+on it, in the second half on the next one). Several pads on one step become one trig
+with several notes. Stop with STOP.
+
+Recorded hits are normal MIDI trigs: you see them on the grid with Drum Mode off, and
+they save, copy and clear like any trig. On playback a step plays at the loudest of its
+pads' velocities.
+
+- Recording always snaps to the nearest step; the stock "Live Rec: Quantized/Unquantized"
+  setting doesn't apply to the pads.
+- A step holds up to 8 notes, so all 8 pads fit on one step.
+
 The notes, velocities and which tracks have Drum Mode on are saved with the project.
 A project made without Drum Mode starts with the GM notes above and Drum Mode off.
 
 While Drum Mode is on for the selected track, trig keys 9–16 do nothing and you can't
-place trigs on that track (step programming comes in milestones 3–5). FUNC + a trig key
+place trigs by hand on that track (grid editing of lanes is next). FUNC + a trig key
 still does what it normally does.
+
+**OS 1.44 only** from 0.4: it uses firmware addresses found in OS 1.44.
 
 ## What it will do
 
@@ -89,6 +106,7 @@ git clone https://github.com/irpina/digiemu ~/digiemu
 cd ~/digiemu && uv sync && tools/install-patched-unicorn.sh
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_lanes.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -103,6 +121,7 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `tests/emu_session.py` | Drives the firmware in digiemu: keys, MIDI out, screen |
 | `tests/test_live_lanes.py` | The pads: notes, chords, note-offs, FUNC, the corner (20 checks) |
 | `tests/test_assign_notes.py` | Setting notes and velocities, saving with the project (21 checks) |
+| `tests/test_live_record.py` | Live recording: step timing, chords, playback, no stray stock trigs (15 checks) |
 | `docs/design.md` | Design and build plan |
 
 ## Disclaimer

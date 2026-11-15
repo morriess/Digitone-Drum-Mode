@@ -20,15 +20,27 @@ sys.path.insert(0, DIGIEMU)
 class Digitone:
     """A booted Digitone: keys by name, MIDI out captured, memory and the screen readable."""
 
-    def __init__(self, syx, home):
+    def __init__(self, syx, home, audio=False):
         self.symbols = {}
         if os.path.exists(syx + '.map.json'):
             with open(syx + '.map.json') as fh:
                 self.symbols = {k: int(v, 16) for k, v in json.load(fh).items()
                                 if isinstance(v, str) and v.startswith('0x')}
+        # The prepared firmware (and its +Drive) is kept per home folder; a changed .syx starts it again, or the
+        # emulator would run the old build against the new build's symbols.
+        import hashlib
+        import shutil
+        with open(syx, 'rb') as fh:
+            digest = hashlib.sha256(fh.read()).hexdigest()
+        stamp = os.path.join(home, 'firmware.sha256')
+        if os.path.isdir(home) and (not os.path.exists(stamp) or open(stamp).read() != digest):
+            shutil.rmtree(home)
         if not os.path.isdir(os.path.join(home, 'firmware')):
+            os.makedirs(home, exist_ok=True)
             subprocess.run([sys.executable, '-m', 'emu.portable', '--home', home, '--add', syx, '--yes'],
                            cwd=DIGIEMU, check=True, stdout=subprocess.DEVNULL)
+            with open(stamp, 'w') as fh:
+                fh.write(digest)
         from emu.bootstrap import FirmwarePaths
         from emu.session import Session
         from emu import midi
@@ -42,11 +54,11 @@ class Digitone:
         self.s = None
         # Hooks must go in before the emulator translates any code (a block translated without a hook never
         # calls it), so they are added from the session's on_machine callback.
-        self.s = Session(paths.gui, paths.syx, audio=False, on_machine=self._hook_midi_send)
+        self.s = Session(paths.gui, paths.syx, audio=audio, on_machine=self._hook_midi_send)
         self.wait(500)
 
     # Where OS 1.44 hands MIDI out, logged at each routine's entry whatever MIDI CONFIG's ports say:
-    # the port switch's send (0x400ee1a6, f(buf, len, flags)), and the sequencer MIDI engine's two
+    # the port switch's send (0x400ee1a6, f(len, buf, flags)), and the sequencer MIDI engine's two
     # append routines (0x400f3e70, 0x400f3c1a, f(len, msg)), which carry the MIDI tracks' notes.
     MIDI_SEND = 0x400ee1a6
     SEQ_MIDI = (0x400f3e70, 0x400f3c1a)
@@ -56,8 +68,8 @@ class Digitone:
 
         def on_send(uc, address, size, data):
             sp = uc.reg_read(UC_M68K_REG_A7)
-            buf = int.from_bytes(uc.mem_read(sp + 4, 4), 'big')
-            n = int.from_bytes(uc.mem_read(sp + 8, 4), 'big')
+            n = int.from_bytes(uc.mem_read(sp + 4, 4), 'big')
+            buf = int.from_bytes(uc.mem_read(sp + 8, 4), 'big')
             if 0 < n <= 16:
                 self.midi_sent.append(bytes(uc.mem_read(buf, n)))
         session.at(self.MIDI_SEND, on_send)

@@ -1,16 +1,13 @@
 {
  "id": "drummode",
- "version": "0.3",
+ "version": "0.4",
  "license": "GPL-2.0-or-later",
  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
  "category": "Sequencer",
  "author": "morriess",
- "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.3, live lanes with assignable notes: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; the screen's corner shows the lanes and the held pad's note. Saved with the project. It names no firmware address, so its OS 1.44 port is empty. Needs core-dn1 5.3.",
+ "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.4: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; in live recording (RECORD + PLAY) each pad hit is written at the nearest step as a normal MIDI trig, lanes on one step as its chord notes. Saved with the project. OS 1.44 only: it names the live-record flag and the step setters by address. Needs core-dn1 5.3 and seq-events.",
  "device": "digitone-mk1",
- "os": "1.43",
- "ports": {
-  "1.44": {}
- },
+ "os": "1.44",
  "sources": [
   "drummode.c"
  ],
@@ -42,6 +39,21 @@
   {
    "event": "ev_draw",
    "fn": "dm_draw",
+   "order": 50
+  },
+  {
+   "event": "ev_gen_trig",
+   "fn": "dm_gen_trig",
+   "order": 90
+  },
+  {
+   "event": "ev_fire_notes",
+   "fn": "dm_fire_notes",
+   "order": 90
+  },
+  {
+   "event": "ev_fire_vel",
+   "fn": "dm_fire_vel",
    "order": 50
   }
  ],

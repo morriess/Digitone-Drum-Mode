@@ -107,6 +107,7 @@ stock. To verify: copy/paste behaviour of those parameters.
 2. **Live lanes.** Trig 1–8 send the 8 lane notes. *Done, tested in digiemu (20 checks).*
    **0.3 adds:** hold a pad + turn A/B to set its note/velocity; the drum map and on/off state
    are saved as project data "DRUM" (pulled forward from milestone 4; 21 more checks).
+   **0.4 adds live recording** (milestones 3 and 4 by another route, below; 15 more checks).
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
 5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs.
@@ -127,4 +128,19 @@ stock. To verify: copy/paste behaviour of those parameters.
   LEDs (milestone 5) need the setter found first. Until then the screen corner shows the lanes.
 - **MIDI track channel.** A MIDI track's CHAN is off in the default project ("Func+Press to
   enable" on its SRC page); with it off nothing is sent, stock or Drum Mode.
+- **Live recording (0.4).** Recorded hits are stored as stock MIDI trigs: a trig plus the step's 8 note
+  slots (slot 0 the note, 1–7 intervals), the stock's chord format, written with the stock's setters
+  TRIG_SET (0x4003673a) and STEP_NOTE (0x40035858) on the track's edit object (fw_project + 0x11f4 +
+  0x58 × track). So the lane-parameter storage planned above was not needed: patterns save, copy and
+  clear the hits like any trig, and the stock sequencer plays them. Live recording is byte +0x169 of the
+  object a global at 0x419f0dd8 points to (the stock's getter 0x400addc8). A hit's step: the sequencer
+  fires a step one step before it plays (measured in digiemu), so the playing position is the last fired
+  step − 1 plus the time since its fire; the hit goes to the nearest step.
+- **Bypassing the stock recorder.** The live note routine (fw_note_on) queues every note for the stock's
+  recorder (0x400f050e), which recorded the pads again on steps of its own. From 0.4 the pads send
+  MIDI through the port switch's note senders (0x400ee232 / 0x400ee29e) on the MIDI track's channel,
+  read from the sequencer's MIDI track state (0x419c5b30 + 158 × track + 38; CHAN on: bit 0 of
+  0x419c5b10 + 4 × (186 + track)).
+- **The sequencer needs the audio engine.** In digiemu the Digitone's sequencer only runs with audio
+  on (it is clocked by the render), so recording and playback tests start the session with audio.
 

@@ -9,7 +9,7 @@ set -euo pipefail
 
 ELEKLOADER_REPO="https://github.com/irpina/elekloader.git"
 ELEKLOADER_COMMIT="9281c991e27c1516b43749dfb39a53c2c057859b"   # core-dn1 5.3, seq-events-dn1 0.1
-VERSION_LABEL="DRM1"
+VERSION_LABEL="DRM2"
 
 here="$(cd "$(dirname "$0")" && pwd)"
 stock="${1:?usage: ./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx [output.syx]}"
@@ -39,11 +39,13 @@ build() { python3 -m elekloader.sdk.build "$1" --stock "$stock"; }
 
 build "$ek/mods/core-dn1"
 build "$ek/mods/seq-events-dn1"
+rm -rf "$here/src/out"
 build "$here/src"
 
 core="$ek/mods/core-dn1/out/core-5.3-os1.44.elemod"
 seq="$ek/mods/seq-events-dn1/out/seq-events-0.1-os1.44.elemod"
-dm="$(ls "$here"/src/out/drummode-*-os1.44.elemod)"
+dm_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$here/src/mod.json")"
+dm="$here/src/out/drummode-$dm_version-os1.44.elemod"
 
 python3 -m elekloader.lint "$dm" --stock "$stock" --with "$core" --with "$seq"
 python3 -m elekloader.patch --stock "$stock" --mod "$core" --mod "$seq" --mod "$dm" \

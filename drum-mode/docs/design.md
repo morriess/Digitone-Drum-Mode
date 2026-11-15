@@ -103,10 +103,26 @@ stock. To verify: copy/paste behaviour of those parameters.
 
 ## Build plan
 
-1. **Groundwork.** Build setup on core 5.x, an empty mod that loads and changes nothing.
-2. **Live lanes.** KEYBOARD mode: trig 1–8 send the 8 lane notes.
+1. **Groundwork.** Build setup on core 5.x, an empty mod that loads and changes nothing. *Done.*
+2. **Live lanes.** Trig 1–8 send the 8 lane notes. *Done, tested in digiemu (20 checks).*
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
 5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs.
 6. **Screen grid.** 8 × 16 grid, playhead, lane flashes.
 7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2.
+
+## Findings while building
+
+- **Turning it on.** v0.2 toggles Drum Mode from the Mod Menu (DRUM MODE), and then the trig
+  keys are pads on that track whatever the GRID/KEYBOARD state. Tying pads to KEYBOARD mode
+  needs the firmware's KEYBOARD flag, which core does not export; the KEYBOARD key is code 3,
+  so the flag can be found in digiemu by diffing memory around a KEYBOARD press. Decide in
+  milestone 5, when GRID editing arrives.
+- **Sending notes.** The stock KEYBOARD dispatcher (0x4003b198) plays a MIDI track's note
+  through 0x400eae5c, which core exports as `fw_note_on(track, note, vel, source, skip, sound)`
+  (tracks 4–7 are MIDI A–D). Drum Mode calls it with source 0x40, as the trig keys do.
+- **Key LEDs.** `ev_key_leds` gives the LedManager but core exports no setter, so per-lane trig
+  LEDs (milestone 5) need the setter found first. Until then the screen corner shows the lanes.
+- **MIDI track channel.** A MIDI track's CHAN is off in the default project ("Func+Press to
+  enable" on its SRC page); with it off nothing is sent, stock or Drum Mode.
+

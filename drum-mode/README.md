@@ -9,11 +9,12 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: milestone 2, live lanes.** Trig keys 1–8 play 8 drum lanes on a MIDI
-> track. No step sequencing or saving yet. See [docs/design.md](docs/design.md)
+> **Status: 0.3, live lanes with assignable notes.** Trig keys 1–8 play 8 drum lanes
+> on a MIDI track; each pad's note and velocity can be set on the unit and are saved
+> with the project. No step sequencing yet. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-## Using it (milestone 2)
+## Using it (0.3)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -27,11 +28,19 @@ Digitone mk1 core and its sequencer-events mod.
    | Lane | Kick 36 | Snare 38 | Closed hat 42 | Open hat 46 | Clap 39 | Low tom 45 | High tom 50 | Crash 49 |
 
    The screen's top-right corner shows 8 small boxes; a lane's box lights while it plays.
-4. Pick DRUM MODE again to turn it off.
+4. **Set a pad's note:** hold the pad and turn **A**. You hear each note as you turn,
+   so you can find the right sound on your drum machine by ear. Turn **B** for its
+   velocity. The corner shows the pad, its note and velocity, e.g. `BD 38 V100`
+   (holding a pad a moment shows it too). While a pad is held the knobs only change
+   the pad, not the page underneath.
+5. Pick DRUM MODE again to turn it off.
+
+The notes, velocities and which tracks have Drum Mode on are saved with the project.
+A project made without Drum Mode starts with the GM notes above and Drum Mode off.
 
 While Drum Mode is on for the selected track, trig keys 9–16 do nothing and you can't
 place trigs on that track (step programming comes in milestones 3–5). FUNC + a trig key
-still does what it normally does. Drum Mode is off again after a power cycle.
+still does what it normally does.
 
 ## What it will do
 
@@ -79,6 +88,7 @@ press keys and check the MIDI the Digitone sends:
 git clone https://github.com/irpina/digiemu ~/digiemu
 cd ~/digiemu && uv sync && tools/install-patched-unicorn.sh
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_lanes.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -91,7 +101,8 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `src/drummode.c` | The mod |
 | `build.sh` | Builds the firmware from your stock OS file |
 | `tests/emu_session.py` | Drives the firmware in digiemu: keys, MIDI out, screen |
-| `tests/test_live_lanes.py` | Milestone 2's tests |
+| `tests/test_live_lanes.py` | The pads: notes, chords, note-offs, FUNC, the corner (20 checks) |
+| `tests/test_assign_notes.py` | Setting notes and velocities, saving with the project (21 checks) |
 | `docs/design.md` | Design and build plan |
 
 ## Disclaimer

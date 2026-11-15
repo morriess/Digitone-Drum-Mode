@@ -46,8 +46,8 @@ def main():
         return d.peek32(addr['fw_active_track'])
 
     def enabled(m):
-        # struct dm_track { u8 enabled; u8 mutes; struct dm_lane lanes[8] (2 bytes) } = 18 bytes
-        return d.mem(addr['dm_tracks'] + 18 * m, 1)[0]
+        # struct dm_save { u8 version; u8 enabled (bit per track); ... }
+        return (d.mem(addr['dm'] + 1, 1)[0] >> m) & 1
 
     # Setup: MIDI out to DIN (digiemu leaves it at USB), MIDI track A selected (hold MIDI, press T1), and its
     # CHAN enabled (FUNC + push A on its SRC page: the default project has it OFF, so nothing is sent).
@@ -112,6 +112,7 @@ def main():
     # Several at once: hold 1, 3 and 5 together.
     for k in ('1', '3', '5'):
         d.press(k, after_ms=40)
+    d.wait(150)                                 # the MIDI engine sends on its next ticks
     on = sorted(n[1] for n in notes_on(d.take_midi()))
     d.wait(150)                                 # a frame or two for the screen
     d.screen_png(os.path.join(work, 'lanes-1-3-5-held.png'))

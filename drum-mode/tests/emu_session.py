@@ -21,6 +21,11 @@ class Digitone:
     """A booted Digitone: keys by name, MIDI out captured, memory and the screen readable."""
 
     def __init__(self, syx, home):
+        self.symbols = {}
+        if os.path.exists(syx + '.map.json'):
+            with open(syx + '.map.json') as fh:
+                self.symbols = {k: int(v, 16) for k, v in json.load(fh).items()
+                                if isinstance(v, str) and v.startswith('0x')}
         if not os.path.isdir(os.path.join(home, 'firmware')):
             subprocess.run([sys.executable, '-m', 'emu.portable', '--home', home, '--add', syx, '--yes'],
                            cwd=DIGIEMU, check=True, stdout=subprocess.DEVNULL)
@@ -120,6 +125,77 @@ class Digitone:
             self.tap(key)
         for _ in range(6):
             self.tap('NO', after_ms=400)
+
+    def settle(self, quiet_ms=250, limit_ms=2000):
+        """Run until the screen has not changed for quiet_ms."""
+        start = self.s.ms
+        while self.s.ms - start < limit_ms:
+            self.s.run_ms(50)
+            if not self.s.frames or self.s.ms - self.s.frames[-1][0] >= quiet_ms:
+                return
+
+    def _project_menu(self):
+        self.tap('GLOBAL')
+        self._top()
+        self.tap('YES')
+        self._top()
+
+    def _leave_settings(self):
+        for _ in range(6):
+            self.tap('NO', after_ms=400)
+
+    def save_project(self, slot):
+        """SETTINGS > PROJECT > SAVE PROJECT AS slot (2-128; 1 holds the write-protected presets)."""
+        self._project_menu()
+        self.tap('DOWN')
+        self.tap('YES')
+        self._top()
+        for _ in range(slot - 1):
+            self.tap('DOWN')
+        self.tap('YES')                 # the name editor
+        self.tap('YES')                 # save
+        self.settle(quiet_ms=5000, limit_ms=120000)
+        self._leave_settings()
+
+    def load_project(self, slot):
+        """SETTINGS > PROJECT > LOAD PROJECT slot, answering yes to losing changes."""
+        self._project_menu()
+        self.tap('YES')
+        self._top()
+        for _ in range(slot - 1):
+            self.tap('DOWN')
+        self.tap('YES')
+        self.tap('YES')
+        self.settle(quiet_ms=20000, limit_ms=300000)
+        self._leave_settings()
+
+    def setup_midi_track_a(self):
+        """MIDI out to DIN, MIDI track A selected, and its CHAN enabled (the default project has it OFF:
+        FUNC + push A on its SRC page). Leaves the TRIG page shown."""
+        self.midi_out_to_din()
+        self.select_midi_a()
+        self.tap('SYN1', after_ms=400)
+        self.press('FUNC')
+        self.tap('A')
+        self.release('FUNC', after_ms=400)
+        self.tap('TRIG', after_ms=300)
+
+    def active_track(self):
+        return self.peek32(self.symbols['fw_active_track'])
+
+    def select_midi_a(self):
+        """MIDI track A (hold MIDI, press T1), unless it is already the active track: MIDI + T1 again would
+        go back to the synth tracks."""
+        if self.symbols and self.active_track() == 4:
+            return
+        self.press('MIDI')
+        self.tap('T1')
+        self.release('MIDI', after_ms=300)
+
+    def mod_menu_first(self):
+        """Hold a track key for the Mod Menu and pick its first entry (DRUM MODE, the build's only one)."""
+        self.hold('T1', 700)
+        self.tap('YES', after_ms=500)
 
     # -- state --------------------------------------------------------------------------------
     def mem(self, addr, size):

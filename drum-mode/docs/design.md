@@ -105,6 +105,8 @@ stock. To verify: copy/paste behaviour of those parameters.
 
 1. **Groundwork.** Build setup on core 5.x, an empty mod that loads and changes nothing. *Done.*
 2. **Live lanes.** Trig 1–8 send the 8 lane notes. *Done, tested in digiemu (20 checks).*
+   **0.3 adds:** hold a pad + turn A/B to set its note/velocity; the drum map and on/off state
+   are saved as project data "DRUM" (pulled forward from milestone 4; 21 more checks).
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
 5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs.

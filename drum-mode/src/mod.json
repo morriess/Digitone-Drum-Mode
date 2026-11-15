@@ -1,0 +1,13 @@
+{
+ "id": "drummode", "version": "0.1",
+ "license": "GPL-2.0-or-later",
+ "title": "Drum Mode (Digitone MIDI track drum sequencer)", "category": "Sequencer", "author": "morriess",
+ "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. Milestone 1: the mod loads and changes nothing; it names no firmware address, so its OS 1.44 port is empty.",
+ "device": "digitone-mk1", "os": "1.43",
+ "ports": {"1.44": {}},
+ "sources": ["drummode.c"],
+ "subscribe": [
+  {"event": "ev_boot_ui", "fn": "dm_boot", "order": 50}
+ ],
+ "requires": ["core", "seq-events"]
+}

@@ -9,8 +9,8 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: design / groundwork.** Nothing to flash yet. See
-> [docs/design.md](docs/design.md) for the full design and build plan.
+> **Status: milestone 1 (test build).** The mod loads and changes nothing yet.
+> See [docs/design.md](docs/design.md) for the full design and build plan.
 
 ## What it will do
 
@@ -33,11 +33,30 @@ Digitone mk1 core and its sequencer-events mod.
 
 ## Building
 
-You need your own copy of the stock Digitone OS 1.44 `.syx` from Elektron.
+You need your own copy of the stock Digitone OS 1.44 `.syx` from Elektron, plus
+git, python3 and an m68k cross toolchain (`m68k-elf-gcc` or `m68k-linux-gnu-gcc`;
+on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
+
+```
+./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx
+```
+
+This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
+(core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
+combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
+**DRM1** on the unit.
+
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.
 
-Build instructions follow with milestone 1.
+## Layout
+
+| Path | What |
+| --- | --- |
+| `src/mod.json` | Mod manifest: events it subscribes to, what it needs |
+| `src/drummode.c` | The mod |
+| `build.sh` | Builds the firmware from your stock OS file |
+| `docs/design.md` | Design and build plan |
 
 ## Disclaimer
 

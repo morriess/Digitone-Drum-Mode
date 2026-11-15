@@ -2,11 +2,11 @@
 /* Drum Mode for the Digitone mk1 (core-dn1 5.3): a MIDI track becomes 8 drum lanes, each sending its own note on
  * the track's MIDI channel. See ../docs/design.md.
  *
- * 0.4, live lanes with assignable notes, and live recording:
+ * 0.5, live lanes with assignable notes, live recording and lane mutes:
  * - DRUM MODE in the Mod Menu (hold a track key) turns Drum Mode on or off for the active MIDI track (A-D).
  * - While a Drum Mode track is the active track, trig keys 1-8 are pads: each plays its lane's note on the track's
  *   MIDI channel (SRC's CHAN; nothing while it is off), several at once. Trig keys 9-16 do
- *   nothing yet. FUNC + a trig key is left to the stock.
+ *   nothing yet. FUNC + a pad mutes its lane (below); FUNC + trig keys 9-16 are left to the stock.
  * - Hold a pad and turn A: its note (you hear each new note as it changes). Turn B: its velocity. While a pad is
  *   held the knobs are Drum Mode's, so the page underneath does not change. Holding a pad a moment, or turning,
  *   shows its note and velocity in the corner.
@@ -15,6 +15,10 @@
  * - Live recording (RECORD + PLAY): each pad hit is written into the pattern at the nearest step as a normal MIDI trig,
  *   its lane's note added to the step's notes (a step holds up to 8: a note and 7 intervals, the stock's chord), so
  *   recorded hits play, show, copy, clear and save as stock trigs. The pads bypass the stock's own recorder. A step whose notes are lanes plays at the loudest of their velocities.
+ *
+ * - FUNC + a pad mutes or unmutes its lane: the sequencer leaves a muted lane's note out of every step it plays (a step
+ *   of muted lanes only plays nothing); its steps stay in the pattern. The pad itself still plays and records. The
+ *   corner strip shows a muted lane as a dash. Saved with the project.
  *
  * OS 1.44 only from 0.4: the live-record flag and the stock's step setters are named by address (below).
  *
@@ -77,13 +81,17 @@ typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
 /* The default drum map (General MIDI), and the lanes' short names for the corner. */
 static const uint8_t dm_default_notes[DM_LANES] = { 36, 38, 42, 46, 39, 45, 50, 49 };
 static const char *const dm_names[DM_LANES] = { "BD", "SD", "CH", "OH", "CP", "LT", "HT", "CY" };
+static const char *const dm_mute_msg[DM_LANES] = { "BD MUTE", "SD MUTE", "CH MUTE", "OH MUTE",
+                                                   "CP MUTE", "LT MUTE", "HT MUTE", "CY MUTE" };
+static const char *const dm_unmute_msg[DM_LANES] = { "BD ON", "SD ON", "CH ON", "OH ON",
+                                                     "CP ON", "LT ON", "HT ON", "CY ON" };
 
 /* What the project keeps (project data "DRUM"). A project saved without Drum Mode loads as all zeros: version 0,
  * which dm_loaded turns into the defaults. */
 struct dm_save {
     uint8_t version;
     uint8_t enabled;                    /* bit per track */
-    uint8_t mutes[DM_TRACKS];           /* bit per lane (later milestones) */
+    uint8_t mutes[DM_TRACKS];           /* bit per lane: left out of what the sequencer plays */
     uint8_t pad[2];
     uint8_t note[DM_TRACKS][DM_LANES];
     uint8_t velocity[DM_TRACKS][DM_LANES];
@@ -253,23 +261,38 @@ void dm_gen_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
     f->step = step;
 }
 
-/* The notes stage: a Drum Mode track's step whose notes are lanes plays at the loudest of their velocities. */
+/* The notes stage: on a Drum Mode track, the notes of muted lanes are taken out of the step (a step left with none
+ * plays nothing), and a step whose notes are lanes plays at the loudest of their velocities. */
 void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
 {
-    int32_t t = track - DM_FIRST, vel = 0;
+    int32_t t = track - DM_FIRST, vel = 0, n_keep = 0;
+    int32_t keep[SQ_NOTES];
+    uint8_t mutes;
     (void)step;
     if (!drum_track(track))
         return;
+    mutes = dm.mutes[t];
     if (notes[0] >= 0)
         for (int32_t i = 0; i < SQ_NOTES; i++) {
-            int32_t n;
+            int32_t n, muted = 0;
             if (i && !notes[i])
                 continue;
             n = i ? notes[0] + notes[i] : notes[0];
             for (int32_t l = 0; l < DM_LANES; l++)
-                if (dm.note[t][l] == n && dm.velocity[t][l] > vel)
-                    vel = dm.velocity[t][l];
+                if (dm.note[t][l] == n) {
+                    if ((mutes >> l) & 1)
+                        muted = 1;
+                    else if (dm.velocity[t][l] > vel)
+                        vel = dm.velocity[t][l];
+                }
+            if (!muted && n >= 0 && n <= 127)
+                keep[n_keep++] = n;
         }
+    if (mutes && notes[0] >= 0) {               /* rebuild: the first kept note, the others as intervals from it */
+        notes[0] = (int8_t)(n_keep ? keep[0] : -1);
+        for (int32_t i = 1; i < SQ_NOTES; i++)
+            notes[i] = (int8_t)(i < n_keep ? keep[i] - keep[0] : 0);
+    }
     dm_step_vel[t] = (uint8_t)vel;
 }
 
@@ -347,8 +370,8 @@ static void dm_loaded(int32_t found)
 const struct core_projdata dm_projdata = { 0x4452554du /* "DRUM" */, sizeof dm, &dm, dm_loaded };
 
 /* ---- keys ------------------------------------------------------------------------------------ */
-/* The UI task, each key event. On a Drum Mode track a trig key's press is taken (FUNC + a trig key is left to the
- * stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
+/* The UI task, each key event. On a Drum Mode track a trig key's press is taken (FUNC + pad 1-8 toggles its lane's
+ * mute; FUNC + 9-16 is left to the stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
  * press played, and a key the stock saw go down is never kept from it on the way up. */
 int32_t dm_key(void *brain, void *ev)
 {
@@ -377,8 +400,17 @@ int32_t dm_key(void *brain, void *ev)
         }
         return 1;                       /* a repeat of ours, or our release */
     }
-    if (up || (flags & (CORE_KEY_FUNC | CORE_KEY_REPEAT)) || !drum_track(track))
+    if (up || (flags & CORE_KEY_REPEAT) || !drum_track(track))
         return 0;
+    if (flags & CORE_KEY_FUNC) {
+        int32_t t = track - DM_FIRST;
+        if (k >= DM_LANES)
+            return 0;                   /* FUNC + 9-16: the stock's */
+        dm.mutes[t] ^= (uint8_t)(1u << k);
+        dm_taken |= bit;                /* its release is ours too; no note */
+        say(((dm.mutes[t] >> k) & 1) ? dm_mute_msg[k] : dm_unmute_msg[k], 0);
+        return 1;
+    }
     dm_taken |= bit;
     if (k < DM_LANES) {
         lane_on(k, track, k);
@@ -527,6 +559,8 @@ void dm_draw(void *bmp, void *ctrl)
         int32_t x0 = 96 + 4 * l, x1 = x0 + 2;
         if ((dm_lit_held[t] >> l) & 1 || dm_flash[t][l])
             ((rect_fn)fw_fillrect)(bmp, x0, 56, x1, 61, -1);
+        else if ((dm.mutes[t] >> l) & 1)
+            ((rect_fn)fw_fillrect)(bmp, x0, 58, x1, 59, -1);     /* muted: a dash */
         else
             ((rect_fn)fw_framerect)(bmp, x0, 56, x1, 61, -1);
     }

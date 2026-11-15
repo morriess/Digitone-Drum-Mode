@@ -108,6 +108,8 @@ stock. To verify: copy/paste behaviour of those parameters.
    **0.3 adds:** hold a pad + turn A/B to set its note/velocity; the drum map and on/off state
    are saved as project data "DRUM" (pulled forward from milestone 4; 21 more checks).
    **0.4 adds live recording** (milestones 3 and 4 by another route, below; 15 more checks).
+   **0.5 adds lane mutes:** FUNC + pad; seq-events' notes stage drops muted lanes' notes from each step
+   the sequencer plays (a step left with none plays nothing); saved in project data (10 more checks).
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
 5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs.

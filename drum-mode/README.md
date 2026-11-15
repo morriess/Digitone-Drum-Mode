@@ -9,12 +9,13 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.4, live lanes and live recording.** Trig keys 1–8 play 8 drum lanes on
-> a MIDI track; each pad's note and velocity can be set on the unit; live recording
-> writes the pads into the pattern. No lane editing on the grid yet. See [docs/design.md](docs/design.md)
+> **Status: 0.5, live lanes, live recording and lane mutes.** Trig keys 1–8 play 8 drum
+> lanes on a MIDI track; each pad's note and velocity can be set on the unit; live
+> recording writes the pads into the pattern; FUNC + a pad mutes its lane. No lane
+> editing on the grid yet. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-## Using it (0.4)
+## Using it (0.5)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -50,12 +51,20 @@ pads' velocities.
   setting doesn't apply to the pads.
 - A step holds up to 8 notes, so all 8 pads fit on one step.
 
-The notes, velocities and which tracks have Drum Mode on are saved with the project.
+### Muting a lane
+
+**FUNC + a pad** mutes that lane: the pattern plays on without it, and its steps stay
+in the pattern. FUNC + the pad again unmutes it. The corner shows `BD MUTE` / `BD ON`,
+and in the lane strip a muted lane is a dash instead of a box. On a step with several
+drums only the muted one drops out. The pad itself still plays (and records) when you
+hit it.
+
+The notes, velocities, mutes and which tracks have Drum Mode on are saved with the project.
 A project made without Drum Mode starts with the GM notes above and Drum Mode off.
 
 While Drum Mode is on for the selected track, trig keys 9–16 do nothing and you can't
-place trigs by hand on that track (grid editing of lanes is next). FUNC + a trig key
-still does what it normally does.
+place trigs by hand on that track (grid editing of lanes is next). FUNC + trig keys 9–16
+still do what they normally do.
 
 **OS 1.44 only** from 0.4: it uses firmware addresses found in OS 1.44.
 
@@ -107,6 +116,7 @@ cd ~/digiemu && uv sync && tools/install-patched-unicorn.sh
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_lanes.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -119,9 +129,10 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `src/drummode.c` | The mod |
 | `build.sh` | Builds the firmware from your stock OS file |
 | `tests/emu_session.py` | Drives the firmware in digiemu: keys, MIDI out, screen |
-| `tests/test_live_lanes.py` | The pads: notes, chords, note-offs, FUNC, the corner (20 checks) |
+| `tests/test_live_lanes.py` | The pads: notes, chords, note-offs, FUNC + pad, the corner (21 checks) |
 | `tests/test_assign_notes.py` | Setting notes and velocities, saving with the project (21 checks) |
 | `tests/test_live_record.py` | Live recording: step timing, chords, playback, no stray stock trigs (15 checks) |
+| `tests/test_lane_mute.py` | Lane mutes: playback without muted lanes, chords, the strip (10 checks) |
 | `docs/design.md` | Design and build plan |
 
 ## Disclaimer

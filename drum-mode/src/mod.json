@@ -1,11 +1,11 @@
 {
  "id": "drummode",
- "version": "0.4",
+ "version": "0.5",
  "license": "GPL-2.0-or-later",
  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
  "category": "Sequencer",
  "author": "morriess",
- "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.4: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; in live recording (RECORD + PLAY) each pad hit is written at the nearest step as a normal MIDI trig, lanes on one step as its chord notes. Saved with the project. OS 1.44 only: it names the live-record flag and the step setters by address. Needs core-dn1 5.3 and seq-events.",
+ "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.4: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; FUNC + a pad mutes its lane on playback; in live recording (RECORD + PLAY) each pad hit is written at the nearest step as a normal MIDI trig, lanes on one step as its chord notes. Saved with the project. OS 1.44 only: it names the live-record flag and the step setters by address. Needs core-dn1 5.3 and seq-events.",
  "device": "digitone-mk1",
  "os": "1.44",
  "sources": [

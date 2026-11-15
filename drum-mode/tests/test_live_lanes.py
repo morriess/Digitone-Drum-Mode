@@ -125,15 +125,22 @@ def main():
     check('three pads at once: three note-ons', on == [36, 39, 42], str(on))
     check('and three note-offs', off == [36, 39, 42], str(off))
 
-    # FUNC + a trig key is the stock's, and so is that key's release even after FUNC is let go first.
+    # FUNC + pad 6 mutes lane 6 (no note), even when FUNC is let go before the pad; again unmutes it.
+    def mutes():
+        return d.mem(addr['dm'] + 2, 1)[0]      # struct dm_save: version, enabled, mutes[track]...
     d.press('FUNC', after_ms=60)
     d.press('6', after_ms=60)
     d.release('FUNC', after_ms=60)
     d.release('6', after_ms=150)
-    taken = d.peek32(addr['dm_taken']) if 'dm_taken' in addr else 0
     sent = notes_on(d.take_midi())
-    check('FUNC + trig 6 plays no lane and leaves the key to the stock',
-          not [n for n in sent if n[1] == GM[5]] and taken == 0, 'taken=%#x, stock sent %s' % (taken, sent))
+    taken = d.peek32(addr['dm_taken'])
+    check('FUNC + pad 6 mutes lane 6 and plays nothing', mutes() == 0x20 and not sent and taken == 0,
+          'mutes=%#x sent=%s taken=%#x' % (mutes(), sent, taken))
+    d.press('FUNC', after_ms=60)
+    d.tap('6')
+    d.release('FUNC', after_ms=150)
+    check('FUNC + pad 6 again unmutes it', mutes() == 0, 'mutes=%#x' % mutes())
+    d.take_midi()
 
     # Trig 9-16: nothing yet.
     d.tap('9')

@@ -9,13 +9,13 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.5, live lanes, live recording and lane mutes.** Trig keys 1–8 play 8 drum
-> lanes on a MIDI track; each pad's note and velocity can be set on the unit; live
-> recording writes the pads into the pattern; FUNC + a pad mutes its lane. No lane
-> editing on the grid yet. See [docs/design.md](docs/design.md)
+> **Status: 0.6, live lanes, live recording, lane mutes, and a lane strip that follows
+> playback.** Trig keys 1–8 play 8 drum lanes on a MIDI track; each pad's note and
+> velocity can be set on the unit; live recording writes the pads into the pattern;
+> FUNC + a pad mutes its lane. No lane editing on the grid yet. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-## Using it (0.5)
+## Using it (0.6)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -28,8 +28,8 @@ Digitone mk1 core and its sequencer-events mod.
    | --- | --- | --- | --- | --- | --- | --- | --- | --- |
    | Lane | Kick 36 | Snare 38 | Closed hat 42 | Open hat 46 | Clap 39 | Low tom 45 | High tom 50 | Crash 49 |
 
-   The screen's top-right corner shows 8 small boxes; a lane's box lights while it plays
-   (see [docs/ui](docs/ui/README.md)).
+   The screen's top-right corner shows 8 small boxes: a lane's box lights while its pad
+   is held, and blinks each time the sequencer plays it (see [docs/ui](docs/ui/README.md)).
 4. **Set a pad's note:** hold the pad and turn **A**. You hear each note as you turn,
    so you can find the right sound on your drum machine by ear. Turn **B** for its
    velocity. The corner shows the pad, its note and velocity, e.g. `BD 38 V100`
@@ -118,6 +118,7 @@ DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_lanes.py out
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -134,6 +135,7 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `tests/test_assign_notes.py` | Setting notes and velocities, saving with the project (21 checks) |
 | `tests/test_live_record.py` | Live recording: step timing, chords, playback, no stray stock trigs (15 checks) |
 | `tests/test_lane_mute.py` | Lane mutes: playback without muted lanes, chords, the strip (10 checks) |
+| `tests/test_strip_playback.py` | The strip blinking on playback, on time; not over menus (11 checks) |
 | `docs/design.md` | Design and build plan |
 | `docs/ui/` | The screen UI explained, with screenshots |
 

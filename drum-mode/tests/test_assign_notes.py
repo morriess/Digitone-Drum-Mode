@@ -135,7 +135,9 @@ def main():
     d.take_midi()
     check('after the load pad 1 plays note 40', [n[1] for n in pad('1')] == [40])
 
-    # A project saved without Drum Mode (slot 1, the presets): the defaults, Drum Mode off.
+    # A project saved without Drum Mode (slot 1, the presets): the defaults, Drum Mode off. The pause first: right after
+    # the previous load the Digitone ignored YES on the load list for a while (seen with 0.6's timing in digiemu).
+    d.wait(5000)
     d.load_project(1)
     fresh = saved()
     check('a project without Drum Mode loads the GM defaults, off',

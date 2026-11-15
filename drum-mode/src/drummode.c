@@ -2,7 +2,7 @@
 /* Drum Mode for the Digitone mk1 (core-dn1 5.3): a MIDI track becomes 8 drum lanes, each sending its own note on
  * the track's MIDI channel. See ../docs/design.md.
  *
- * 0.5, live lanes with assignable notes, live recording and lane mutes:
+ * 0.6, live lanes with assignable notes, live recording, lane mutes, and the strip following playback:
  * - DRUM MODE in the Mod Menu (hold a track key) turns Drum Mode on or off for the active MIDI track (A-D).
  * - While a Drum Mode track is the active track, trig keys 1-8 are pads: each plays its lane's note on the track's
  *   MIDI channel (SRC's CHAN; nothing while it is off), several at once. Trig keys 9-16 do
@@ -10,7 +10,8 @@
  * - Hold a pad and turn A: its note (you hear each new note as it changes). Turn B: its velocity. While a pad is
  *   held the knobs are Drum Mode's, so the page underneath does not change. Holding a pad a moment, or turning,
  *   shows its note and velocity in the corner.
- * - The screen's top-right corner shows the 8 lanes; a lane lights while it is held.
+ * - The screen's top-right corner shows the 8 lanes; a lane lights while its pad is held, and blinks each time the
+ *   sequencer plays it (muted lanes do not).
  * - Saved with the project (project data "DRUM"): each track's Drum Mode on/off and its 8 notes and velocities.
  * - Live recording (RECORD + PLAY): each pad hit is written into the pattern at the nearest step as a normal MIDI trig,
  *   its lane's note added to the step's notes (a step holds up to 8: a note and 7 intervals, the stock's chord), so
@@ -60,6 +61,10 @@ typedef int32_t (*midi_on_fn)(int32_t channel, int32_t note, int32_t velocity);
 typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
 #define FW_MIDI_NOTE_ON     ((midi_on_fn)0x400ee232)
 #define FW_MIDI_NOTE_OFF    ((midi_off_fn)0x400ee29e)
+/* The parameter pages' class (TRIG, SYN1, SYN2, FLTR, AMP, LFO, on every track: one class in the firmware), by its
+ * vtable: the corner is drawn only while one of them is the view on top (fw_view), not over the settings menus, the
+ * project list, TEMPO or the pattern screens, which measured as other classes in digiemu. */
+#define PAGE_VTABLE         0x401c3f34u
 
 #define DM_TRACKS       4               /* MIDI tracks A-D: firmware tracks 4-7 */
 #define DM_FIRST        4
@@ -73,6 +78,7 @@ typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
 
 
 #define FLASH_TICKS     6               /* how long a lane stays lit after a hit, in UI ticks */
+#define SEQ_FLASH_TICKS 3               /* and after the sequencer plays it: shorter, so 16ths blink apart */
 #define NOTE_TICKS      60              /* how long a corner message shows */
 #define INFO_TICKS      90              /* how long a pad's note and velocity show after its pad is let go */
 
@@ -155,6 +161,10 @@ struct dm_fire {
 };
 static struct dm_fire dm_fire[DM_TRACKS];
 static volatile uint8_t dm_step_vel[DM_TRACKS];        /* the velocity the step being fired plays at, 0 stock's */
+/* The strip follows playback. A step is fired one step before it plays: its lanes wait in dm_seq_next until the next
+ * fire, when the step plays and they move to dm_seq_hits, which the UI tick turns into blinks. Bit per lane. */
+static volatile uint8_t dm_seq_next[DM_TRACKS];
+static volatile uint8_t dm_seq_hits[DM_TRACKS];
 
 volatile int32_t dm_rec_count;          /* hits recorded, for the tests */
 volatile int32_t dm_rec_last_step = -1;
@@ -259,6 +269,8 @@ void dm_gen_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
     f->prev_time = f->time;
     f->time = fw_timeline;
     f->step = step;
+    dm_seq_hits[track - DM_FIRST] |= dm_seq_next[track - DM_FIRST];   /* the step fired before plays now */
+    dm_seq_next[track - DM_FIRST] = 0;
 }
 
 /* The notes stage: on a Drum Mode track, the notes of muted lanes are taken out of the step (a step left with none
@@ -267,7 +279,7 @@ void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
 {
     int32_t t = track - DM_FIRST, vel = 0, n_keep = 0;
     int32_t keep[SQ_NOTES];
-    uint8_t mutes;
+    uint8_t mutes, lanes = 0;
     (void)step;
     if (!drum_track(track))
         return;
@@ -280,10 +292,13 @@ void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
             n = i ? notes[0] + notes[i] : notes[0];
             for (int32_t l = 0; l < DM_LANES; l++)
                 if (dm.note[t][l] == n) {
-                    if ((mutes >> l) & 1)
+                    if ((mutes >> l) & 1) {
                         muted = 1;
-                    else if (dm.velocity[t][l] > vel)
-                        vel = dm.velocity[t][l];
+                    } else {
+                        if (dm.velocity[t][l] > vel)
+                            vel = dm.velocity[t][l];
+                        lanes |= (uint8_t)(1u << l);
+                    }
                 }
             if (!muted && n >= 0 && n <= 127)
                 keep[n_keep++] = n;
@@ -294,6 +309,7 @@ void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
             notes[i] = (int8_t)(i < n_keep ? keep[i] - keep[0] : 0);
     }
     dm_step_vel[t] = (uint8_t)vel;
+    dm_seq_next[t] = lanes;
 }
 
 void dm_fire_vel(int32_t track, int32_t step, int32_t *vel)
@@ -507,6 +523,18 @@ const struct item dm_menu = { "DRUM MODE", dm_open, CORE_MENU_ICON, dm_icon };
  * we draw changes. ctrl + 0x20: the redraw flag (as digisolo sets it). */
 void dm_tick(void *ctrl)
 {
+    for (int32_t t = 0; t < DM_TRACKS; t++) {
+        uint8_t hits = dm_seq_hits[t];
+        if (!hits)
+            continue;
+        dm_seq_hits[t] &= (uint8_t)~hits;
+        if (fw_transport != 1)
+            continue;                   /* stopped since: nothing plays */
+        for (int32_t l = 0; l < DM_LANES; l++)
+            if (((hits >> l) & 1) && dm_flash[t][l] < SEQ_FLASH_TICKS)
+                dm_flash[t][l] = SEQ_FLASH_TICKS;
+        dm_dirty = 1;
+    }
     for (int32_t t = 0; t < DM_TRACKS; t++)
         for (int32_t l = 0; l < DM_LANES; l++)
             if (dm_flash[t][l]) {
@@ -523,17 +551,25 @@ void dm_tick(void *ctrl)
     }
 }
 
-/* The top-right corner, drawn by inverting a cleared box so it shows on any page:
+/* The top-right corner of the parameter pages (not over menus: on_page), drawn by inverting a cleared box so it shows on any page:
  * - a message (x 84-127, y 54-63, the box digisolo uses);
  * - a pad's lane, note and velocity ("BD 36 V100", x 64-127) while it is edited or held a moment, and a little after;
  * - else on a Drum Mode track the 8 lanes as small boxes (x 94-127), filled while held or just hit, kept narrow so
  *   the title bar's text beside it stays readable. */
 static int32_t dm_info_lane = -1, dm_info_track = -1;
 
+static int32_t on_page(void)
+{
+    void *v = fw_view();
+    return v && *(volatile uint32_t *)v == PAGE_VTABLE;
+}
+
 void dm_draw(void *bmp, void *ctrl)
 {
     int32_t track = fw_active_track, t;
     (void)ctrl;
+    if (!on_page())
+        return;                         /* a menu or another screen is on top: leave it alone */
     if (dm_note_ticks > 0 && dm_note) {
         ((rect_fn)fw_fillrect)(bmp, 84, 54, 127, 63, 0);
         ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 87, 57, -1, dm_note, (int)dm_note_arg);

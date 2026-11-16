@@ -96,7 +96,7 @@ RECORDING. FUNC + trig keys 9–16 still do what they normally do.
 ## What it will do
 
 - Turn DrumMode on per MIDI track (A–D).
-- Screen: an 8 × 16 grid of all lanes, with the playhead and a flash when a lane fires.
+- Nice to have: an 8 × 16 overview of all lanes on the screen.
 - All lanes send only on the MIDI track's own channel.
 
 ## Milestones
@@ -106,7 +106,8 @@ RECORDING. FUNC + trig keys 9–16 still do what they normally do.
 3. Lane playback through the sequencer hook
 4. Lane storage in the pattern, drum map in the project
 5. Grid editing, lane select and per-lane trig LEDs *(0.7)*
-6. Screen grid with playhead and lane flashes
+6. *Nice to have:* screen grid of all lanes. Lightest form: an 8 × 16 overview shown only while
+   TRIG is held (as when selecting a lane), the selected lane highlighted. Waiting on hardware testing.
 7. Polish: lane mute, DRUM page, LIVE REC
 
 ## Building

@@ -121,7 +121,10 @@ them needs a test build.
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
 5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs. *Done in 0.7.*
-6. **Screen grid.** 8 × 16 grid, playhead, lane flashes.
+6. **Screen grid.** *Nice to have, not scheduled.* The LEDs show one lane, the strip shows what plays;
+   a grid would add the whole pattern at a glance. A full-screen grid needs its own view and costs the
+   page underneath, so the lighter idea is an overview drawn only while TRIG is held (the lane-select
+   key), with the selected lane highlighted. Decide after testing 0.7 on a unit.
 7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2.
 
 ## Findings while building

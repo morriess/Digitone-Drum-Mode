@@ -16,6 +16,9 @@ Digitone mk1 core and its sequencer-events mod.
 > lanes' notes and velocities with the knobs. Tested in the emulator, not yet on a unit. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
+**Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
+the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
+
 ## Using it (0.8)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its

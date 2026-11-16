@@ -131,6 +131,13 @@ them needs a test build.
 7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2. *Done: 0.5, 0.8, 0.4.*
    *Nice to have:* revisit the DRUM pages after hardware use (where they sit, layout, what they show);
    0.8's version stands until then.
+   *Nice to have:* drum kit presets (a track's 8 notes, velocities and mutes, about 17 bytes). Within a
+   project: N kit slots in the "DRUM" project data (it shares 480 bytes with other mods; a variable-size
+   block, core-dn1 4.2's CORE_PROJDATA_VARIABLE, would only save the slots in use), with save/load from
+   the Mod Menu or a DRUM page. Across projects: core-dn1 has no storage outside the project (the
+   Octatrack's core has card files and battery RAM, the Rytm's sound/kit/global slots; the Digitone mk1's
+   only the project's 480-byte gap), so that needs either a new core feature or a SysEx dump/receive of
+   a kit through the computer.
 
 ## Findings while building
 

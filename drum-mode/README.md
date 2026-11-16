@@ -135,6 +135,11 @@ RECORDING. FUNC + trig keys 9–16 still do what they normally do.
 **Nice to have, after hardware testing:** a revised DRUM settings page (its place behind LFO,
 its layout, what it shows) once it has been used on a unit.
 
+**Nice to have:** drum kit presets: save a Drum Mode track's setup (8 notes, velocities, mutes)
+as a kit and load it onto any MIDI track. Kits saved in the project are possible now; kits
+shared across projects need storage outside the project, which the Digitone mk1's core doesn't
+offer yet (a SysEx dump to the computer and back would be the workaround).
+
 ## Building
 
 You need your own copy of the stock Digitone OS 1.44 `.syx` from Elektron, plus

@@ -5,8 +5,10 @@ Custom-firmware mods for the **Elektron Digitone mk1** (OS 1.44), built on
 
 | Mod | What it does | Status |
 | --- | --- | --- |
-| [drum-mode](drum-mode/) | Turns a MIDI track into an 8-lane drum sequencer on one MIDI channel | Milestone 1 |
-| [digiarp](digiarp/) | Arpeggiator for MIDI tracks A–D, by aleks-karachevtsev (build recipe only) | Beta, upstream |
+| [drum-mode](drum-mode/) | Turns a MIDI track into an 8-lane drum sequencer on one MIDI channel | 0.6, emulator-tested |
+
+Looking for a MIDI-track arpeggiator? DigiArp MIDI by aleks-karachevtsev is in the
+[elekloader Mod Shop](https://elekloader.github.io/shop/).
 
 ## Rules for this repo
 

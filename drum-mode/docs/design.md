@@ -89,8 +89,9 @@ lane plays, and store which lanes play as two mod parameters on that trig (a
 p-lock value holds about 7 bits). Patterns then save, load, copy and clear like
 stock. To verify: copy/paste behaviour of those parameters.
 
-**Combining with DigiArp.** DigiArp is built on core 4.1.1; DrumMode needs core
-5.1+. Core 5.2.1 moved two hooks so DigiArp fits beside it; needs a test build.
+**Combining with DigiArp.** DigiArp (from the elekloader Mod Shop) is built on
+core 4.1; DrumMode needs core 5.3. One firmware takes one core, so combining
+them needs a test build.
 
 ## Open questions
 

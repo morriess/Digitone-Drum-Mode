@@ -2,7 +2,7 @@
 /* Drum Mode for the Digitone mk1 (core-dn1 5.3): a MIDI track becomes 8 drum lanes, each sending its own note on
  * the track's MIDI channel. See ../docs/design.md.
  *
- * 0.6, live lanes with assignable notes, live recording, lane mutes, and the strip following playback:
+ * 0.7, live lanes with assignable notes, live recording, lane mutes, the strip following playback, and grid editing:
  * - DRUM MODE in the Mod Menu (hold a track key) turns Drum Mode on or off for the active MIDI track (A-D).
  * - While a Drum Mode track is the active track, trig keys 1-8 are pads: each plays its lane's note on the track's
  *   MIDI channel (SRC's CHAN; nothing while it is off), several at once. Trig keys 9-16 do
@@ -21,9 +21,14 @@
  *   of muted lanes only plays nothing); its steps stay in the pattern. The pad itself still plays and records. The
  *   corner strip shows a muted lane as a dash. Saved with the project.
  *
- * OS 1.44 only from 0.4: the live-record flag and the stock's step setters are named by address (below).
+ * - Hold the TRIG page key and press a pad: that lane is selected (no note plays). The corner strip underlines it.
+ * - GRID RECORDING (RECORD while stopped) on a Drum Mode track: the 16 trig keys are the shown page's steps for the
+ *   selected lane. A press adds the lane's note to the step (as live recording does) or takes it out (the step's
+ *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
+ *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted.
  *
- * Not yet: grid editing of lanes, lane select, per-lane trig LEDs. */
+ * OS 1.44 only from 0.4: the live-record flag, the stock's step setters, and from 0.7 GRID RECORDING's flag, the shown
+ * page and the LED setter are named by address (below). */
 #include "digitone-mk1/core3.h"
 #include "digitone-mk1/seq.h"
 
@@ -65,11 +70,27 @@ typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
  * vtable: the corner is drawn only while one of them is the view on top (fw_view), not over the settings menus, the
  * project list, TEMPO or the pattern screens, which measured as other classes in digiemu. */
 #define PAGE_VTABLE         0x401c3f34u
+/* 0.7: GRID RECORDING is byte +0x168 of the recorder's state, read only while +0x161 is set (the stock's getter,
+ * 0x400adcb4); the page of steps the trig keys show is the long at 0x41368ce8 (0 = steps 1-16; measured in digiemu,
+ * a press of PAGE on a 48-step track counting 0, 1, 2, 0); the LED setter, set(mgr, led, layer, colour), the one
+ * DigiArp calls, refuses an LED someone set this frame, so what ev_key_leds sets stays over the stock views'.
+ * The trig keys are LEDs 1-16 (the Digitakt II's numbering too: a trig key's code - 25); colours are the panel's palette (2 dark, 3 red, 5 dim red, 20 white). */
+#define REC_GRID_ON         0x161
+#define REC_GRID            0x168
+#define FW_GRID_PAGE        (*(volatile int32_t *)0x41368ce8)
+typedef void (*led_set_fn)(void *mgr, int32_t led, int32_t layer, int32_t colour);
+#define FW_LED_SET          ((led_set_fn)0x40016e62)
+#define LED_LAYER           2
+#define LED_DARK            2
+#define LED_RED             3
+#define LED_DIM_RED         5
+#define LED_WHITE           20
 
 #define DM_TRACKS       4               /* MIDI tracks A-D: firmware tracks 4-7 */
 #define DM_FIRST        4
 #define DM_LANES        8
 
+#define KEY_TRIG        20              /* the TRIG page key: held, a pad selects its lane */
 #define KEY_STEP1       26              /* trig keys 1-16: 26-41 */
 #define KEY_STEPS       16
 #define ENC_A           1               /* ev_enc's encoders: 1-8, A-H */
@@ -91,6 +112,8 @@ static const char *const dm_mute_msg[DM_LANES] = { "BD MUTE", "SD MUTE", "CH MUT
                                                    "CP MUTE", "LT MUTE", "HT MUTE", "CY MUTE" };
 static const char *const dm_unmute_msg[DM_LANES] = { "BD ON", "SD ON", "CH ON", "OH ON",
                                                      "CP ON", "LT ON", "HT ON", "CY ON" };
+static const char *const dm_select_msg[DM_LANES] = { "EDIT BD", "EDIT SD", "EDIT CH", "EDIT OH",
+                                                     "EDIT CP", "EDIT LT", "EDIT HT", "EDIT CY" };
 
 /* What the project keeps (project data "DRUM"). A project saved without Drum Mode loads as all zeros: version 0,
  * which dm_loaded turns into the defaults. */
@@ -98,7 +121,7 @@ struct dm_save {
     uint8_t version;
     uint8_t enabled;                    /* bit per track */
     uint8_t mutes[DM_TRACKS];           /* bit per lane: left out of what the sequencer plays */
-    uint8_t pad[2];
+    uint8_t selected[2];                /* the selected lane per track, a nibble each (A low, B high, ...); 0.6 kept 0 */
     uint8_t note[DM_TRACKS][DM_LANES];
     uint8_t velocity[DM_TRACKS][DM_LANES];
 };
@@ -123,6 +146,19 @@ static const char *dm_note;             /* the corner message */
 static int32_t dm_note_arg, dm_note_ticks;
 static int32_t dm_info_ticks;           /* > 0: the corner shows the held pad's note and velocity */
 static int32_t dm_dirty;                /* the corner needs a redraw */
+static int32_t dm_trig_held;            /* the TRIG page key is down */
+volatile int32_t dm_grid_edits;         /* steps toggled in GRID RECORDING, for the tests */
+
+static int32_t selected_lane(int32_t t)
+{
+    return (dm.selected[t >> 1] >> (4 * (t & 1))) & 7;
+}
+
+static void select_lane(int32_t t, int32_t lane)
+{
+    uint8_t *b = &dm.selected[t >> 1];
+    *b = (uint8_t)((*b & ~(0xf << (4 * (t & 1)))) | (lane << (4 * (t & 1))));
+}
 
 static void say(const char *what, int32_t arg)
 {
@@ -254,6 +290,87 @@ static int32_t midi_channel(int32_t track)
         return -1;
     ch = *(volatile int8_t *)(MIDI_TRACK_STATE + MIDI_TRACK_STRIDE * m + MIDI_TRACK_CHAN);
     return ch >= 0 && ch < 16 ? ch : -1;
+}
+
+/* ---- grid editing -------------------------------------------------------------------------- */
+static int32_t grid_recording(void)
+{
+    uint8_t *rec = FW_REC_OBJ;
+    return rec && rec[REC_GRID_ON] && rec[REC_GRID];
+}
+
+static int32_t track_len(int32_t track)
+{
+    struct sq_track info;
+    if (sq_track_info(track, &info, sizeof info) < 0 || info.len < 1)
+        return 16;
+    return info.len > 64 ? 64 : info.len;
+}
+
+static int32_t grid_page(int32_t track)
+{
+    int32_t p = FW_GRID_PAGE, pages = (track_len(track) + 15) / 16;
+    return p >= 0 && p < pages ? p : 0;
+}
+
+/* Whether a step of a track's pattern data plays note (a trig, and the note in its slot 0 or as an interval). */
+static int32_t step_has(const uint8_t *data, int32_t step, int32_t note)
+{
+    const uint8_t *slots = data + TRACK_SLOTS + 8 * step;
+    int32_t base = slots[0];
+    if (!(*(const volatile uint16_t *)(data + 2 * step) & FW_STEP_TRIG))
+        return 0;
+    if (base == note)
+        return 1;
+    for (int32_t k = 1; k < 8; k++)
+        if ((int8_t)slots[k] && base + (int8_t)slots[k] == note)
+            return 1;
+    return 0;
+}
+
+/* Take a note out of a step: its other notes are written back (the first as slot 0, the rest as intervals from it),
+ * and the trig goes with the last note, as the stock's own trig key would take it. */
+static void remove_note(int32_t track, int32_t step, int32_t note)
+{
+    void *obj = track_obj(track);
+    uint8_t *data = track_data(obj), *slots;
+    int32_t keep[8], n = 0, base;
+    if (!data)
+        return;
+    slots = data + TRACK_SLOTS + 8 * step;
+    base = slots[0];
+    if (base != note)
+        keep[n++] = base;
+    for (int32_t k = 1; k < 8; k++) {
+        int32_t iv = (int8_t)slots[k];
+        if (iv && base + iv != note && base + iv >= 0 && base + iv <= 127)
+            keep[n++] = base + iv;
+    }
+    if (!n) {
+        FW_TRIG_SET(obj, step, FW_STEP_TRIG, 0);
+        FW_TRIG_SET(obj, step, 2, 0);
+        return;
+    }
+    FW_STEP_NOTE(obj, step, keep[0], 0);
+    for (int32_t k = 1; k < 8; k++)
+        FW_STEP_NOTE(obj, step, k < n ? keep[k] - keep[0] : 0, k);
+}
+
+/* A trig key in GRID RECORDING: the selected lane on or off on that step of the shown page. */
+static void grid_toggle(int32_t track, int32_t key)
+{
+    int32_t t = track - DM_FIRST, lane = selected_lane(t), note = dm.note[t][lane];
+    int32_t step = 16 * grid_page(track) + key;
+    uint8_t *data = track_data(track_obj(track));
+    if (!data || step >= track_len(track))
+        return;
+    if (step_has(data, step, note))
+        remove_note(track, step, note);
+    else
+        record_note(track, step, note);
+    dm_grid_edits++;
+    dm_flash[t][lane] = FLASH_TICKS;
+    dm_dirty = 1;
 }
 
 /* seq-events, interrupt level. The trig stage: note each Drum Mode track's fired step and its time (first read only;
@@ -398,6 +515,10 @@ int32_t dm_key(void *brain, void *ev)
     uint32_t bit;
     (void)brain;
 
+    if (key == KEY_TRIG) {
+        dm_trig_held = !up;             /* watched, never taken: the page key still works */
+        return 0;
+    }
     if (key < KEY_STEP1 || key >= KEY_STEP1 + KEY_STEPS)
         return 0;
     k = key - KEY_STEP1;
@@ -427,7 +548,17 @@ int32_t dm_key(void *brain, void *ev)
         say(((dm.mutes[t] >> k) & 1) ? dm_mute_msg[k] : dm_unmute_msg[k], 0);
         return 1;
     }
+    if (dm_trig_held && k < DM_LANES) {    /* TRIG + pad: select the lane, silently */
+        select_lane(track - DM_FIRST, k);
+        dm_taken |= bit;
+        say(dm_select_msg[k], 0);
+        return 1;
+    }
     dm_taken |= bit;
+    if (grid_recording()) {             /* GRID RECORDING: the 16 keys are the selected lane's steps */
+        grid_toggle(track, k);
+        return 1;
+    }
     if (k < DM_LANES) {
         lane_on(k, track, k);
         if (dm_last_pad != k)
@@ -545,9 +676,58 @@ void dm_tick(void *ctrl)
         dm_dirty = 1;
     if (dm_info_ticks > 0 && dm_last_pad < 0 && --dm_info_ticks == 0)
         dm_dirty = 1;                   /* the info stays while its pad is held, then fades */
+    {                                   /* the LEDs follow GRID RECORDING, its page and the pattern */
+        static int32_t last_grid = -1, last_page = -1, last_track = -1;
+        int32_t g = grid_recording(), track = fw_active_track;
+        int32_t p = drum_track(track) ? grid_page(track) : 0;
+        if (g != last_grid || p != last_page || track != last_track)
+            dm_dirty = 1;
+        last_grid = g;
+        last_page = p;
+        last_track = track;
+    }
     if (dm_dirty || dm_note_ticks > 0) {
-        *((unsigned char *)ctrl + 0x20) = 1;
+        *((unsigned char *)ctrl + 0x20) = 1;    /* redraw */
+        *((unsigned char *)ctrl + 0x21) = 1;    /* and an LED frame */
         dm_dirty = 0;
+    }
+}
+
+/* The key-LED frame (core's ev_key_leds, before the stock views set theirs): on a Drum Mode track,
+ * - in GRID RECORDING the shown page's steps: red where the selected lane plays, dark elsewhere; the playing step and
+ *   steps past the track's length are left to the stock;
+ * - else trig keys 1-8 as pads: white while held or just played, dim red when muted, dark otherwise; 9-16 dark. */
+void dm_leds(void *mgr)
+{
+    int32_t track = fw_active_track, t;
+    if (!drum_track(track))
+        return;
+    t = track - DM_FIRST;
+    if (grid_recording()) {
+        uint8_t *data = track_data(track_obj(track));
+        int32_t len = track_len(track), first = 16 * grid_page(track), note = dm.note[t][selected_lane(t)];
+        int32_t playing = -1;
+        if (!data)
+            return;
+        if (fw_transport == 1 && dm_fire[t].step >= 0)
+            playing = (dm_fire[t].step - LEAD_STEPS + len) % len;
+        for (int32_t k = 0; k < KEY_STEPS; k++) {
+            int32_t step = first + k;
+            if (step >= len || step == playing)
+                continue;
+            FW_LED_SET(mgr, k + 1, LED_LAYER, step_has(data, step, note) ? LED_RED : LED_DARK);
+        }
+        return;
+    }
+    for (int32_t k = 0; k < KEY_STEPS; k++) {
+        int32_t c = LED_DARK;
+        if (k < DM_LANES) {
+            if (((dm_lit_held[t] >> k) & 1) || dm_flash[t][k])
+                c = LED_WHITE;
+            else if ((dm.mutes[t] >> k) & 1)
+                c = LED_DIM_RED;
+        }
+        FW_LED_SET(mgr, k + 1, LED_LAYER, c);
     }
 }
 
@@ -599,5 +779,9 @@ void dm_draw(void *bmp, void *ctrl)
             ((rect_fn)fw_fillrect)(bmp, x0, 58, x1, 59, -1);     /* muted: a dash */
         else
             ((rect_fn)fw_framerect)(bmp, x0, 56, x1, 61, -1);
+    }
+    {                                   /* the selected lane: a line under its box (y counts up from the bottom) */
+        int32_t x0 = 96 + 4 * selected_lane(t);
+        ((rect_fn)fw_fillrect)(bmp, x0, 54, x0 + 2, 54, -1);
     }
 }

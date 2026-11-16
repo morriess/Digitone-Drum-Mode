@@ -254,6 +254,24 @@ class Digitone:
         with open(path, 'wb') as fh:
             fh.write(screen.png(px, w, h))
 
+    def leds(self):
+        """{led: palette index} the panel MCU was last told, LEDs 0-15 the trig keys (digiemu's panelleds, seeded from
+        OS 1.44's shadow copies, then fed the panel UART stream)."""
+        from emu import panelleds
+        if getattr(self, '_led_state', None) is None:
+            self._led_state = panelleds.seed(self.mem, '1.44', 'Digitone')
+            self.s.ev['uart_out'].clear()
+        buf = self.s.ev['uart_out']
+        if buf:
+            self._led_state.feed(bytes(buf))
+            buf.clear()
+        return {led: self._led_state.index(led) for led in range(16)}
+
+    def palette(self):
+        from emu import panelleds
+        self.leds()
+        return dict(self._led_state.palette)
+
     @property
     def halted(self):
         return getattr(self.s, 'halted', None)

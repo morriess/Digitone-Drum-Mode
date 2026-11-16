@@ -9,13 +9,14 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.6, live lanes, live recording, lane mutes, and a lane strip that follows
-> playback.** Trig keys 1–8 play 8 drum lanes on a MIDI track; each pad's note and
-> velocity can be set on the unit; live recording writes the pads into the pattern;
-> FUNC + a pad mutes its lane. No lane editing on the grid yet. See [docs/design.md](docs/design.md)
+> **Status: 0.7, live lanes, live recording, lane mutes, a lane strip that follows
+> playback, and grid editing per lane.** Trig keys 1–8 play 8 drum lanes on a MIDI track;
+> each pad's note and velocity can be set on the unit; live recording writes the pads into
+> the pattern; FUNC + a pad mutes its lane; in GRID RECORDING the 16 trig keys edit and
+> show one lane's steps. Tested in the emulator, not yet on a unit. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-## Using it (0.6)
+## Using it (0.7)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -52,6 +53,30 @@ pads' velocities.
   setting doesn't apply to the pads.
 - A step holds up to 8 notes, so all 8 pads fit on one step.
 
+### Programming a lane on the grid
+
+1. **Select a lane:** hold the **TRIG** page key and press a pad (1–8). No note plays; the
+   corner shows `EDIT CH`, and a line under the lane's box in the strip marks the selected
+   lane.
+2. Press **RECORD** (while stopped) for GRID RECORDING, as you would to place trigs.
+3. The 16 trig keys are now the selected lane's steps. Press a key to put the lane on
+   that step, press it again to take it off. The keys light **red** where the selected
+   lane plays; the rest stay dark, even if other drums play there.
+4. Select another lane (TRIG + pad) at any time: the keys switch to that lane's steps.
+5. For patterns longer than 16 steps, **PAGE** moves through the pages as usual.
+
+Steps are stored the same way live recording stores them: a normal trig, with several
+drums on one step as its chord notes. Taking the last drum off a step removes its trig.
+You can mix grid editing and live recording freely.
+
+In GRID RECORDING, a Drum Mode track's trig keys belong to the lane, so holding a trig
+key to p-lock it isn't available there.
+
+### The trig key LEDs
+
+Outside GRID RECORDING, pads 1–8 light **white** while held or when the sequencer plays
+their lane, and a muted lane's pad is **dim red**. Keys 9–16 stay dark.
+
 ### Muting a lane
 
 **FUNC + a pad** mutes that lane: the pattern plays on without it, and its steps stay
@@ -63,18 +88,14 @@ hit it.
 The notes, velocities, mutes and which tracks have Drum Mode on are saved with the project.
 A project made without Drum Mode starts with the GM notes above and Drum Mode off.
 
-While Drum Mode is on for the selected track, trig keys 9–16 do nothing and you can't
-place trigs by hand on that track (grid editing of lanes is next). FUNC + trig keys 9–16
-still do what they normally do.
+While Drum Mode is on for the selected track, trig keys 9–16 do nothing outside GRID
+RECORDING. FUNC + trig keys 9–16 still do what they normally do.
 
 **OS 1.44 only** from 0.4: it uses firmware addresses found in OS 1.44.
 
 ## What it will do
 
 - Turn DrumMode on per MIDI track (A–D).
-- Pick one of 8 lanes with a modifier + trig 1–8.
-- GRID mode: the 16 trig keys show and edit the selected lane's steps.
-- KEYBOARD mode: trig 1–8 play the 8 lanes, several at once; LIVE REC records them.
 - Screen: an 8 × 16 grid of all lanes, with the playhead and a flash when a lane fires.
 - All lanes send only on the MIDI track's own channel.
 
@@ -84,7 +105,7 @@ still do what they normally do.
 2. Live lanes: trig 1–8 send lane notes in KEYBOARD mode
 3. Lane playback through the sequencer hook
 4. Lane storage in the pattern, drum map in the project
-5. Grid editing, lane select and per-lane trig LEDs
+5. Grid editing, lane select and per-lane trig LEDs *(0.7)*
 6. Screen grid with playhead and lane flashes
 7. Polish: lane mute, DRUM page, LIVE REC
 
@@ -101,7 +122,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DRM1** on the unit.
+**DRM7** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.
@@ -119,6 +140,7 @@ DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_assign_notes.py o
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_grid_edit.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -136,6 +158,7 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `tests/test_live_record.py` | Live recording: step timing, chords, playback, no stray stock trigs (15 checks) |
 | `tests/test_lane_mute.py` | Lane mutes: playback without muted lanes, chords, the strip (10 checks) |
 | `tests/test_strip_playback.py` | The strip blinking on playback, on time; not over menus (11 checks) |
+| `tests/test_grid_edit.py` | Lane select, grid editing with pages, the trig key LEDs (26 checks) |
 | `docs/design.md` | Design and build plan |
 | `docs/ui/` | The screen UI explained, with screenshots |
 

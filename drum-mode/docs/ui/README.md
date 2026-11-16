@@ -1,6 +1,6 @@
 # Drum Mode UI
 
-How Drum Mode shows itself on the Digitone's screen, as of 0.6. All images are
+How Drum Mode shows itself on the Digitone's screen, as of 0.7. All images are
 screenshots of the real firmware running in [digiemu](https://github.com/irpina/digiemu).
 
 Everything Drum Mode draws lives in the **top-right corner** of the screen, only while
@@ -30,6 +30,9 @@ Each box has three looks:
 | Outline (a small "0") | Lane active, not playing right now |
 | Filled | The pad is held or was just hit, or the sequencer just played that lane (a short blink) |
 | Dash | Lane muted (FUNC + pad) |
+
+**The selected lane (0.7)** has a short line under its box (row 9), so you can see which
+lane the trig keys edit in GRID RECORDING. Select a lane with TRIG + its pad.
 
 A held pad on a muted lane shows filled: the pad still plays. A muted lane does not blink
 on playback, because the sequencer leaves it out.
@@ -62,6 +65,7 @@ text:
 | --- | --- |
 | `DRUM A ON` / `DRUM A OFF` | DRUM MODE picked in the Mod Menu (A–D: the MIDI track) |
 | `BD MUTE` / `BD ON` | FUNC + a pad mutes or unmutes its lane |
+| `EDIT BD` | TRIG + a pad selects its lane for grid editing |
 | `MIDI TRK ONLY` | DRUM MODE picked while a synth track is selected |
 
 ## Pad info
@@ -72,18 +76,30 @@ While you hold a pad and turn A (note) or B (velocity), or hold a pad for a mome
 corner shows the pad's lane, note number and velocity, e.g. `BD 38 V100`. It is wider
 than the strip (x 64–127) and stays while the pad is held, then fades out shortly after.
 
+## The trig key LEDs (0.7)
+
+On a Drum Mode track Drum Mode also owns the 16 trig key LEDs:
+
+| Mode | Key | LED |
+| --- | --- | --- |
+| GRID RECORDING | a step where the selected lane plays | red |
+| GRID RECORDING | any other step | dark (other lanes don't show) |
+| GRID RECORDING | the playing step, steps past the track's length | the stock's |
+| Otherwise | pad 1–8 held, or its lane just played | white |
+| Otherwise | pad 1–8 of a muted lane | dim red |
+| Otherwise | any other key | dark |
+
 ## Known limitations
 
 - **The strip covers the tempo display** in the top-right corner of the main page while
   Drum Mode is on.
 - **It is small:** a glance indicator, not a replacement for real feedback.
-- **No trig-key LEDs yet.** Lighting the trig keys per lane would be clearer; core's
-  `ev_key_leds` lets a mod own the LEDs but exports no setter to light one, so that waits
-  for the grid-editing milestone.
+- **The LED colours are from the emulator's palette.** They should match the unit, but
+  that hasn't been checked on hardware yet.
 
 ## Where it is in the code
 
-`dm_draw` and `dm_tick` in [../../src/drummode.c](../../src/drummode.c): `dm_tick`
+`dm_draw`, `dm_tick` and `dm_leds` in [../../src/drummode.c](../../src/drummode.c): `dm_tick`
 (the UI task's tick) turns the sequencer's played lanes into blinks, counts down the
 flashes and messages and asks for a redraw; `dm_draw` draws the corner (only when
 `on_page()`: the view on top is a parameter page). The played lanes come from

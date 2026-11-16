@@ -114,9 +114,13 @@ them needs a test build.
    **0.6:** the lane strip blinks as the sequencer plays each lane (a step's lanes, seen when it is
    fired, blink at the next fire, when it plays), and the corner is drawn only on the parameter pages
    (the view on top has the page class's vtable, 0x401c3f34 in OS 1.44), not over menus (11 more checks).
+   **0.7 is milestone 5:** TRIG (page key) + pad selects a lane; in GRID RECORDING the 16 trig keys toggle
+   the selected lane on the shown page's steps (added as live recording adds a note, removed by rewriting
+   the step's notes, the trig going with the last); the trig key LEDs show the selected lane in GRID
+   RECORDING and the pads (held, playing, muted) outside it (26 more checks).
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
-5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs.
+5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs. *Done in 0.7.*
 6. **Screen grid.** 8 × 16 grid, playhead, lane flashes.
 7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2.
 
@@ -125,13 +129,23 @@ them needs a test build.
 - **Turning it on.** v0.2 toggles Drum Mode from the Mod Menu (DRUM MODE), and then the trig
   keys are pads on that track whatever the GRID/KEYBOARD state. Tying pads to KEYBOARD mode
   needs the firmware's KEYBOARD flag, which core does not export; the KEYBOARD key is code 3,
-  so the flag can be found in digiemu by diffing memory around a KEYBOARD press. Decide in
-  milestone 5, when GRID editing arrives.
+  so the flag can be found in digiemu by diffing memory around a KEYBOARD press. Decided in
+  0.7: the pads play in both modes; grid editing happens in GRID RECORDING instead (below), which is
+  where the stock's trig keys place trigs too. (KEYBOARD on: byte +0x167 of the recorder's state.)
 - **Sending notes.** The stock KEYBOARD dispatcher (0x4003b198) plays a MIDI track's note
   through 0x400eae5c, which core exports as `fw_note_on(track, note, vel, source, skip, sound)`
   (tracks 4–7 are MIDI A–D). Drum Mode calls it with source 0x40, as the trig keys do.
-- **Key LEDs.** `ev_key_leds` gives the LedManager but core exports no setter, so per-lane trig
-  LEDs (milestone 5) need the setter found first. Until then the screen corner shows the lanes.
+- **Key LEDs (0.7).** `ev_key_leds` gives the LedManager; the setter is 0x40016e62 in OS 1.44,
+  `set(mgr, led, layer, colour)`, found through DigiArp MIDI (which lights the KEYBOARD key with it)
+  and matching Modwerk's notes for the Digitakt II's `fw_led_set`. It refuses an LED already set this
+  frame, so what a handler sets before the stock views stays. The trig keys are LEDs 1–16 (code − 25).
+  Colours are palette indices: 2 dark, 3 red (a stock trig), 5 dim red, 20 white, 21 the stock's
+  dim white. A mod asks for an LED frame by setting the view controller's byte +0x21 (ev_tick's ctrl).
+  digiemu decodes the panel's LED stream (emu/panelleds.py), which the tests read.
+- **GRID RECORDING and pages (0.7).** GRID RECORDING is byte +0x168 of the recorder's state
+  (`*(0x419f0dd8)`), valid while +0x161 is set (the stock getter 0x400adcb4); +0x169 is live recording.
+  The page the trig keys show is the long at 0x41368ce8 (0 = steps 1–16), found by diffing memory
+  around PAGE presses on a 48-step track; the stock's own trig key then sets step 16 × page + key.
 - **MIDI track channel.** A MIDI track's CHAN is off in the default project ("Func+Press to
   enable" on its SRC page); with it off nothing is sent, stock or Drum Mode.
 - **Live recording (0.4).** Recorded hits are stored as stock MIDI trigs: a trig plus the step's 8 note

@@ -140,6 +140,12 @@ as a kit and load it onto any MIDI track. Kits saved in the project are possible
 shared across projects need storage outside the project, which the Digitone mk1's core doesn't
 offer yet (a SysEx dump to the computer and back would be the workaround).
 
+**Nice to have:** synth tracks as extra drum tracks. More than 8 tracks isn't realistic (the
+pattern and project format has exactly 4 synth + 4 MIDI tracks), but a synth track you don't
+need could send its steps as MIDI through Drum Mode, its own voice kept silent: up to 8 drum
+tracks. The hard part is timing (sending each note at the moment it plays, plus its note-off),
+so this waits until the current version has run on a unit.
+
 ## Building
 
 You need your own copy of the stock Digitone OS 1.44 `.syx` from Elektron, plus

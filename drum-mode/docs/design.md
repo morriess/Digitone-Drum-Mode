@@ -138,6 +138,24 @@ them needs a test build.
    Octatrack's core has card files and battery RAM, the Rytm's sound/kit/global slots; the Digitone mk1's
    only the project's 480-byte gap), so that needs either a new core feature or a SysEx dump/receive of
    a kit through the computer.
+   *Nice to have:* synth tracks (T1–T4) as Drum Mode tracks, for up to 8 drum tracks. Not more tracks:
+   the pattern (8 × 976-byte tracks), the project format, the track keys and the screens all assume
+   4 synth + 4 MIDI, and a project with more would stop loading on the stock OS. The stock OS never
+   sends a synth track's sequence as MIDI (only live trig keys), so Drum Mode would do it: in
+   ev_fire_notes on tracks 0–3 with Drum Mode on, keep the step's notes and drop them from the voice
+   (notes[0] = -1), then send them as MIDI on a channel of the track's own (a per-track setting in
+   the "DRUM" block, as synth tracks have no MIDI Source page). Problems to solve:
+   - **Timing.** ev_fire_notes runs one step before the step plays (measured for the strip, 0.6), so
+     the notes must be held and sent at the play moment, which needs a timer at sequencer resolution
+     (fw_timeline gives the time; the send could ride ev_gen_trig of the next step, as the strip's
+     blink does, but that is a 16th's resolution, not the step's microtiming or swing).
+   - **Note-offs.** The trig's length (from the step or the track) decides when to send note-off;
+     the voice's own gate doesn't run once its notes are dropped.
+   - **UI.** The DRUM pages live behind the MIDI LFO page; synth tracks need their own place (and a
+     channel setting), and the corner and LEDs must treat tracks 0–3 like 4–7.
+   - **Cost.** The synth track's sound is lost while it is a drum track; nothing else changes for
+     the Digitone's 4-voice engine. CPU and MIDI bandwidth are no concern.
+   Waits for hardware testing of 0.8: the timing must be checked on a unit with a real drum machine.
 
 ## Findings while building
 

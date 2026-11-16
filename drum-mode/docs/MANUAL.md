@@ -81,7 +81,8 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and its OS version now reads **DRM8** instead of 1.44.
+The Digitone starts as normal, and the OS version on its boot screen now reads **DRM8**
+instead of 1.44.
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
 

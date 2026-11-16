@@ -129,6 +129,9 @@ RECORDING. FUNC + trig keys 9–16 still do what they normally do.
    TRIG is held (as when selecting a lane), the selected lane highlighted. Waiting on hardware testing.
 7. Polish: lane mute, DRUM page, LIVE REC *(lane mute 0.5, live rec 0.4, DRUM pages 0.8)*
 
+**Nice to have, after hardware testing:** a revised DRUM settings page (its place behind LFO,
+its layout, what it shows) once it has been used on a unit.
+
 ## Building
 
 You need your own copy of the stock Digitone OS 1.44 `.syx` from Elektron, plus

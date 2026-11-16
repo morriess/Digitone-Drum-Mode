@@ -129,6 +129,8 @@ them needs a test build.
    page underneath, so the lighter idea is an overview drawn only while TRIG is held (the lane-select
    key), with the selected lane highlighted. Decide after testing 0.7 on a unit.
 7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2. *Done: 0.5, 0.8, 0.4.*
+   *Nice to have:* revisit the DRUM pages after hardware use (where they sit, layout, what they show);
+   0.8's version stands until then.
 
 ## Findings while building
 

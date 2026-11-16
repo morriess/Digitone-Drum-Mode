@@ -143,8 +143,10 @@ offer yet (a SysEx dump to the computer and back would be the workaround).
 **Nice to have:** synth tracks as extra drum tracks. More than 8 tracks isn't realistic (the
 pattern and project format has exactly 4 synth + 4 MIDI tracks), but a synth track you don't
 need could send its steps as MIDI through Drum Mode, its own voice kept silent: up to 8 drum
-tracks. The hard part is timing (sending each note at the moment it plays, plus its note-off),
-so this waits until the current version has run on a unit.
+tracks. The same could make a synth track a **normal MIDI track** (its steps sent as plain
+MIDI notes, without Drum Mode's lanes), for up to 8 MIDI tracks of any kind. The hard part is
+timing (sending each note at the moment it plays, plus its note-off), so this waits until the
+current version has run on a unit.
 
 ## Building
 

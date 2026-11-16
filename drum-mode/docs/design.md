@@ -155,6 +155,12 @@ them needs a test build.
      channel setting), and the corner and LEDs must treat tracks 0–3 like 4–7.
    - **Cost.** The synth track's sound is lost while it is a drum track; nothing else changes for
      the Digitone's 4-voice engine. CPU and MIDI bandwidth are no concern.
+   **Variant: a synth track as a normal MIDI track.** The same mechanism without the lanes: the synth
+   track's steps (note, chord notes, velocity, length) sent as plain MIDI notes on its own channel, so
+   T1–T4 can drive any external synth, for up to 8 MIDI tracks. Timing and note-offs are the same
+   problems; it needs less UI (a channel, an on/off), but it has no MIDI CC/program pages of its own,
+   as the stock MIDI tracks do. A synth track's p-locks of synth parameters wouldn't translate to MIDI.
+   Possibly a separate mod sharing the code, since it isn't drum-specific.
    Waits for hardware testing of 0.8: the timing must be checked on a unit with a real drum machine.
 
 ## Findings while building

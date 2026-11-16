@@ -9,14 +9,14 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.7, live lanes, live recording, lane mutes, a lane strip that follows
-> playback, and grid editing per lane.** Trig keys 1–8 play 8 drum lanes on a MIDI track;
-> each pad's note and velocity can be set on the unit; live recording writes the pads into
-> the pattern; FUNC + a pad mutes its lane; in GRID RECORDING the 16 trig keys edit and
-> show one lane's steps. Tested in the emulator, not yet on a unit. See [docs/design.md](docs/design.md)
+> **Status: 0.8, live lanes, live recording, lane mutes, a lane strip that follows
+> playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
+> MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
+> in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
+> lanes' notes and velocities with the knobs. Tested in the emulator, not yet on a unit. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-## Using it (0.7)
+## Using it (0.8)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -37,6 +37,25 @@ Digitone mk1 core and its sequencer-events mod.
    (holding a pad a moment shows it too). While a pad is held the knobs only change
    the pad, not the page underneath.
 5. Pick DRUM MODE again to turn it off.
+
+### The DRUM pages
+
+Press **LFO** twice on a Drum Mode track: after the LFO page come **Drum Notes** and
+**Drum Velocity** (`LFO (1/3)`, `Drum Notes (2/3)`, `Drum Velocity (3/3)`).
+
+![The Drum Notes page](docs/ui/drum-notes-page.png)
+
+Knobs **A–H** are lanes 1–8, in the same layout as the screen: A–D the top row (BD, SD,
+CH, OH), E–H the bottom row (CP, LT, HT, CY).
+
+- **Drum Notes:** each cell shows the lane's note name and number (`D3 38`). Turning a knob
+  plays each new note, so you can find the right sound on your drum machine by ear.
+- **Drum Velocity:** each cell shows the lane's velocity (1–127); a muted lane says `MUTE`.
+
+The selected lane's cell (TRIG + pad) is inverted. On a MIDI track without Drum Mode the
+pages say `DRUM MODE IS OFF`, and the knobs do nothing there.
+
+Holding a pad and turning A/B still works too, from any page.
 
 ### Live recording
 
@@ -108,7 +127,7 @@ RECORDING. FUNC + trig keys 9–16 still do what they normally do.
 5. Grid editing, lane select and per-lane trig LEDs *(0.7)*
 6. *Nice to have:* screen grid of all lanes. Lightest form: an 8 × 16 overview shown only while
    TRIG is held (as when selecting a lane), the selected lane highlighted. Waiting on hardware testing.
-7. Polish: lane mute, DRUM page, LIVE REC
+7. Polish: lane mute, DRUM page, LIVE REC *(lane mute 0.5, live rec 0.4, DRUM pages 0.8)*
 
 ## Building
 
@@ -123,7 +142,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DRM7** on the unit.
+**DRM8** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.
@@ -142,6 +161,7 @@ DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_record.py ou
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_grid_edit.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_drum_page.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -160,6 +180,7 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `tests/test_lane_mute.py` | Lane mutes: playback without muted lanes, chords, the strip (10 checks) |
 | `tests/test_strip_playback.py` | The strip blinking on playback, on time; not over menus (11 checks) |
 | `tests/test_grid_edit.py` | Lane select, grid editing with pages, the trig key LEDs (26 checks) |
+| `tests/test_drum_page.py` | The DRUM pages: knobs set notes and velocities, the pages underneath untouched (15 checks) |
 | `docs/design.md` | Design and build plan |
 | `docs/ui/` | The screen UI explained, with screenshots |
 

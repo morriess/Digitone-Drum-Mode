@@ -1,11 +1,11 @@
 {
  "id": "drummode",
- "version": "0.7",
+ "version": "0.8",
  "license": "GPL-2.0-or-later",
  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
  "category": "Sequencer",
  "author": "morriess",
- "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.7: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; FUNC + a pad mutes its lane on playback; in live recording (RECORD + PLAY) each pad hit is written at the nearest step as a normal MIDI trig, lanes on one step as its chord notes. Hold TRIG and press a pad to select a lane; in GRID RECORDING the 16 trig keys toggle the selected lane on the shown page's steps, and light red where it plays. The screen's corner shows the 8 lanes: lit while a pad is held, blinking as the sequencer plays them, a dash when muted. Saved with the project. OS 1.44 only: it names the live-record flag, the step setters, GRID RECORDING's flag and page, the LED setter and the MIDI senders by address. Needs core-dn1 5.3 and seq-events.",
+ "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.8: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; FUNC + a pad mutes its lane on playback; in live recording (RECORD + PLAY) each pad hit is written at the nearest step as a normal MIDI trig, lanes on one step as its chord notes. Hold TRIG and press a pad to select a lane; in GRID RECORDING the 16 trig keys toggle the selected lane on the shown page's steps, and light red where it plays. Two DRUM pages behind LFO on a MIDI track (Drum Notes, Drum Velocity): knobs A-H set the 8 lanes' notes and velocities. The screen's corner shows the 8 lanes: lit while a pad is held, blinking as the sequencer plays them, a dash when muted. Saved with the project. OS 1.44 only: it names the live-record flag, the step setters, GRID RECORDING's flag and page, the LED setter and the MIDI senders by address. Needs core-dn1 5.3 and seq-events.",
  "device": "digitone-mk1",
  "os": "1.44",
  "sources": [
@@ -88,12 +88,40 @@
      0
     ]
    ]
+  },
+  {
+   "to": "core_pages",
+   "order": 50,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:dm_page_notes",
+     0
+    ]
+   ]
+  },
+  {
+   "to": "core_pages",
+   "order": 50,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:dm_page_vel",
+     0
+    ]
+   ]
   }
  ],
  "resources": {
   "core": "5.3",
   "names": [
-   "projdata:DRUM"
+   "projdata:DRUM",
+   "page:27",
+   "page:28"
   ]
  },
  "requires": [

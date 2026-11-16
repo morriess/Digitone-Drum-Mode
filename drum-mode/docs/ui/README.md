@@ -1,6 +1,6 @@
 # Drum Mode UI
 
-How Drum Mode shows itself on the Digitone's screen, as of 0.7. All images are
+How Drum Mode shows itself on the Digitone's screen, as of 0.8. All images are
 screenshots of the real firmware running in [digiemu](https://github.com/irpina/digiemu).
 
 Everything Drum Mode draws lives in the **top-right corner** of the screen, only while
@@ -75,6 +75,18 @@ text:
 While you hold a pad and turn A (note) or B (velocity), or hold a pad for a moment, the
 corner shows the pad's lane, note number and velocity, e.g. `BD 38 V100`. It is wider
 than the strip (x 64–127) and stays while the pad is held, then fades out shortly after.
+
+## The DRUM pages (0.8)
+
+Behind the LFO page on a MIDI track (press LFO twice): **Drum Notes** and **Drum Velocity**.
+
+![Drum Notes](drum-notes-page.png) ![Drum Velocity](drum-velocity-page.png)
+
+Eight cells in knob order (A–D top, E–H bottom), each with the lane's name and its note
+(name and number, as the Digitone names notes: 60 is C5) or velocity. The selected lane's
+cell is inverted; a muted lane's velocity cell says `MUTE`. Drum Mode clears the page's
+empty knob boxes and draws the cells itself; the corner strip is not drawn on these pages,
+so the title stays readable. Each cell is 25 × 24 pixels, x 20–127, rows 12–63.
 
 ## The trig key LEDs (0.7)
 

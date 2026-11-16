@@ -118,6 +118,9 @@ them needs a test build.
    the selected lane on the shown page's steps (added as live recording adds a note, removed by rewriting
    the step's notes, the trig going with the last); the trig key LEDs show the selected lane in GRID
    RECORDING and the pads (held, playing, muted) outside it (26 more checks).
+   **0.8 finishes milestone 7:** two DRUM pages (mod pages 27 and 28) behind the MIDI tracks' LFO key,
+   knobs A–H = lanes 1–8, Drum Notes and Drum Velocity, drawn by Drum Mode over empty knob boxes and
+   edited through ev_enc while shown (15 more checks).
 3. **Lane playback.** Steps fire lanes through the sequencer hook (hard-coded test pattern).
 4. **Lane storage.** Lane steps in the pattern, drum map in the project.
 5. **Grid editing and LEDs.** Lane select, step toggling, per-lane LEDs. *Done in 0.7.*
@@ -125,7 +128,7 @@ them needs a test build.
    a grid would add the whole pattern at a glance. A full-screen grid needs its own view and costs the
    page underneath, so the lighter idea is an overview drawn only while TRIG is held (the lane-select
    key), with the selected lane highlighted. Decide after testing 0.7 on a unit.
-7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2.
+7. **Polish.** Lane mute, DRUM page, LIVE REC; then decide on v2. *Done: 0.5, 0.8, 0.4.*
 
 ## Findings while building
 
@@ -166,4 +169,12 @@ them needs a test build.
   0x419c5b10 + 4 × (186 + track)).
 - **The sequencer needs the audio engine.** In digiemu the Digitone's sequencer only runs with audio
   on (it is clocked by the render), so recording and playback tests start the session with audio.
+- **DRUM pages (0.8).** The firmware's 26 page records sit at 0x4136c558 + 44 × index in 1.44 (short title,
+  title, 8 knob ids, kind); the MIDI tracks' pages are 19 TRIG, 20 MIDI Source (on both SYN1 and SYN2),
+  21 CC Value (FLTR), 22 CC Select (AMP), 23 LFO. A mod page after 20 stops FUNC + push A from turning CHAN
+  on (measured in digiemu; after 19, 21 and 23 it works), so the DRUM pages follow 23. The pages' knob ids
+  are 0, so Drum Mode needs none of the 10 mod parameter ids other mods share; it draws the cells itself
+  and takes the knobs in ev_enc. core_page_shown compares against the one view core noted in the
+  descriptor, so Drum Mode reads the shown view's page list itself (Brain +0x54/+0x5c, page manager +8,
+  view +0xc0, list +124/+128, current +144; core-dn1's pages.s and lists.c).
 

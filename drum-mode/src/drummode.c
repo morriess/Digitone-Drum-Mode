@@ -27,6 +27,9 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted.
  *
+ * - 0.8: two DRUM pages behind the MIDI track's LFO key (LFO, then Drum Notes, then Drum Velocity): knobs
+ *   A-H set lanes 1-8's notes (each new note plays, so it can be found by ear) and velocities.
+ *
  * OS 1.44 only from 0.4: the live-record flag, the stock's step setters, and from 0.7 GRID RECORDING's flag, the shown
  * page and the LED setter are named by address (below). */
 #include "digitone-mk1/core3.h"
@@ -147,6 +150,8 @@ static int32_t dm_note_arg, dm_note_ticks;
 static int32_t dm_info_ticks;           /* > 0: the corner shows the held pad's note and velocity */
 static int32_t dm_dirty;                /* the corner needs a redraw */
 static int32_t dm_trig_held;            /* the TRIG page key is down */
+static void *dm_brain;                  /* the UI's Brain, from the key and knob events: for core_page_shown */
+static int32_t dm_page_acc[8];          /* counts towards the next detent on the DRUM pages, A-H */
 volatile int32_t dm_grid_edits;         /* steps toggled in GRID RECORDING, for the tests */
 
 static int32_t selected_lane(int32_t t)
@@ -502,6 +507,74 @@ static void dm_loaded(int32_t found)
 }
 const struct core_projdata dm_projdata = { 0x4452554du /* "DRUM" */, sizeof dm, &dm, dm_loaded };
 
+/* ---- the DRUM pages --------------------------------------------------------------------------- */
+/* Pages 27 and 28 follow the MIDI tracks' LFO page (23), so LFO pressed again on a MIDI track steps to them. Not after
+ * MIDI Source (20): measured in digiemu, its FUNC + push A (CHAN on) stops working with any mod page after it; not
+ * after TRIG (19): TRIG + pad selects a lane, and each TRIG press would step the page. Their knob boxes are empty
+ * (id 0): Drum Mode draws the 8 lanes over them and takes the knobs while one is shown. */
+#define PAGE_MIDI_LFO   23
+struct core_page dm_page_notes = { 27, PAGE_MIDI_LFO, "DRMN", "Drum Notes", { 0 }, 0, 0, 0 };
+struct core_page dm_page_vel = { 28, PAGE_MIDI_LFO, "DRMV", "Drum Velocity", { 0 }, 0, 0, 0 };
+
+/* 1 the notes page, 2 the velocity page, 0 neither, on screen with nothing over it. core_page_shown compares the
+ * view with the one core noted in the descriptor, the last built, so this asks the shown view itself (core-dn1's pages.s and lists.c): the Brain's view stack (+0x54, and
+ * +0x5c the same while nothing is over the pages), its page manager (+8), the key view shown (+0xc0), and that
+ * view's list (a std::vector at +124, +128) at its current place (+144). */
+static int32_t drum_page(void)
+{
+    uint8_t *b = dm_brain, *top, *mgr, *v;
+    int32_t *beg, *end, cur;
+    if (!b)
+        return 0;
+    top = *(uint8_t **)(b + 0x54);
+    if (!top || top != *(uint8_t **)(b + 0x5c))
+        return 0;
+    mgr = *(uint8_t **)(top + 8);
+    if (!mgr || !(v = *(uint8_t **)(mgr + 0xc0)))
+        return 0;
+    beg = *(int32_t **)(v + 124);
+    end = *(int32_t **)(v + 128);
+    cur = *(int32_t *)(v + 144);
+    if (!beg || cur < 0 || beg + cur >= end)
+        return 0;
+    return beg[cur] == dm_page_notes.idx ? 1 : beg[cur] == dm_page_vel.idx ? 2 : 0;
+}
+
+/* A knob on a DRUM page: knob A-H is lane 1-8. A new note plays at once (on, then off), as when a pad is held. */
+static void page_turn(int32_t page, int32_t enc, int32_t counts)
+{
+    int32_t track = fw_active_track, t = track - DM_FIRST, lane = enc - 1, steps = 0, ch;
+    int32_t *acc = &dm_page_acc[lane];
+    *acc += counts;
+    while (*acc >= COUNTS) {
+        *acc -= COUNTS;
+        steps++;
+    }
+    while (*acc <= -COUNTS) {
+        *acc += COUNTS;
+        steps--;
+    }
+    if (!steps)
+        return;
+    if (page == 1) {
+        int32_t n = dm.note[t][lane] + steps;
+        n = n < 0 ? 0 : n > 127 ? 127 : n;
+        if (n == dm.note[t][lane])
+            return;
+        dm.note[t][lane] = (uint8_t)n;
+        ch = midi_channel(track);
+        if (ch >= 0) {
+            FW_MIDI_NOTE_ON(ch, n, dm.velocity[t][lane]);
+            FW_MIDI_NOTE_OFF(ch, n);
+        }
+        dm_flash[t][lane] = FLASH_TICKS;
+    } else {
+        int32_t v = dm.velocity[t][lane] + steps;
+        dm.velocity[t][lane] = (uint8_t)(v < 1 ? 1 : v > 127 ? 127 : v);
+    }
+    dm_dirty = 1;
+}
+
 /* ---- keys ------------------------------------------------------------------------------------ */
 /* The UI task, each key event. On a Drum Mode track a trig key's press is taken (FUNC + pad 1-8 toggles its lane's
  * mute; FUNC + 9-16 is left to the stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
@@ -513,7 +586,7 @@ int32_t dm_key(void *brain, void *ev)
     int32_t up = (flags & CORE_KEY_UP) || !(flags & CORE_KEY_DOWN);
     int32_t k, track = fw_active_track;
     uint32_t bit;
-    (void)brain;
+    dm_brain = brain;
 
     if (key == KEY_TRIG) {
         dm_trig_held = !up;             /* watched, never taken: the page key still works */
@@ -577,10 +650,15 @@ int32_t dm_enc(void *brain, void *ev)
     int32_t enc = CORE_KEY_ID(ev), counts = (int32_t)CORE_KEY_FLAGS(ev), steps = 0;
     int32_t k = dm_last_pad, t, lane;
     struct dm_held *h;
-    (void)brain;
+    dm_brain = brain;
 
-    if (k < 0 || !(dm_taken & (1u << k)) || dm_held[k].track < 0)
-        return 0;
+    if (k < 0 || !(dm_taken & (1u << k)) || dm_held[k].track < 0) {
+        int32_t page = drum_track(fw_active_track) ? drum_page() : 0;
+        if (!page || enc < 1 || enc > 8)
+            return 0;
+        page_turn(page, enc, counts);
+        return 1;                       /* a DRUM page's knob: ours */
+    }
     h = &dm_held[k];
     t = h->track - DM_FIRST;
     lane = h->lane;
@@ -744,12 +822,54 @@ static int32_t on_page(void)
     return v && *(volatile uint32_t *)v == PAGE_VTABLE;
 }
 
+static const char *const dm_note_names[12] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+
+/* A DRUM page's body, over its empty knob boxes: 4 x 2 cells (x 20-127, the screen's rows 12-63), lane 1-8 in knob
+ * order, each with the lane's name and its note (name and number) or velocity; a muted lane's velocity cell says
+ * MUTE, and the selected lane's cell is inverted. Coordinates: x from the left, y from the bottom (a 5-pixel text's
+ * y is its bottom row), so a row r from the top is y 63 - r. */
+static void draw_drum_page(void *bmp, int32_t page, int32_t track)
+{
+    int32_t t = track - DM_FIRST, sel = selected_lane(t);
+    ((rect_fn)fw_fillrect)(bmp, 20, 0, 127, 52, 0);
+    if (!drum_track(track)) {
+        ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 30, 34, -1, "DRUM MODE IS OFF");
+        ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 30, 24, -1, "HOLD A TRACK KEY");
+        return;
+    }
+    for (int32_t l = 0; l < DM_LANES; l++) {
+        int32_t x = 20 + 27 * (l & 3), top = 12 + 26 * (l >> 2);     /* the cell's top row from the screen's top */
+        int32_t y0 = 63 - (top + 24), y1 = 63 - (top + 1);
+        ((rect_fn)fw_framerect)(bmp, x + 1, y0, x + 25, y1, -1);
+        ((text_fn)fw_textf)(bmp, (const void *)fw_font5, x + 4, 59 - (top + 3), -1, dm_names[l]);
+        if (page == 1) {
+            int32_t n = dm.note[t][l];
+            ((text_fn)fw_textf)(bmp, (const void *)fw_font5, x + 4, 59 - (top + 11), -1, "%s%d",
+                                dm_note_names[n % 12], n / 12);
+            ((text_fn)fw_textf)(bmp, (const void *)fw_font5, x + 4, 59 - (top + 18), -1, "%d", n);
+        } else {
+            ((text_fn)fw_textf)(bmp, (const void *)fw_font5, x + 4, 59 - (top + 11), -1, "%d",
+                                (int)dm.velocity[t][l]);
+            if ((dm.mutes[t] >> l) & 1)
+                ((text_fn)fw_textf)(bmp, (const void *)fw_font5, x + 4, 59 - (top + 18), -1, "MUTE");
+        }
+        if (l == sel)
+            ((rect_fn)fw_fillrect)(bmp, x + 2, y0 + 1, x + 24, y1 - 1, -1);
+    }
+}
+
 void dm_draw(void *bmp, void *ctrl)
 {
-    int32_t track = fw_active_track, t;
+    int32_t track = fw_active_track, t, page;
     (void)ctrl;
     if (!on_page())
         return;                         /* a menu or another screen is on top: leave it alone */
+    page = (track >= DM_FIRST && track < DM_FIRST + DM_TRACKS) ? drum_page() : 0;
+    if (page) {
+        draw_drum_page(bmp, page, track);
+        if (!(dm_note_ticks > 0 && dm_note))
+            return;                     /* the page shows the lanes: no strip over its title */
+    }
     if (dm_note_ticks > 0 && dm_note) {
         ((rect_fn)fw_fillrect)(bmp, 84, 54, 127, 63, 0);
         ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 87, 57, -1, dm_note, (int)dm_note_arg);

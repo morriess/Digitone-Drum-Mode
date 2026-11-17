@@ -158,6 +158,21 @@ current version has run on a unit.
   prepare step 1 again. First step: find where the firmware prepares that step (OS 1.44).
   Found in the emulator with `tests/test_drum_off.py`; details in
   [docs/design.md](docs/design.md) ("Drum Mode off").
+- **The UI froze with the Mod Menu open (emulator only, cause unknown).** In one exact
+  sequence of `tests/test_drum_off.py` (Drum Mode turned off, two bars played, trig key 1
+  pressed, then the Mod Menu opened with YES straight after letting go of the track key), the
+  screen and keys stopped responding while the sequencer and audio kept running. It happened
+  every time in that sequence, but not with a short pause before YES, not without the trig
+  key press, and not in shorter scripts with the same steps, so it may be the emulator, the
+  core's Mod Menu, the stock OS or Drum Mode. *Next:* watch for it on the unit (the Mod Menu
+  stops responding to YES, NO and the page keys). Details in
+  [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
+- **The DRUM pages clash with DigiTables.** Drum Mode's two pages use mod page slots 27 and
+  28; DigiTables (irpina) also claims 27, so the two can't be built into one firmware.
+  DigiTables only exists for OS 1.43 so far, so this doesn't matter on 1.44 yet. *Possible
+  fix:* move the pages to 28 and 29 (29 clashes with CTRL-PLUS instead, which needs an older
+  core anyway). Slot 30 is out: core claims it for the second TRIG page as soon as a mod puts
+  knobs there (DigiChoke, DigiLoop, DigiPCSound).
 
 ## Building
 

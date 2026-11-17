@@ -167,6 +167,14 @@ current version has run on a unit.
   core's Mod Menu, the stock OS or Drum Mode. *Next:* watch for it on the unit (the Mod Menu
   stops responding to YES, NO and the page keys). Details in
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
+- **The lane strip sometimes disappears when switching pages (on the unit).** Reported on
+  hardware (0.8, 2026-11-17) while browsing between pages, e.g. LFO and then SYN1; not seen in
+  the emulator, where the strip was there after every page switch. To check: whether it
+  happened on Drum Notes / Drum Velocity (the strip is left out there on purpose, so the title
+  stays readable), and whether it comes back by itself or only on a pad hit. *Possible fix:*
+  Drum Mode redraws the corner only when something in it changes; if the Digitone sometimes
+  repaints the whole page after Drum Mode has drawn, the strip stays wiped until the next
+  change. Also asking for a redraw whenever the shown page changes would cover that.
 - **The DRUM pages clash with DigiTables.** Drum Mode's two pages use mod page slots 27 and
   28; DigiTables (irpina) also claims 27, so the two can't be built into one firmware.
   DigiTables only exists for OS 1.43 so far, so this doesn't matter on 1.44 yet. *Possible

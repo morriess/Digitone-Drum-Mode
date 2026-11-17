@@ -1,0 +1,67 @@
+diff --git a/firmware/live.c b/firmware/live.c
+index 49e8488..85200ff 100644
+--- a/firmware/live.c
++++ b/firmware/live.c
+@@ -29,7 +29,7 @@ extern volatile uint32_t fw_timeline;
+ extern volatile uint32_t fw_transport;
+ extern void fast_wake_at(uint32_t);
+ extern void fast_schedule(uint32_t);
+-extern void fw_note_on(int,int,int),fw_note_off(int,int);
++extern void digiarp_midi_on(int,int,int),digiarp_midi_off(int,int);
+ void *arp_sound(void *owner,int track)
+ {
+     if((unsigned)(track-4)>=4) return stock_sound(owner,track);
+@@ -103,7 +103,7 @@ int live_input(int source,int track,int note,int velocity){
+ }
+ static void emit(void *p,int t,int ch,int n,int v,int on){
+     (void)p;(void)t;
+-    if(on)fw_note_on(ch,n,v);else fw_note_off(ch,n);
++    if(on)digiarp_midi_on(ch,n,v);else digiarp_midi_off(ch,n);
+ }
+ void live_poll(void){
+     int transport_running=(fw_transport==1);
+diff --git a/firmware/trig-hook.s b/firmware/trig-hook.s
+index 5faba87..bdaa623 100644
+--- a/firmware/trig-hook.s
++++ b/firmware/trig-hook.s
+@@ -32,8 +32,10 @@ dn144_worker_tail:
+         move.b  0x419b14ec,%d0
+         rts
+ 
+-        .globl fw_note_on,fw_note_off
+-fw_note_on:
++        /* core 5.3 exports its own fw_note_on/fw_note_off (the track-level note routines), so DigiArp's names for
++           the MIDI senders are its own: digiarp_midi_on(ch, note, vel), digiarp_midi_off(ch, note). */
++        .globl digiarp_midi_on,digiarp_midi_off
++digiarp_midi_on:
+         jmp     0x400ee232
+-fw_note_off:
++digiarp_midi_off:
+         jmp     0x400ee29e
+diff --git a/mod.json b/mod.json
+index c85b467..18dac44 100644
+--- a/mod.json
++++ b/mod.json
+@@ -1,11 +1,11 @@
+ {
+   "id": "digiarp-midi",
+-  "version": "0.9-dev11",
++  "version": "0.9-dev11-core5",
+   "title": "DigiArp MIDI",
+   "category": "Sequencer",
+   "author": "DigiArp project",
+   "license": "GPL-2.0-or-later",
+-  "description": "Experimental MIDI arpeggiator for Digitone MK1 OS 1.44; hardware verification required",
++  "description": "Experimental MIDI arpeggiator for Digitone MK1 OS 1.44; hardware verification required. Rebuilt for elekloader core 5.2.1+ (core 5.3 beside Drum Mode): the MIDI senders renamed, nothing else changed",
+   "device": "digitone-mk1",
+   "os": "1.44",
+   "sources": [
+@@ -138,7 +138,7 @@
+     }
+   ],
+   "resources": {
+-    "core": "4.1",
++    "core": "5.2.1",
+     "names": [
+       "projdata:DARP"
+     ]

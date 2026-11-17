@@ -89,9 +89,10 @@ lane plays, and store which lanes play as two mod parameters on that trig (a
 p-lock value holds about 7 bits). Patterns then save, load, copy and clear like
 stock. To verify: copy/paste behaviour of those parameters.
 
-**Combining with DigiArp.** DigiArp (from the elekloader Mod Shop) is built on
-core 4.1; DrumMode needs core 5.3. One firmware takes one core, so combining
-them needs a test build.
+**Combining with DigiArp.** The Mod Shop's DigiArp is built on core 4.1 and names the MIDI
+senders `fw_note_on`/`fw_note_off`, which core 5.3 now exports for other routines. Rebuilt with
+those two names changed, it goes into one firmware with Drum Mode: see
+[../../digiarp-core5](../../digiarp-core5/) (emulator-tested, both mods' tests pass).
 
 ## Open questions
 

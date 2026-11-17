@@ -325,8 +325,10 @@ Please report it, ideally with a photo of the screen, at the repository's
 - **All MIDI tracks** get the two DRUM pages in their LFO list, including tracks without
   Drum Mode.
 - **No p-locks by holding a trig key** in GRID RECORDING on a Drum Mode track.
-- **Combining with other mods** that need a different elekloader core (DigiArp MIDI uses
-  core 4.1, Drum Mode core 5.3) is untested.
+- **Combining with DigiArp MIDI** needs the rebuilt DigiArp in this repo's
+  [digiarp-core5](../../digiarp-core5/) folder: the Mod Shop's version is built on an older
+  elekloader core and can't go into one firmware with Drum Mode. Other combinations are
+  untested.
 
 ---
 

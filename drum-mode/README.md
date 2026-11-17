@@ -148,6 +148,17 @@ MIDI notes, without Drum Mode's lanes), for up to 8 MIDI tracks of any kind. The
 timing (sending each note at the moment it plays, plus its note-off), so this waits until the
 current version has run on a unit.
 
+## Known bugs (possible fixes)
+
+- **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
+  ahead, and step 1 of a new run is prepared when the previous run stops. So right after you
+  turn Drum Mode off or on, or change a mute or velocity while stopped, step 1 of the next run
+  still plays the old way; from step 2, and from the next run on, everything follows the new
+  setting. *Possible fix:* when such a setting changes while stopped, have the sequencer
+  prepare step 1 again. First step: find where the firmware prepares that step (OS 1.44).
+  Found in the emulator with `tests/test_drum_off.py`; details in
+  [docs/design.md](docs/design.md) ("Drum Mode off").
+
 ## Building
 
 You need your own copy of the stock Digitone OS 1.44 `.syx` from Elektron, plus

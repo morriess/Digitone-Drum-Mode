@@ -20,7 +20,11 @@ sys.path.insert(0, DIGIEMU)
 class Digitone:
     """A booted Digitone: keys by name, MIDI out captured, memory and the screen readable."""
 
-    def __init__(self, syx, home, audio=False):
+    def __init__(self, syx, home, audio=False, trace=()):
+        """trace: symbols (e.g. 'dm_tick', 'dm_key') whose entries are counted in self.hits from boot on; a hook
+        added later never fires for code the emulator has already translated."""
+        self.trace = tuple(trace)
+        self.hits = {name: 0 for name in self.trace}
         self.symbols = {}
         if os.path.exists(syx + '.map.json'):
             with open(syx + '.map.json') as fh:
@@ -82,6 +86,10 @@ class Digitone:
                 self.midi_sent.append(bytes(uc.mem_read(buf, n)))
         for a in self.SEQ_MIDI:
             session.at(a, on_append)
+        for name in self.trace:
+            def on_hit(uc, address, size, data, name=name):
+                self.hits[name] += 1
+            session.at(self.symbols[name], on_hit)
         # And the DIN port itself (UART9), as digiemu's window listens to it.
         from emu import midi
         self.din_sent = []

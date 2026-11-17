@@ -181,6 +181,7 @@ DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_lane_mute.py out/
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_grid_edit.py out/Digitone_OS1.44_DrumMode.syx
 DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_drum_page.py out/Digitone_OS1.44_DrumMode.syx
+DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_drum_off.py out/Digitone_OS1.44_DrumMode.syx
 ```
 
 The first run sets up the firmware (a few minutes); screenshots land in the work folder.
@@ -200,6 +201,7 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `tests/test_strip_playback.py` | The strip blinking on playback, on time; not over menus (11 checks) |
 | `tests/test_grid_edit.py` | Lane select, grid editing with pages, the trig key LEDs (26 checks) |
 | `tests/test_drum_page.py` | The DRUM pages: knobs set notes and velocities, the pages underneath untouched (15 checks) |
+| `tests/test_drum_off.py` | A beat with Drum Mode on, off and on again: what plays, what's kept (17 checks) |
 | `docs/design.md` | Design and build plan |
 | `docs/ui/` | The screen UI explained, with screenshots |
 

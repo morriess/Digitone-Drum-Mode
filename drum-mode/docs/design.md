@@ -211,4 +211,40 @@ those two names changed, it goes into one firmware with Drum Mode: see
   and takes the knobs in ev_enc. core_page_shown compares against the one view core noted in the
   descriptor, so Drum Mode reads the shown view's page list itself (Brain +0x54/+0x5c, page manager +8,
   view +0xc0, list +124/+128, current +144; core-dn1's pages.s and lists.c).
+- **Drum Mode off (tested 2026-11-17, tests/test_drum_off.py, 17 checks).** A beat programmed in
+  GRID RECORDING (kick 1, 5, 9, 13; snare 5, 13; closed hat every odd step), kick velocity 90,
+  snare 70, hat muted; two bars played after each change, at the project's 86 BPM:
+
+  | | Step 1 | Steps 2–16 |
+  | --- | --- | --- |
+  | On, 1st bar after setting mute/velocities | kick + hat at 100 (old) | kick ×3, snare ×2, all at 90; no hats |
+  | On, 2nd bar | kick at 90 | the same |
+  | Off, 1st bar | kick at 90 (old) | kick ×3, snare ×2, hat ×7, all at 100 |
+  | Off, 2nd bar | kick + hat at 100 | the same |
+  | On again, 1st bar | kick + hat at 100 (old) | as "On" |
+  | On again, 2nd bar | as "On, 2nd bar" | as "On" |
+
+  - Turning off changes only the enabled bit: the pattern data (all 64 steps) is byte-for-byte the
+    same, and the stock OS plays it: the same notes, mutes not applied, every note at the trig's
+    velocity (the track's VEL, 100). Mutes, notes and velocities are kept for turning it back on.
+  - With Drum Mode on, a step plays at its loudest unmuted lane's velocity (steps 5 and 13: kick 90
+    over snare 70), since a MIDI trig has one velocity.
+  - **Step 1 of a run follows the state of the run before.** The sequencer prepares a step one step
+    early, and step 1 of a new run when the previous run stops (or earlier), so ev_fire_notes and
+    ev_fire_vel see it then, not at PLAY. A change made while stopped (on/off, a mute, a velocity)
+    reaches step 1 from the following run. A possible fix: ask the sequencer to prepare step 1 again
+    when such a setting changes while stopped; the routine that does it isn't known yet.
+  - With Drum Mode off, trig key 1 sends nothing while stopped outside KEYBOARD mode (the stock's
+    GRID mode), as on any MIDI track.
+- **Open: a UI hang in the emulator.** In one exact sequence of test_drum_off.py (the full beat,
+  two bars on, Drum Mode off, two bars, trig key 1, then the Mod Menu with YES straight after
+  letting go of the track key), digiemu's UI task stopped with the Mod Menu open: no more UI
+  ticks, draws or key events, while the sequencer and audio ran on. It happened every time in
+  that sequence (fresh emulator folder too), but not with a 300 ms pause before YES, not without
+  the trig key press, and not in shorter scripts with the same steps (with or without Drum Mode
+  ever on), so the cause isn't known: it may be the emulator, the core's Mod Menu, the stock OS or
+  Drum Mode. The test now pauses before YES. Worth watching for on the unit: the Mod Menu stops
+  responding (YES, NO and page keys do nothing). tests/emu_session.py's `trace=` counts handler
+  entries from boot (hooks added later never fire for code already translated), which is how this
+  was found.
 

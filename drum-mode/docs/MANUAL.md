@@ -269,6 +269,23 @@ More detail, with every screen: [Drum Mode UI additions](ui/README.md).
   normal MIDI trigs with chords. Mutes and Drum Mode's settings don't apply there, but the
   stock OS keeps them, so they're back when you reinstall Drum Mode.
 
+### Turning Drum Mode off
+
+Turning Drum Mode off for a track (Mod Menu → DRUM MODE) leaves its pattern untouched, and
+the Digitone keeps playing it as ordinary MIDI trigs. Tested in the emulator:
+
+- **The same notes play**, so your drum machine plays the same drums.
+- **Mutes stop applying:** a muted drum plays again. The mutes are kept, and work again when
+  you turn Drum Mode back on.
+- **Velocities change** to the trig's own velocity (VEL on the TRIG page, 100 by default).
+  With Drum Mode on, each step plays at the loudest velocity among its drums.
+- **The trig keys** are normal trig keys again.
+- **The first step after PLAY** can still follow the old setting. The Digitone prepares each
+  step one step ahead, and step 1 of a new run was prepared when the previous run stopped.
+  So right after turning Drum Mode off, on, or changing a mute or velocity while stopped,
+  step 1 of the next run plays the old way; from step 2, and from the following run on,
+  everything follows the new setting.
+
 ## Quick reference
 
 On a Drum Mode track:

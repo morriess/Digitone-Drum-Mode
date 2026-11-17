@@ -46,11 +46,9 @@ send it to the Digitone the same way as an Elektron OS update.
 
 ### 1. Get the firmware
 
-Choose one:
+There is no download: the firmware contains Elektron's OS, so nobody shares it, not this
+project either. You build it from your own copy of the stock OS file.
 
-- **The ready-made file.** `Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **DRM8**). It's built from Elektron's OS, so keep it for yourself and don't share it
-  publicly.
 - **Build it yourself** (Linux, macOS or Windows with WSL). You need git, python3 and an
   m68k cross compiler (on Debian/Ubuntu: `sudo apt install gcc-m68k-linux-gnu`). Then:
 
@@ -60,10 +58,14 @@ Choose one:
   ./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx
   ```
 
-  The firmware appears as `out/Digitone_OS1.44_DrumMode.syx`.
+  The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
+  **DRM8**).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
+
+The file you build is for your own Digitone: don't upload or pass it on, since it contains
+Elektron's OS.
 
 ### 2. Back up
 

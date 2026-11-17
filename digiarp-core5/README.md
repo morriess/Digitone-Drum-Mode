@@ -57,7 +57,8 @@ DigiArp at `2a853b7`, applies the patch, and writes:
 | `out/Digitone_OS1.44_DigiArp_core5.syx` | core 5.3 + DigiArp only | **DAC5** |
 
 Install as in the [Drum Mode manual](../drum-mode/docs/MANUAL.md#installing). Both files are
-built from Elektron's OS: keep them for yourself.
+built from your own copy of Elektron's OS, so they are for your own unit only: don't upload or pass
+them on. This repo never contains them.
 
 ## Using both
 

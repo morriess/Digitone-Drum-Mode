@@ -16,12 +16,11 @@ Digitone mk1 core and its sequencer-events mod.
 > lanes' notes and velocities with the knobs. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-> **⚠️ Debugging phase: not confirmed on the unit yet.** First hardware test (2026-11-17,
-> OS 1.44, 0.8): it boots, and the pads, their notes and velocities, the DRUM pages and
-> mutes work. But **recorded beats didn't play back** on any pattern but A01: Drum Mode
-> wrote them into another pattern. 0.8.2 (DR82) fixes that in the emulator and waits for a
-> test on the unit; see
-> [Known bugs](#known-bugs-possible-fixes) and [docs/debugging.md](docs/debugging.md).
+> **Beta: working on the unit (0.8.2, 2026-11-18).** Hardware tests on OS 1.44: it boots,
+> the pads, their notes and velocities, the DRUM pages and mutes work, and since 0.8.2
+> recorded beats play back (0.8 and 0.8.1 wrote them into another pattern; see
+> [docs/debugging.md](docs/debugging.md)). A few smaller [known bugs](#known-bugs-possible-fixes)
+> remain.
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
@@ -157,7 +156,7 @@ current version has run on a unit.
 
 ## Known bugs (possible fixes)
 
-- **Recorded beats don't play back on the unit (fixed in 0.8.2, to confirm on the unit).** Found on
+- **Recorded beats don't play back on the unit (fixed in 0.8.2, confirmed on the unit 2026-11-18).** Found on
   hardware with 0.8 (2026-11-17). Live recording with Drum Mode on writes trigs at the
   right moments, but pressing PLAY afterwards sends nothing at all (the drum machine's MIDI
   light stays dark), with Drum Mode still on. Pads play fine, nothing is muted, velocities

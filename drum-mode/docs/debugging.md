@@ -150,9 +150,14 @@ checked by its data pointer, and searches all 128 if that doesn't match.
 `tests/test_other_pattern.py` now records on H02: it fails on 0.8.1 as on the unit, and passes
 on 0.8.2.
 
-### Next: 0.8.2 on the unit
+### 18 Nov 2026, 0.8.2 on the unit: fixed
 
-Build 0.8.2 (shows as **DR82**) and run the test on H02 (or any pattern).
+On H02, live recorded beats now play back. Solved.
+
+What it took: the emulator only ever ran on A01, where the bug can't show. Debug 1 placed the
+fault in recording, debug 2 showed the stored step was right but never played, debug 3's
+addresses showed which pattern Drum Mode was writing into, and the emulator, set up on the same
+pattern, showed the object the stock uses. The debug builds stay in `debug/` for next time.
 
 ### For reference: what debug 2's readings meant
 

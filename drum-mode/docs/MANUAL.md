@@ -7,7 +7,7 @@ become drum pads, each playing its own note on the track's MIDI channel, so you 
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.8.2 has been tested in an emulator; on a real Digitone it's still being debugged. Back up your
+> **Beta.** 0.8.2 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -337,7 +337,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator; hardware testing is still to come. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.8.2); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

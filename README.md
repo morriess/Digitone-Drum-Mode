@@ -3,13 +3,13 @@
 Custom-firmware mods for the **Elektron Digitone mk1** (OS 1.44), built on
 [elekloader](https://github.com/irpina/elekloader).
 
-> **⚠️ Not working yet: in the debugging phase.** Drum Mode boots and partly works on a real
-> Digitone, but recorded beats don't play back on the unit (see
-> [Known bugs](drum-mode/README.md#known-bugs-possible-fixes)). Don't rely on it for music yet.
+> **Beta.** Drum Mode 0.8.2 works on a real Digitone (OS 1.44), recorded beats included. A few
+> smaller [known bugs](drum-mode/README.md#known-bugs-possible-fixes) remain, so back up your
+> projects before you use it.
 
 | Mod | What it does | Status |
 | --- | --- | --- |
-| [drum-mode](drum-mode/) | Turns a MIDI track into an 8-lane drum sequencer on one MIDI channel ([manual](drum-mode/docs/MANUAL.md)) | 0.8.2, **debugging on hardware**: fix for recorded beats not playing back, to confirm on the unit |
+| [drum-mode](drum-mode/) | Turns a MIDI track into an 8-lane drum sequencer on one MIDI channel ([manual](drum-mode/docs/MANUAL.md)) | 0.8.2, beta: **working on the unit** |
 | [digiarp-core5](digiarp-core5/) | DigiArp MIDI (by aleks-karachevtsev) rebuilt for core 5.3, and one firmware with it and Drum Mode | emulator-tested |
 
 Looking for a MIDI-track arpeggiator? DigiArp MIDI by aleks-karachevtsev is in the

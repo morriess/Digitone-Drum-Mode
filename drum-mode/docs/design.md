@@ -248,13 +248,13 @@ those two names changed, it goes into one firmware with Drum Mode: see
   entries from boot (hooks added later never fire for code already translated), which is how this
   was found.
 
-- **Two sets of track edit objects (the 0.8 bug on the unit).** The project holds two sets
-  of the track edit objects (`fw_project + 0x11f4 + 0x58 * track`, and `+ 0x1580`, 0x38c
-  apart), one per pattern buffer; their data pointer (+16, what method 10 returns) says which
-  pattern they edit, and which set edits the active pattern swaps with pattern changes. Every
-  emulator test ran on A01, where the first set is right, so the bug only showed on the unit:
-  on another pattern, recording went into a pattern that wasn't playing. 0.8.1 takes the set
-  that points into `fw_pattern`. Lesson: test on more than one pattern.
+- **One set of track edit objects per pattern (the 0.8 bug on the unit).** The project holds a
+  set of track edit objects for each of the 128 patterns (`fw_project + 0x11f4 + 0x38c *
+  pattern + 0x58 * track`); their data pointer (+16, what method 10 returns) points into their
+  own pattern, and the stock edits through the active pattern's set. Every emulator test ran on
+  A01, where the first set is right, so the bug only showed on the unit (on H02): recording went
+  into A01. 0.8.1 took A01's or A02's set (it fixed an A02 test, not the unit); 0.8.2 takes
+  the active pattern's, checked by its data pointer. Lesson: test on a pattern far from A01.
 
 ## What the emulator can't show
 

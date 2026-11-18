@@ -45,18 +45,19 @@ I, O and V change only when F goes up, so they show the last step that counted.
 
 ### Debug 3 (DRD3)
 
-Two lines at the top of the screen (0.8.1 with the fix):
+Two lines at the top of the screen:
 
     F4/4 N67 K0 O3780
     PE354 AE354 B4471 T0000         (the emulator on A01)
 
 - **F4/4 N67**: as in debug 2.
-- **K0**: the set of track edit objects Drum Mode writes through (0 or 1); **-1** means
-  neither points into the playing pattern, so it fell back to the first.
+- **K0**: the set of track edit objects Drum Mode writes through: on 0.8.2 the pattern's number
+  (0 = A01 ... 127 = H16; 1000 + n if it had to search), **-1** if none points into the playing
+  pattern. (Built on 0.8.1 it was 0 or 1, and -1 meant neither of the first two.)
 - **O3780**: the object the Digitone's own trig edit used last (low 4 hex digits of its
   address), 0000 until you place a trig the normal way.
 - **P**: where the playing pattern's data for this track is (low 4 hex digits).
-- **A, B**: where the two sets point. The one equal to P is right.
+- **A, B**: where A01's and A02's sets point.
 - **T**: where the object of the last normal trig edit points.
 
 ## The test
@@ -122,6 +123,36 @@ two-sets fix alone doesn't cover what happens on the unit. *Next:* debug 3 (DRD3
 pattern: live record and PLAY (photo), then place a trig the normal way with Drum Mode off and
 turn Drum Mode back on (photo). It shows which object the unit's own trig keys use, where it
 points, and where Drum Mode writes.
+
+### 18 Nov 2026, debug 3 (on 0.8.1) on the unit
+
+On pattern H02, MIDI track D:
+
+    1. after live recording:            F0/0 N-9 K-1 O0000 PCC91 AEEC4 B4FE1 T0000
+    2. a normal trig, Drum Mode on:     F1/1 N67 K-1 O0000 PCC91 AEEC4 B4FE1 T0000
+
+Worked out from the addresses: P is H02's data for track 8, A is A01's and B is A02's. So
+neither set Drum Mode looked at was the playing pattern's (K-1): it wrote into A01. The normal
+trig plays (F1/1), but the trig-edit listener didn't see it (O and T stayed 0000), so maybe it
+was placed before, or another way.
+
+### The real cause, found in the emulator
+
+Switched to H02 in the emulator (BANK + trig 16, then trig 2) and hooked the stock trig setter:
+the stock grid edit wrote through an object at `fw_project + 0x11f4 + 0x38c * 113 + 0x58 *
+track`. 113 is H02's number. The project holds **one set of track edit objects per pattern**,
+128 sets 0x38c bytes apart, each pointing into its own pattern; there are no "two buffers". 0.8.1
+looked at A01's and A02's sets only, which is why it fixed A02 in the emulator and not H02 on
+the unit.
+
+**Fix (0.8.2):** Drum Mode takes the active pattern's own set (its number from `fw_pattern`),
+checked by its data pointer, and searches all 128 if that doesn't match.
+`tests/test_other_pattern.py` now records on H02: it fails on 0.8.1 as on the unit, and passes
+on 0.8.2.
+
+### Next: 0.8.2 on the unit
+
+Build 0.8.2 (shows as **DR82**) and run the test on H02 (or any pattern).
 
 ### For reference: what debug 2's readings meant
 

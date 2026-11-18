@@ -1,7 +1,7 @@
 diff -ru a/drummode.c b/drummode.c
---- a/drummode.c	2026-11-18 22:00:52.307001998 +0100
-+++ b/drummode.c	2026-11-18 22:30:45.341610782 +0100
-@@ -222,15 +222,32 @@
+--- a/drummode.c	2026-11-18 23:00:28.190300455 +0100
++++ b/drummode.c	2026-11-18 23:02:04.228932421 +0100
+@@ -223,6 +223,20 @@
      return rec && rec[REC_LIVE] && fw_transport == 1;
  }
  
@@ -22,12 +22,21 @@ diff -ru a/drummode.c b/drummode.c
  static void *track_obj(int32_t track)
  {
      uint8_t *first = fw_project + TRACK_OBJ_FIRST + TRACK_OBJ_STRIDE * track;
-     uint8_t *want = fw_pattern + 976 * track;
-     for (int32_t k = 0; k < TRACK_OBJ_SETS; k++) {
-         uint8_t *obj = first + TRACK_OBJ_SET_STEP * k;
+@@ -231,14 +245,19 @@
+     uint8_t *obj;
+     if (idx < TRACK_OBJ_SETS) {
+         obj = first + TRACK_OBJ_SET_STEP * idx;
 -        if (*(void *const *)obj == *(void *const *)first && *(uint8_t *const volatile *)(obj + TRACK_OBJ_DATA) == want)
 +        if (*(void *const *)obj == *(void *const *)first && *(uint8_t *const volatile *)(obj + TRACK_OBJ_DATA) == want) {
-+            dbg_k = k;
++            dbg_k = (int32_t)idx;
+             return obj;
++        }
+     }
+     for (int32_t k = 0; k < TRACK_OBJ_SETS; k++) {
+         obj = first + TRACK_OBJ_SET_STEP * k;
+-        if (*(void *const *)obj == *(void *const *)first && *(uint8_t *const volatile *)(obj + TRACK_OBJ_DATA) == want)
++        if (*(void *const *)obj == *(void *const *)first && *(uint8_t *const volatile *)(obj + TRACK_OBJ_DATA) == want) {
++            dbg_k = 1000 + k;
              return obj;
 +        }
      }
@@ -35,7 +44,7 @@ diff -ru a/drummode.c b/drummode.c
      return first;
  }
  
-@@ -275,6 +292,7 @@
+@@ -283,6 +302,7 @@
      int32_t base, free_slot = -1;
      if (!data || step < 0 || step > 63)
          return;
@@ -43,7 +52,7 @@ diff -ru a/drummode.c b/drummode.c
      slots = data + TRACK_SLOTS + 8 * step;
      if (!(*(volatile uint16_t *)(data + 2 * step) & FW_STEP_TRIG)) {
          FW_TRIG_SET(obj, step, FW_STEP_TRIG, 1);
-@@ -284,20 +302,21 @@
+@@ -292,20 +312,21 @@
      } else {
          base = slots[0];
          if (base == note)
@@ -68,7 +77,7 @@ diff -ru a/drummode.c b/drummode.c
  }
  
  /* A MIDI track's output channel (0-15), or -1 when its CHAN is off. track: the firmware's, 4-7. */
-@@ -418,6 +437,10 @@
+@@ -426,6 +447,10 @@
      (void)step;
      if (!drum_track(track))
          return;
@@ -79,7 +88,7 @@ diff -ru a/drummode.c b/drummode.c
      mutes = dm.mutes[t];
      if (notes[0] >= 0)
          for (int32_t i = 0; i < SQ_NOTES; i++) {
-@@ -777,6 +800,8 @@
+@@ -785,6 +810,8 @@
          last_page = p;
          last_track = track;
      }
@@ -88,7 +97,7 @@ diff -ru a/drummode.c b/drummode.c
      if (dm_dirty || dm_note_ticks > 0) {
          *((unsigned char *)ctrl + 0x20) = 1;    /* redraw */
          *((unsigned char *)ctrl + 0x21) = 1;    /* and an LED frame */
-@@ -878,6 +903,21 @@
+@@ -886,6 +913,21 @@
      if (!on_page())
          return;                         /* a menu or another screen is on top: leave it alone */
      page = (track >= DM_FIRST && track < DM_FIRST + DM_TRACKS) ? drum_page() : 0;
@@ -111,20 +120,25 @@ diff -ru a/drummode.c b/drummode.c
          draw_drum_page(bmp, page, track);
          if (!(dm_note_ticks > 0 && dm_note))
 diff -ru a/mod.json b/mod.json
---- a/mod.json	2026-11-18 22:00:52.307036866 +0100
-+++ b/mod.json	2026-11-18 22:01:05.105068891 +0100
+--- a/mod.json	2026-11-18 23:00:28.190335831 +0100
++++ b/mod.json	2026-11-18 23:00:37.606214115 +0100
 @@ -1,6 +1,6 @@
  {
   "id": "drummode",
-- "version": "0.8.1",
-+ "version": "0.8.1-debug3",
+- "version": "0.8.2",
++ "version": "0.8.2-debug3",
   "license": "GPL-2.0-or-later",
   "title": "Drum Mode (Digitone MIDI track drum sequencer)",
   "category": "Sequencer",
-@@ -60,6 +60,11 @@
+@@ -60,6 +60,16 @@
     "event": "ev_key_leds",
     "fn": "dm_leds",
     "order": 50
++  },
++  {
++   "event": "ev_trig_set",
++   "fn": "dm_dbg_trig_set",
++   "order": 50
 +  },
 +  {
 +   "event": "ev_trig_set",

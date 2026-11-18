@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.8.1, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.8.2, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -18,14 +18,15 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **⚠️ Debugging phase: not confirmed on the unit yet.** First hardware test (2026-11-17,
 > OS 1.44, 0.8): it boots, and the pads, their notes and velocities, the DRUM pages and
-> mutes work. But **recorded beats don't play back**. 0.8.1 (DR81) fixes one cause found in
-> the emulator (recording on a pattern other than A01), but not yet on the unit; see
+> mutes work. But **recorded beats didn't play back** on any pattern but A01: Drum Mode
+> wrote them into another pattern. 0.8.2 (DR82) fixes that in the emulator and waits for a
+> test on the unit; see
 > [Known bugs](#known-bugs-possible-fixes) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.8.1)
+## Using it (0.8.2)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -156,7 +157,7 @@ current version has run on a unit.
 
 ## Known bugs (possible fixes)
 
-- **Recorded beats don't play back on the unit (blocking, being debugged).** Found on
+- **Recorded beats don't play back on the unit (fixed in 0.8.2, to confirm on the unit).** Found on
   hardware with 0.8 (2026-11-17). Live recording with Drum Mode on writes trigs at the
   right moments, but pressing PLAY afterwards sends nothing at all (the drum machine's MIDI
   light stays dark), with Drum Mode still on. Pads play fine, nothing is muted, velocities
@@ -168,12 +169,11 @@ current version has run on a unit.
   issue to fix too). Debug build 1 (DRMD) on the unit: recorded steps never
   reach Drum Mode's playback with a note, while normal trigs do and come out as 67, so the
   fault is in what recording stores. Debug build 2 (DRD2): the step is stored right (trig
-  on, note 67) but the sequencer never sees it. *Cause:* the project keeps two sets of
-  track edit objects, one per pattern buffer, and which one edits the active pattern swaps
-  with pattern changes; 0.8 always used the first, so on any pattern but A01 the beats went
-  into another pattern. *Fix (0.8.1):* use the set that points into the active pattern.
-  Reproduced and fixed in the emulator (`tests/test_other_pattern.py`), but on the unit
-  0.8.1 still doesn't play the recorded beats: being debugged with debug build 3. The process and
+  on, note 67) but the sequencer never sees it. *Cause:* the project keeps a set of track
+  edit objects per pattern (128); 0.8 always used A01's, so on any other pattern the beats
+  went into A01. 0.8.1 also tried A02's (enough for the emulator test on A02, not for the
+  unit on H02; debug build 3 showed it). *Fix (0.8.2):* use the active pattern's own set.
+  Reproduced and fixed in the emulator on H02 (`tests/test_other_pattern.py`). The process and
   results: [docs/debugging.md](docs/debugging.md).
 
 - **PATTERN or BANK + a trig key plays a pad instead of choosing the pattern** (found in
@@ -228,7 +228,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DR81** on the unit.
+**DR82** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

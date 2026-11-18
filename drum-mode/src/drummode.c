@@ -41,12 +41,12 @@ typedef void (*text_fn)(void *bmp, const void *font, int x, int y, int maxlen, c
 /* OS 1.44's live recording and step editing, found in its disassembly and checked in digiemu:
  * - REC_OBJ: a global pointing to the recorder's state; byte +0x169 is set while live recording (the stock's own
  *   getter, 0x400addc8, returns it while the sequencer plays; 0x400addf2 toggles it).
- * - TRACK_OBJ: each track's edit object. The project holds two sets of them, one for each of the firmware's two
- *   pattern buffers (fw_project + 0x11f4 + 0x58 * track and fw_project + 0x1580 + 0x58 * track, 0x38c apart); which
- *   one edits the active pattern swaps with pattern changes, so the one whose data is the active pattern's is used
- *   (0.8 always took the first: right on A01 only, so recorded beats went into a pattern that wasn't playing).
- *   Its method 10 (+40 in the vtable, which returns +16) gives the track's pattern data (976 bytes: the step words at +2 * step, the step's 8 note slots at
- *   +448 + 8 * step, slot 0 the note and 1-7 intervals, 0 none).
+ * - TRACK_OBJ: each track's edit object. The project holds one set of them per pattern (128 sets, 0x38c bytes
+ *   apart from fw_project + 0x11f4; track t's at + 0x58 * t): the active pattern's set is the one to edit it
+ *   through (0.8 always took A01's, 0.8.1 A01's or A02's: on any other pattern recorded beats went into a pattern
+ *   that wasn't playing). The set is the pattern's index, checked by its data pointer; failing that, all are searched.
+ *   Its method 10 (+40 in the vtable, which returns +16) gives the track's pattern data (976 bytes: the step words
+ *   at +2 * step, the step's 8 note slots at +448 + 8 * step, slot 0 the note and 1-7 intervals, 0 none).
  * - TRIG_SET (track obj, step, mask, on) and STEP_NOTE (track obj, step, note, slot): the stock's setters, which core
  *   hooks for ev_trig_set and ev_step_note; the stock's live recorder calls them in this order.
  * - The sequencer's MIDI track state, 158 bytes a MIDI track from 0x419c5b30: the output channel (SRC's CHAN, 0-15) at
@@ -58,8 +58,9 @@ typedef void (*text_fn)(void *bmp, const void *font, int x, int y, int maxlen, c
 #define FW_REC_OBJ          (*(uint8_t *volatile *)0x419f0dd8)
 #define REC_LIVE            0x169
 #define TRACK_OBJ_FIRST     0x11f4
-#define TRACK_OBJ_SETS      2
+#define TRACK_OBJ_SETS      128
 #define TRACK_OBJ_SET_STEP  0x38c
+#define PATTERN_SIZE        0x1611d
 #define TRACK_OBJ_STRIDE    0x58
 #define TRACK_OBJ_DATA      16
 #define TRACK_SLOTS         448
@@ -226,8 +227,15 @@ static void *track_obj(int32_t track)
 {
     uint8_t *first = fw_project + TRACK_OBJ_FIRST + TRACK_OBJ_STRIDE * track;
     uint8_t *want = fw_pattern + 976 * track;
+    uint32_t idx = (uint32_t)(fw_pattern - fw_patterns) / PATTERN_SIZE;
+    uint8_t *obj;
+    if (idx < TRACK_OBJ_SETS) {
+        obj = first + TRACK_OBJ_SET_STEP * idx;
+        if (*(void *const *)obj == *(void *const *)first && *(uint8_t *const volatile *)(obj + TRACK_OBJ_DATA) == want)
+            return obj;
+    }
     for (int32_t k = 0; k < TRACK_OBJ_SETS; k++) {
-        uint8_t *obj = first + TRACK_OBJ_SET_STEP * k;
+        obj = first + TRACK_OBJ_SET_STEP * k;
         if (*(void *const *)obj == *(void *const *)first && *(uint8_t *const volatile *)(obj + TRACK_OBJ_DATA) == want)
             return obj;
     }

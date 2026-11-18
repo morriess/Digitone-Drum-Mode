@@ -154,6 +154,15 @@ MIDI notes, without Drum Mode's lanes), for up to 8 MIDI tracks of any kind. The
 timing (sending each note at the moment it plays, plus its note-off), so this waits until the
 current version has run on a unit.
 
+**Improvement (asked 2026-11-18, after the first working hardware test):** pick a lane with
+its pad alone. Pressing trig key 1-8 selects that lane (voice), and its key stays lit as the
+selected one. When you then press RECORD (GRID RECORDING), the trig keys place and show trigs
+for that lane only, never the other lanes' steps. Today a lane is selected with TRIG held + pad
+(a pad on its own plays the drum), and GRID RECORDING already shows only the selected lane, so
+the change is mainly selecting by the pad itself and the lit key. To decide: whether a pad
+still plays its drum when pressed to select it, and how that fits with live recording, where
+the pads play and record.
+
 ## Known bugs (possible fixes)
 
 - **Recorded beats don't play back on the unit (fixed in 0.8.2, confirmed on the unit 2026-11-18).** Found on

@@ -139,6 +139,8 @@ those two names changed, it goes into one firmware with Drum Mode: see
    Octatrack's core has card files and battery RAM, the Rytm's sound/kit/global slots; the Digitone mk1's
    only the project's 480-byte gap), so that needs either a new core feature or a SysEx dump/receive of
    a kit through the computer.
+   *Improvement:* select a lane by pressing its pad alone (1-8), its key lit; GRID RECORDING then
+   places and shows that lane's trigs only (today: TRIG + pad selects). See the README.
    *Nice to have:* synth tracks (T1–T4) as Drum Mode tracks, for up to 8 drum tracks. Not more tracks:
    the pattern (8 × 976-byte tracks), the project format, the track keys and the screens all assume
    4 synth + 4 MIDI, and a project with more would stop loading on the stock OS. The stock OS never

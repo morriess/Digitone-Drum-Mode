@@ -18,8 +18,8 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **⚠️ Debugging phase: not confirmed on the unit yet.** First hardware test (2026-11-17,
 > OS 1.44, 0.8): it boots, and the pads, their notes and velocities, the DRUM pages and
-> mutes work. But **recorded beats didn't play back** on any pattern other than A01. 0.8.1
-> (DR81) fixes that in the emulator and waits for a test on the unit; see
+> mutes work. But **recorded beats don't play back**. 0.8.1 (DR81) fixes one cause found in
+> the emulator (recording on a pattern other than A01), but not yet on the unit; see
 > [Known bugs](#known-bugs-possible-fixes) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
@@ -156,7 +156,7 @@ current version has run on a unit.
 
 ## Known bugs (possible fixes)
 
-- **Recorded beats don't play back on the unit (fixed in 0.8.1, to confirm on the unit).** Found on
+- **Recorded beats don't play back on the unit (blocking, being debugged).** Found on
   hardware with 0.8 (2026-11-17). Live recording with Drum Mode on writes trigs at the
   right moments, but pressing PLAY afterwards sends nothing at all (the drum machine's MIDI
   light stays dark), with Drum Mode still on. Pads play fine, nothing is muted, velocities
@@ -172,7 +172,8 @@ current version has run on a unit.
   track edit objects, one per pattern buffer, and which one edits the active pattern swaps
   with pattern changes; 0.8 always used the first, so on any pattern but A01 the beats went
   into another pattern. *Fix (0.8.1):* use the set that points into the active pattern.
-  Reproduced and fixed in the emulator (`tests/test_other_pattern.py`). The process and
+  Reproduced and fixed in the emulator (`tests/test_other_pattern.py`), but on the unit
+  0.8.1 still doesn't play the recorded beats: being debugged with debug build 3. The process and
   results: [docs/debugging.md](docs/debugging.md).
 
 - **PATTERN or BANK + a trig key plays a pad instead of choosing the pattern** (found in

@@ -14,6 +14,7 @@ file from their own OS file (never share the result, same as the normal build):
 
     ./debug/build-debug.sh 1 /path/to/Digitone_and_Digitone_Keys_OS1.44.syx    # DRMD
     ./debug/build-debug.sh 2 /path/to/Digitone_and_Digitone_Keys_OS1.44.syx    # DRD2
+    ./debug/build-debug.sh 3 /path/to/Digitone_and_Digitone_Keys_OS1.44.syx    # DRD3
 
 The boot screen shows which one is running. The line appears on a Drum Mode track on the normal
 pages (not the DRUM pages or menus) and updates while the pattern plays. Flash the normal build
@@ -41,6 +42,22 @@ I, O and V change only when F goes up, so they show the last step that counted.
 - **S12**: the step Drum Mode last recorded into (1-16).
 - **W11**: that step's stored word now, in hex. Bit 0 (an odd number) is the trig.
 - **K67/67**: that step's note just after recording / that step's note now.
+
+### Debug 3 (DRD3)
+
+Two lines at the top of the screen (0.8.1 with the fix):
+
+    F4/4 N67 K0 O3780
+    PE354 AE354 B4471 T0000         (the emulator on A01)
+
+- **F4/4 N67**: as in debug 2.
+- **K0**: the set of track edit objects Drum Mode writes through (0 or 1); **-1** means
+  neither points into the playing pattern, so it fell back to the first.
+- **O3780**: the object the Digitone's own trig edit used last (low 4 hex digits of its
+  address), 0000 until you place a trig the normal way.
+- **P**: where the playing pattern's data for this track is (low 4 hex digits).
+- **A, B**: where the two sets point. The one equal to P is right.
+- **T**: where the object of the last normal trig edit points.
 
 ## The test
 
@@ -97,6 +114,14 @@ way the unit did, and passes on 0.8.1; all the other tests still pass.
 
 Build 0.8.1 (shows as **DR81**) and run the test above on the pattern you were on. The beats
 should play back.
+
+### 18 Nov 2026, 0.8.1 on the unit
+
+Still no sound: after live recording the steps show on the grid, but they don't play. So the
+two-sets fix alone doesn't cover what happens on the unit. *Next:* debug 3 (DRD3), on the same
+pattern: live record and PLAY (photo), then place a trig the normal way with Drum Mode off and
+turn Drum Mode back on (photo). It shows which object the unit's own trig keys use, where it
+points, and where Drum Mode writes.
 
 ### For reference: what debug 2's readings meant
 

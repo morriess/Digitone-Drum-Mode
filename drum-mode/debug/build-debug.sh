@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # Build a Drum Mode debug firmware: Drum Mode (src/) with one of the debug patches in this folder.
 #
-#   ./debug/build-debug.sh 1|2 /path/to/Digitone_and_Digitone_Keys_OS1.44.syx [output.syx]
+#   ./debug/build-debug.sh 1|2|3 /path/to/Digitone_and_Digitone_Keys_OS1.44.syx [output.syx]
 #
-# Debug 1 shows as DRMD on the boot screen, debug 2 as DRD2. What each shows: ../docs/debugging.md.
+# Debug 1 shows as DRMD on the boot screen, debug 2 as DRD2, debug 3 as DRD3. What each shows: ../docs/debugging.md.
 # Like the normal build, the result is for your own unit only: never share it.
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")/.." && pwd)"
-n="${1:?usage: ./debug/build-debug.sh 1|2 /path/to/OS1.44.syx [output.syx]}"
-stock="${2:?usage: ./debug/build-debug.sh 1|2 /path/to/OS1.44.syx [output.syx]}"
+n="${1:?usage: ./debug/build-debug.sh 1|2|3 /path/to/OS1.44.syx [output.syx]}"
+stock="${2:?usage: ./debug/build-debug.sh 1|2|3 /path/to/OS1.44.syx [output.syx]}"
 case "$n" in
     1) label=DRMD ;;
     2) label=DRD2 ;;
-    *) echo "Debug build 1 or 2." >&2; exit 1 ;;
+    3) label=DRD3 ;;
+    *) echo "Debug build 1, 2 or 3." >&2; exit 1 ;;
 esac
 out="${3:-$here/out/Digitone_OS1.44_DrumMode_DEBUG$n.syx}"
 

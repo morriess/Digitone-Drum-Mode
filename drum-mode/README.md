@@ -165,9 +165,10 @@ current version has run on a unit.
   (lanes' notes changed, velocities changed, mute/unmute, then live recording) record the
   right note (67) and play it back. Holding a recorded step shows ROOT C5 (60) in both
   places: Drum Mode stores the drum as the step's note, which ROOT doesn't show (a display
-  issue to fix too). *Next:* the diagnostic build (OS version DRMD) shows on screen what
-  Drum Mode's playback step receives and passes on for each step, to tell whether the
-  steps reach it at all.
+  issue to fix too). Debug build 1 (DRMD) on the unit: recorded steps never
+  reach Drum Mode's playback with a note, while normal trigs do and come out as 67, so the
+  fault is in what recording stores. *Next:* debug build 2 (DRD2) shows the recorded
+  step's stored trig and note. The process and results: [docs/debugging.md](docs/debugging.md).
 
 - **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
   ahead, and step 1 of a new run is prepared when the previous run stops. So right after you

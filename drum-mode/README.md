@@ -160,8 +160,8 @@ selected one. When you then press RECORD (GRID RECORDING), the trig keys place a
 for that lane only, never the other lanes' steps. Today a lane is selected with TRIG held + pad
 (a pad on its own plays the drum), and GRID RECORDING already shows only the selected lane, so
 the change is mainly selecting by the pad itself and the lit key. Decided: a pad still plays
-its drum when pressed to select it. Still to decide: how that fits with live recording, where
-the pads play and record.
+its drum when pressed to select it; during live recording a pad only plays and records, it
+doesn't change the selected lane.
 
 ## Known bugs (possible fixes)
 

@@ -1,7 +1,7 @@
 diff -ru a/drummode.c b/drummode.c
---- a/drummode.c	2026-11-18 20:54:52.694282264 +0100
-+++ b/drummode.c	2026-11-18 20:54:52.695798422 +0100
-@@ -380,10 +380,13 @@
+--- a/drummode.c	2026-11-18 21:54:37.788669217 +0100
++++ b/drummode.c	2026-11-18 21:54:37.820353640 +0100
+@@ -393,10 +393,13 @@
  
  /* seq-events, interrupt level. The trig stage: note each Drum Mode track's fired step and its time (first read only;
   * the trig is left as it is). */
@@ -15,7 +15,7 @@ diff -ru a/drummode.c b/drummode.c
      if (!first || track < DM_FIRST || track >= DM_FIRST + DM_TRACKS)
          return;
      f = &dm_fire[track - DM_FIRST];
-@@ -405,6 +408,13 @@
+@@ -418,6 +421,13 @@
      (void)step;
      if (!drum_track(track))
          return;
@@ -29,7 +29,7 @@ diff -ru a/drummode.c b/drummode.c
      mutes = dm.mutes[t];
      if (notes[0] >= 0)
          for (int32_t i = 0; i < SQ_NOTES; i++) {
-@@ -432,13 +442,21 @@
+@@ -445,13 +455,21 @@
      }
      dm_step_vel[t] = (uint8_t)vel;
      dm_seq_next[t] = lanes;
@@ -51,7 +51,7 @@ diff -ru a/drummode.c b/drummode.c
  }
  
  static void lane_on(int32_t key, int32_t track, int32_t lane)
-@@ -764,6 +782,8 @@
+@@ -777,6 +795,8 @@
          last_page = p;
          last_track = track;
      }
@@ -60,7 +60,7 @@ diff -ru a/drummode.c b/drummode.c
      if (dm_dirty || dm_note_ticks > 0) {
          *((unsigned char *)ctrl + 0x20) = 1;    /* redraw */
          *((unsigned char *)ctrl + 0x21) = 1;    /* and an LED frame */
-@@ -865,6 +885,13 @@
+@@ -878,6 +898,13 @@
      if (!on_page())
          return;                         /* a menu or another screen is on top: leave it alone */
      page = (track >= DM_FIRST && track < DM_FIRST + DM_TRACKS) ? drum_page() : 0;
@@ -74,14 +74,15 @@ diff -ru a/drummode.c b/drummode.c
      if (page) {
          draw_drum_page(bmp, page, track);
          if (!(dm_note_ticks > 0 && dm_note))
+Only in b: drummode.c.orig
 diff -ru a/mod.json b/mod.json
---- a/mod.json	2026-11-18 20:54:52.694324794 +0100
-+++ b/mod.json	2026-11-18 20:54:52.764743051 +0100
+--- a/mod.json	2026-11-18 21:54:37.788709789 +0100
++++ b/mod.json	2026-11-18 21:54:37.813713193 +0100
 @@ -1,6 +1,6 @@
  {
   "id": "drummode",
-- "version": "0.8",
-+ "version": "0.8-debug1",
+- "version": "0.8.1",
++ "version": "0.8.1-debug1",
   "license": "GPL-2.0-or-later",
   "title": "Drum Mode (Digitone MIDI track drum sequencer)",
   "category": "Sequencer",

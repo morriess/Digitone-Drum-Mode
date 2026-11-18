@@ -6,7 +6,7 @@ tracking that down: the debug builds, how to use them, and what each test showed
 
 ## The debug builds
 
-A debug build is Drum Mode 0.8 with one extra line at the bottom of the screen. It shows what
+A debug build is the current Drum Mode (now 0.8.1, with the fix) with one extra line at the bottom of the screen. It shows what
 Drum Mode's code sees while the pattern plays. Otherwise it works exactly like the normal build.
 
 The changes live in [`debug/`](../debug) as patches against `src/`, so anyone can build the same

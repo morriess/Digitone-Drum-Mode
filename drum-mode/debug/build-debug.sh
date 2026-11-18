@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a Drum Mode debug firmware: Drum Mode 0.8 with one of the debug patches in this folder.
+# Build a Drum Mode debug firmware: Drum Mode (src/) with one of the debug patches in this folder.
 #
 #   ./debug/build-debug.sh 1|2 /path/to/Digitone_and_Digitone_Keys_OS1.44.syx [output.syx]
 #

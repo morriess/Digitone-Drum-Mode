@@ -142,6 +142,8 @@ those two names changed, it goes into one firmware with Drum Mode: see
    *Improvement:* select a lane by pressing its pad alone (1-8), its key lit; GRID RECORDING then
    places and shows that lane's trigs only (today: TRIG + pad selects); the pad still plays its drum,
    and during live recording it doesn't select. See the README.
+   *Improvement:* Drum Mode's settings (on/off, notes, velocities, mutes) per pattern and per track instead of
+   one set for the project. See the README.
    *Nice to have:* synth tracks (T1–T4) as Drum Mode tracks, for up to 8 drum tracks. Not more tracks:
    the pattern (8 × 976-byte tracks), the project format, the track keys and the screens all assume
    4 synth + 4 MIDI, and a project with more would stop loading on the stock OS. The stock OS never

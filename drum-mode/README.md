@@ -163,6 +163,16 @@ the change is mainly selecting by the pad itself and the lit key. Decided: a pad
 its drum when pressed to select it; during live recording a pad only plays and records, it
 doesn't change the selected lane.
 
+**Improvement (asked 2026-11-18): Drum Mode settings per pattern and per track,** like an
+instrument on a track. Today one set of settings is saved for the whole project: which MIDI
+tracks are Drum Mode tracks, and each track's 8 lane notes, velocities and mutes apply to every
+pattern. Instead, each pattern should keep its own for each track, so changing a kit on H02
+leaves A01 alone. Options: core's lane parameters are saved with the pattern but core gives a
+mod only 10 of them (Drum Mode needs about 18 values a track); or Drum Mode's own project data
+grows to a copy per pattern (128 patterns × 4 MIDI tracks × about 18 bytes, about 9 KB). To
+work out: what a new or copied pattern starts with (the current pattern's settings, or the
+defaults), and pattern copy/paste carrying them.
+
 ## Known bugs (possible fixes)
 
 - **Recorded beats don't play back on the unit (fixed in 0.8.2, confirmed on the unit 2026-11-18).** Found on

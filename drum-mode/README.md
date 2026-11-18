@@ -13,8 +13,14 @@ Digitone mk1 core and its sequencer-events mod.
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
-> lanes' notes and velocities with the knobs. Tested in the emulator, not yet on a unit. See [docs/design.md](docs/design.md)
+> lanes' notes and velocities with the knobs. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
+
+> **⚠️ Debugging phase: not working yet on the unit.** First hardware test (2026-11-17,
+> OS 1.44): it boots (DRM8), and the pads, their notes and velocities, the DRUM pages and
+> mutes work. But **recorded beats don't play back** on the unit, though they do in the
+> emulator; see [Known bugs](#known-bugs-possible-fixes). A diagnostic build is being used
+> to find out why.
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
@@ -149,6 +155,19 @@ timing (sending each note at the moment it plays, plus its note-off), so this wa
 current version has run on a unit.
 
 ## Known bugs (possible fixes)
+
+- **Recorded beats don't play back on the unit (blocking, being debugged).** Found on
+  hardware with 0.8 (2026-11-17). Live recording with Drum Mode on writes trigs at the
+  right moments, but pressing PLAY afterwards sends nothing at all (the drum machine's MIDI
+  light stays dark), with Drum Mode still on. Pads play fine, nothing is muted, velocities
+  are normal. A normal trig placed with Drum Mode off plays on the same track; setting
+  ROOT to the drum's note on a recorded step doesn't help. In the emulator the same steps
+  (lanes' notes changed, velocities changed, mute/unmute, then live recording) record the
+  right note (67) and play it back. Holding a recorded step shows ROOT C5 (60) in both
+  places: Drum Mode stores the drum as the step's note, which ROOT doesn't show (a display
+  issue to fix too). *Next:* the diagnostic build (OS version DRMD) shows on screen what
+  Drum Mode's playback step receives and passes on for each step, to tell whether the
+  steps reach it at all.
 
 - **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
   ahead, and step 1 of a new run is prepared when the previous run stops. So right after you

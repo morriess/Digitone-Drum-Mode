@@ -254,13 +254,17 @@ Everything above was tested in [digiemu](https://github.com/irpina/digiemu). Its
 (README "Not yet", docs/STATUS.md "Known limits", docs/FIRMWARE-CHECK.md "What none of it can
 see", at commit 6f2d619) list what it doesn't model. The parts that matter for Drum Mode:
 
-- **The USB/MIDI processor never runs.** The Digitone has a second processor (firmware section
-  8, an ARM) for USB and MIDI. The emulator doesn't run it, so every "the right notes come out"
-  check here stops at the main CPU: the tests catch MIDI where the main CPU hands it over (the
-  port switch 0x400ee1a6 and the sequencer's MIDI appends 0x400f3e70 / 0x400f3c1a). Whether
-  those messages reach the MIDI or USB socket, and when, has never been tested. The first bug
-  found on the unit (recorded beats send nothing) fails exactly there: the emulator shows the
-  notes handed over, the unit's MIDI light stays dark.
+- **The second processor (firmware section 8, an ARM) never runs**, but it turns out not to be
+  on the DIN MIDI path. In OS 1.44 the main CPU sends MIDI out itself: the pads' notes (port
+  switch 0x400ee1a6) and the sequencer's MIDI tracks (its two buffers, flushed at 0x400f37ce by
+  OUTPUT TO's bits at 0x419c5df4) both end in the same two drivers. DIN is 0x40002a3a, the main
+  CPU's UART9 (0xEC074000) fed by eDMA channel 37 from a 4 KB ring; USB is 0x40004bcc, which
+  sends only when the USB link is configured (0x40529244 = 1) and writes the main CPU's USB
+  controller (0xFC0B0000). digiemu models UART9, and the tests can read the bytes on the wire
+  (`din_sent`). Replaying the user's session (four kicks on 67, live recorded, then PLAY): the
+  DIN wire carries `90 43 55` on steps 3, 6, 9 and 12 and each note-off 174 ms later (a 1/16 at
+  86 BPM). So the emulator has checked the path to the DIN jack, not just to the main CPU's
+  hand-over. USB MIDI is not modelled (the link is never configured).
 - **Waits on MIDI and USB hardware are faked** (`unblock` in emu/longrun.py): where the
   firmware waits for that processor, the emulator lets it go on.
 - **The OS starts without its boot flags.** On the unit the bootstrap passes the OS
@@ -273,8 +277,8 @@ see", at commit 6f2d619) list what it doesn't model. The parts that matter for D
 - **The Digitone runs as a plain Digitone** (no Digitone Keys keyboard), and only the keys a
   test presses are exercised.
 
-So a pass in the emulator means the logic on the main CPU is right. It says nothing about the
-MIDI processor, the boot flags' paths, or timing on the unit: those need the unit itself,
+So a pass in the emulator means the logic on the main CPU is right, up to the DIN jack. It says
+nothing about USB MIDI, the boot flags' paths, or timing on the unit: those need the unit itself,
 ideally with a MIDI monitor on the computer (e.g. Snoize's MIDI Monitor on macOS, with the
 Digitone's OUTPUT TO including USB).
 

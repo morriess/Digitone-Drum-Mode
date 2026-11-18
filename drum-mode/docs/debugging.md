@@ -1,7 +1,7 @@
 # Debugging Drum Mode on the unit
 
-Drum Mode 0.8 passes every test in the emulator, but on a real Digitone the beats it records
-don't play back (known bug 1 in the [README](../README.md)). This page is the log of how we're
+Drum Mode 0.8 passed every test in the emulator, but on a real Digitone the beats it recorded
+didn't play back (known bug 1 in the [README](../README.md)). This page is the log of how we're
 tracking that down: the debug builds, how to use them, and what each test showed.
 
 ## The debug builds
@@ -72,7 +72,33 @@ isn't a clue.)
 The emulator, same session: `G41 F4 I67/1 O67 V100>85` and the four notes on the DIN wire. The
 emulator's recording stores the trig and the note (slot 0 = 67), and the unit's apparently doesn't.
 
-### Next: debug 2 on the unit
+### 18 Nov 2026, debug 2 on the unit
+
+`F0/0 N-9 S13 W1 K67/67`: Drum Mode recorded into step 13, and that step holds a trig (W1)
+with note 67, unchanged since recording (K67/67). But no step ever reached Drum Mode's playback,
+not even without a note (F0/0, N still at its start value -9). So the recorded data was right,
+but the sequencer was reading a different copy of the pattern.
+
+### The cause, found in the emulator
+
+Drum Mode wrote through the firmware's track edit objects (`fw_project + 0x11f4 + 0x58 *
+track`); their data pointer (+16) says which pattern they edit. The project holds two such sets
+(the second at `+ 0x1580`), one for each of the firmware's two pattern buffers, and which set
+edits the active pattern swaps with pattern changes. On A01, where every emulator test ran, the
+first set is the right one. After switching to A02 in the emulator, the first set still pointed
+into A01, while the stock trig keys wrote through the second set (found by hooking the stock
+trig setter). Recording there put the beats in A01 and playback sent nothing, as on the unit.
+
+**Fix (0.8.1):** Drum Mode uses the set whose data pointer is the active pattern's track
+(`fw_pattern + 976 * track`). `tests/test_other_pattern.py` records on A02: it fails on 0.8 the
+way the unit did, and passes on 0.8.1; all the other tests still pass.
+
+### Next: 0.8.1 on the unit
+
+Build 0.8.1 (shows as **DR81**) and run the test above on the pattern you were on. The beats
+should play back.
+
+### For reference: what debug 2's readings meant
 
 Debug 2 tells apart why the recorded steps don't count:
 

@@ -248,6 +248,14 @@ those two names changed, it goes into one firmware with Drum Mode: see
   entries from boot (hooks added later never fire for code already translated), which is how this
   was found.
 
+- **Two sets of track edit objects (the 0.8 bug on the unit).** The project holds two sets
+  of the track edit objects (`fw_project + 0x11f4 + 0x58 * track`, and `+ 0x1580`, 0x38c
+  apart), one per pattern buffer; their data pointer (+16, what method 10 returns) says which
+  pattern they edit, and which set edits the active pattern swaps with pattern changes. Every
+  emulator test ran on A01, where the first set is right, so the bug only showed on the unit:
+  on another pattern, recording went into a pattern that wasn't playing. 0.8.1 takes the set
+  that points into `fw_pattern`. Lesson: test on more than one pattern.
+
 ## What the emulator can't show
 
 Everything above was tested in [digiemu](https://github.com/irpina/digiemu). Its own docs

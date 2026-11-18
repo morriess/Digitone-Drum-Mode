@@ -9,23 +9,23 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.8, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.8.1, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
 > lanes' notes and velocities with the knobs. See [docs/design.md](docs/design.md)
 > for the full design and build plan.
 
-> **⚠️ Debugging phase: not working yet on the unit.** First hardware test (2026-11-17,
-> OS 1.44): it boots (DRM8), and the pads, their notes and velocities, the DRUM pages and
-> mutes work. But **recorded beats don't play back** on the unit, though they do in the
-> emulator; see [Known bugs](#known-bugs-possible-fixes). A diagnostic build is being used
-> to find out why.
+> **⚠️ Debugging phase: not confirmed on the unit yet.** First hardware test (2026-11-17,
+> OS 1.44, 0.8): it boots, and the pads, their notes and velocities, the DRUM pages and
+> mutes work. But **recorded beats didn't play back** on any pattern other than A01. 0.8.1
+> (DR81) fixes that in the emulator and waits for a test on the unit; see
+> [Known bugs](#known-bugs-possible-fixes) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.8)
+## Using it (0.8.1)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -156,7 +156,7 @@ current version has run on a unit.
 
 ## Known bugs (possible fixes)
 
-- **Recorded beats don't play back on the unit (blocking, being debugged).** Found on
+- **Recorded beats don't play back on the unit (fixed in 0.8.1, to confirm on the unit).** Found on
   hardware with 0.8 (2026-11-17). Live recording with Drum Mode on writes trigs at the
   right moments, but pressing PLAY afterwards sends nothing at all (the drum machine's MIDI
   light stays dark), with Drum Mode still on. Pads play fine, nothing is muted, velocities
@@ -167,8 +167,20 @@ current version has run on a unit.
   places: Drum Mode stores the drum as the step's note, which ROOT doesn't show (a display
   issue to fix too). Debug build 1 (DRMD) on the unit: recorded steps never
   reach Drum Mode's playback with a note, while normal trigs do and come out as 67, so the
-  fault is in what recording stores. *Next:* debug build 2 (DRD2) shows the recorded
-  step's stored trig and note. The process and results: [docs/debugging.md](docs/debugging.md).
+  fault is in what recording stores. Debug build 2 (DRD2): the step is stored right (trig
+  on, note 67) but the sequencer never sees it. *Cause:* the project keeps two sets of
+  track edit objects, one per pattern buffer, and which one edits the active pattern swaps
+  with pattern changes; 0.8 always used the first, so on any pattern but A01 the beats went
+  into another pattern. *Fix (0.8.1):* use the set that points into the active pattern.
+  Reproduced and fixed in the emulator (`tests/test_other_pattern.py`). The process and
+  results: [docs/debugging.md](docs/debugging.md).
+
+- **PATTERN or BANK + a trig key plays a pad instead of choosing the pattern** (found in
+  the emulator, 0.8.1). On a Drum Mode track, Drum Mode takes every trig key press, also
+  right after [PTN] or [BANK], so pattern and bank select (and chains) don't work there.
+  *Possible fix:* after [PTN] or [BANK], leave the trig keys to the stock until the
+  selection ends (a pick, [NO], or its four seconds). Until then: pick the pattern on
+  another track, or with Drum Mode off.
 
 - **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
   ahead, and step 1 of a new run is prepared when the previous run stops. So right after you
@@ -215,7 +227,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DRM8** on the unit.
+**DR81** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

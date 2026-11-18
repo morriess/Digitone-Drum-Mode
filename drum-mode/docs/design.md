@@ -248,3 +248,33 @@ those two names changed, it goes into one firmware with Drum Mode: see
   entries from boot (hooks added later never fire for code already translated), which is how this
   was found.
 
+## What the emulator can't show
+
+Everything above was tested in [digiemu](https://github.com/irpina/digiemu). Its own docs
+(README "Not yet", docs/STATUS.md "Known limits", docs/FIRMWARE-CHECK.md "What none of it can
+see", at commit 6f2d619) list what it doesn't model. The parts that matter for Drum Mode:
+
+- **The USB/MIDI processor never runs.** The Digitone has a second processor (firmware section
+  8, an ARM) for USB and MIDI. The emulator doesn't run it, so every "the right notes come out"
+  check here stops at the main CPU: the tests catch MIDI where the main CPU hands it over (the
+  port switch 0x400ee1a6 and the sequencer's MIDI appends 0x400f3e70 / 0x400f3c1a). Whether
+  those messages reach the MIDI or USB socket, and when, has never been tested. The first bug
+  found on the unit (recorded beats send nothing) fails exactly there: the emulator shows the
+  notes handed over, the unit's MIDI light stays dark.
+- **Waits on MIDI and USB hardware are faked** (`unblock` in emu/longrun.py): where the
+  firmware waits for that processor, the emulator lets it go on.
+- **The OS starts without its boot flags.** On the unit the bootstrap passes the OS
+  0x00140000, stored at 0x401F55C0 and tested in more than twenty places; the emulator's direct
+  start passes 0. Code that branches on those flags may take another path on the unit.
+- **Interrupts and timing are approximated:** the interrupt controllers' masks aren't modelled,
+  and forced reschedules are stood in for. Timing-sensitive behaviour (task order, races) may
+  differ on the unit.
+- **No caches** are modelled, so a cache/DMA coherency problem can't show.
+- **The Digitone runs as a plain Digitone** (no Digitone Keys keyboard), and only the keys a
+  test presses are exercised.
+
+So a pass in the emulator means the logic on the main CPU is right. It says nothing about the
+MIDI processor, the boot flags' paths, or timing on the unit: those need the unit itself,
+ideally with a MIDI monitor on the computer (e.g. Snoize's MIDI Monitor on macOS, with the
+Digitone's OUTPUT TO including USB).
+

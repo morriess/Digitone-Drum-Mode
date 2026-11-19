@@ -92,7 +92,8 @@ stock. To verify: copy/paste behaviour of those parameters.
 **Combining with DigiArp.** The Mod Shop's DigiArp is built on core 4.1 and names the MIDI
 senders `fw_note_on`/`fw_note_off`, which core 5.3 now exports for other routines. Rebuilt with
 those two names changed, it goes into one firmware with Drum Mode: see
-[../../digiarp-core5](../../digiarp-core5/) (emulator-tested, both mods' tests pass).
+the fork [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3) (emulator-tested,
+both mods' tests pass; until 2026-11-19 the folder digiarp-core5 in this repo).
 
 ## Open questions
 

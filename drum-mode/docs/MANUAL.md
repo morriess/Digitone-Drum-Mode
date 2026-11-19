@@ -53,8 +53,8 @@ project either. You build it from your own copy of the stock OS file.
   m68k cross compiler (on Debian/Ubuntu: `sudo apt install gcc-m68k-linux-gnu`). Then:
 
   ```
-  git clone https://github.com/morriess/Digitone-mods.git
-  cd Digitone-mods/drum-mode
+  git clone https://github.com/morriess/Digitone-Drum-Mode.git
+  cd Digitone-Drum-Mode/drum-mode
   ./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx
   ```
 
@@ -351,7 +351,7 @@ Reinstall the stock OS from the startup menu: see
 
 **Something else behaves oddly.**
 Please report it, ideally with a photo of the screen, at the repository's
-[issues page](https://github.com/morriess/Digitone-mods/issues).
+[issues page](https://github.com/morriess/Digitone-Drum-Mode/issues).
 
 ## Limitations
 
@@ -370,8 +370,8 @@ Please report it, ideally with a photo of the screen, at the repository's
 - **Not yet checked with Drum Mode on:** MUTE mode (FUNC + BANK, then trig keys), STEP
   RECORDING (RECORD + STOP) and pattern copy/paste (PTN + trig key, RECORD / STOP). The trig
   keys may play pads there instead.
-- **Combining with DigiArp MIDI** needs the rebuilt DigiArp in this repo's
-  [digiarp-core5](../../digiarp-core5/) folder: the Mod Shop's version is built on an older
+- **Combining with DigiArp MIDI** needs DigiArp rebuilt on core 5.3, in the fork
+  [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3): the Mod Shop's version is built on an older
   elekloader core and can't go into one firmware with Drum Mode. Other combinations are
   untested.
 

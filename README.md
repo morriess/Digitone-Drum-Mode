@@ -4,7 +4,7 @@ Drum Mode, a custom-firmware mod for the **Elektron Digitone mk1** (OS 1.44) tha
 track into an 8-lane drum sequencer, built on [elekloader](https://github.com/irpina/elekloader).
 
 > **Beta.** Drum Mode 0.10 works on a real Digitone (OS 1.44), recorded beats included. A few
-> smaller [known bugs](drum-mode/README.md#known-bugs-possible-fixes) remain, so back up your
+> smaller [known bugs](drum-mode/README.md#known-bugs) remain, so back up your
 > projects before you use it.
 
 | Mod | What it does | Status |

@@ -40,9 +40,11 @@ on the screen.
 | Muting | Mute mode per track | Drum + Mute + pad mutes one drum track | Modifier + key mutes a lane |
 | MIDI | One channel per track | The drum track sends on one channel, with a note per instrument | One channel, a note per lane |
 
-## How it works for the player
+## How it works for the player (the original plan)
 
-Key combinations are proposals, to be checked against what the Digitone mk1 leaves free.
+The plan as written before building; what was built is in the [manual](MANUAL.md) and the
+[UI additions](ui/README.md) (lanes are picked with the pad or TRIG + pad, the DRUM pages sit
+behind LFO, mutes are FUNC + pad, and the screen grid is still a nice-to-have).
 
 1. **Turn it on.** Select a MIDI track (A–D) and use a shortcut to toggle DrumMode.
 2. **Pick a lane.** Hold the modifier and press trig 1–8 to select lane 1–8, without sounding it.
@@ -57,20 +59,19 @@ Key combinations are proposals, to be checked against what the Digitone mk1 leav
 - Trig keys: lit for the selected lane's steps; the playing step blinks as usual.
 - In KEYBOARD mode, keys 1–8 light up as their lane fires.
 
-## Data model and MIDI output
+## Data model and MIDI output (as built, 0.10)
 
-| Item | Per | Size | Notes |
+| Item | Per | Where | Notes |
 | --- | --- | --- | --- |
-| Lane steps (on/off) | pattern, track, lane, step | 8 lanes × 64 steps = 64 bytes per track | Follows the track's own length |
-| Lane note | project, track, lane | 8 bytes | Default GM map: 36 kick, 38 snare, 42 closed hat, 46 open hat, 39 clap, 45 low tom, 50 high tom, 49 crash |
-| Lane velocity | project, track, lane | 8 bytes | One velocity per lane in v1 |
-| Lane mute | project, track | 1 byte | Bit per lane |
-| DrumMode on/off | pattern, track | 1 bit | Off = the track behaves stock |
+| Lane steps | pattern, track, step | the stock pattern data | a normal MIDI trig; the step's notes (a note + 7 intervals, the stock's chord) are the lanes on it |
+| Lane notes and velocities | kit | project data "DRMK" | up to 10 kits of 8 notes + 8 velocities; default GM map: 36 kick, 38 snare, 42 closed hat, 46 open hat, 39 clap, 45 low tom, 50 high tom, 49 crash |
+| Kit number, lane mutes, Drum Mode on/off | pattern, track | core lane parameter 191, saved with the pattern | 0x2000 set, 0x1000 on, kit << 8, mutes (bit per lane) |
+| Selected lane | track | project data "DRMK" | |
 
 - All lanes send on the MIDI track's channel, nothing else.
 - On a step, all active and unmuted lanes fire together, up to 8 notes.
-- Note length: the track's LEN for v1; note-offs are always sent.
-- Per-step velocity / accents: v2, since the sequencer hook gives one velocity per step.
+- Note length: the trig's own length (LEN); note-offs are always sent.
+- One velocity per step (the sequencer gives a step one): the loudest of its unmuted lanes.
 
 ## Technical feasibility
 
@@ -95,14 +96,17 @@ those two names changed, it goes into one firmware with Drum Mode: see
 the fork [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3) (emulator-tested,
 both mods' tests pass; until 2026-11-19 the folder digiarp-core5 in this repo).
 
-## Open questions
+## Open questions (answered)
 
-- Which drum machine or synth, and which notes does it expect?
-- One velocity per lane, or an accent lane in v1?
-- Which modifier for picking a lane?
-- Note length: track LEN or always short?
-- DigiArp + DrumMode in one firmware, or DrumMode-only first?
-- License?
+- *Which drum machine, which notes?* Any: the lanes start on the GM drum notes and each lane's
+  note can be set (pad + A, the Drum Notes page).
+- *One velocity per lane, or an accent lane?* One velocity per lane (pad + B, the Drum Velocity
+  page); a step with several lanes plays at the loudest. No accent lane.
+- *Which modifier for picking a lane?* TRIG held + pad (0.7), and since 0.9 the pad itself.
+- *Note length?* The trig's own length (the track's LEN), as any MIDI trig.
+- *DigiArp and Drum Mode in one firmware?* Yes, with DigiArp rebuilt on core 5.3: the fork
+  [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3).
+- *License?* GPL-2.0-or-later, as elekloader and DigiArp.
 
 ## Build plan
 

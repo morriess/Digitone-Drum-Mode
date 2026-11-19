@@ -9,291 +9,103 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.10, live lanes, live recording, lane mutes, a lane strip that follows
-> playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
-> MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
-> in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
-> lanes' notes and velocities with the knobs. See [docs/design.md](docs/design.md)
-> for the full design and build plan.
+> **Beta: working on the unit.** First hardware tests on OS 1.44 (2026-11-17/18, 0.8.2): pads,
+> notes, velocities, DRUM pages, mutes and recorded beats work. The features added since (0.9 to
+> 0.10) are tested in the emulator and wait for the unit; see [Known bugs](#known-bugs) and
+> [docs/debugging.md](docs/debugging.md).
 
-> **Beta: working on the unit (0.8.2, 2026-11-18).** Hardware tests on OS 1.44: it boots,
-> the pads, their notes and velocities, the DRUM pages and mutes work, and since 0.8.2
-> recorded beats play back (0.8 and 0.8.1 wrote them into another pattern; see
-> [docs/debugging.md](docs/debugging.md)). A few smaller [known bugs](#known-bugs-possible-fixes)
-> remain.
+**Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
+[UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds), the
+[design notes](docs/design.md) (how it works inside, findings) and the
+[debugging log](docs/debugging.md).
 
-**Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
-the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
+## What it does (0.10)
 
-## Using it (0.10)
+- **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
+- **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
+  track's MIDI channel (GM notes to start with); a pad also selects its lane.
+- **Live recording** writes the pads into the pattern as normal MIDI trigs (several drums on
+  one step become the trig's chord notes).
+- **Grid editing per lane:** in GRID RECORDING the 16 trig keys place and show the selected
+  lane's steps; a held step takes the stock's locks, micro timing and copy/paste.
+- **Lane mutes** with FUNC + pad (outside recording).
+- **Two DRUM pages** behind the MIDI track's LFO key for all lanes' notes and velocities.
+- **On screen and LEDs:** a lane strip that follows playback, the selected lane's pad lit, and
+  keys 9–16 as a running light in time with the pattern.
+- **Settings per pattern and per track,** kits (notes and velocities) shared in the project,
+  at most 10; a new pattern takes a copy of the one you came from (being tried out).
+- **The stock's own trig key functions stay:** pattern and bank select, chains, FUNC + trig in
+  recording.
 
-1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
-   SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
-   drum machine's channel. With CHAN off (the default) nothing is sent.
-2. **Hold a track key** to open the Mod Menu and pick **DRUM MODE** (YES or its
-   trig key). The corner shows `DRUM A ON`.
-3. Trig keys **1–8** now play the 8 lanes, several at once:
+## Plans
 
-   | Trig | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
-   | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-   | Lane | Kick 36 | Snare 38 | Closed hat 42 | Open hat 46 | Clap 39 | Low tom 45 | High tom 50 | Crash 49 |
+**Nice to have**
+- **Screen overview of all lanes:** an 8 × 16 grid, e.g. shown while TRIG is held, the
+  selected lane highlighted.
+- **A revised DRUM settings page** (its place behind LFO, layout, what it shows), after use on
+  the unit.
+- **Drum kit presets:** save a track's setup as a kit and load it onto any MIDI track. Within a
+  project this fits the 0.10 kits; across projects it needs storage outside the project (a SysEx
+  dump to the computer and back would be the workaround).
+- **Synth tracks as extra drum tracks, or as normal MIDI tracks:** a synth track you don't need
+  sends its steps as MIDI (its voice silent), for up to 8 drum or MIDI tracks. Not more tracks:
+  the format has exactly 4 synth + 4 MIDI. The hard part is timing each note and its note-off.
 
-   The screen's top-right corner shows 8 small boxes: a lane's box lights while its pad
-   is held, and blinks each time the sequencer plays it (see [docs/ui](docs/ui/README.md)).
-4. **Set a pad's note:** hold the pad and turn **A**. You hear each note as you turn,
-   so you can find the right sound on your drum machine by ear. Turn **B** for its
-   velocity. The corner shows the pad, its note and velocity, e.g. `BD 38 V100`
-   (holding a pad a moment shows it too). While a pad is held the knobs only change
-   the pad, not the page underneath.
-5. Pick DRUM MODE again to turn it off.
+**To decide after testing**
+- A new pattern copies the last pattern's Drum Mode settings (the user's choice, 2026-11-19), or
+  starts from the defaults.
 
-### The DRUM pages
+**Done** (asked by the user): a pad selects its lane, lit (0.9); keys 9–16 as a running light
+(0.9.1); settings per pattern and per track (0.10).
 
-Press **LFO** twice on a Drum Mode track: after the LFO page come **Drum Notes** and
-**Drum Velocity** (`LFO (1/3)`, `Drum Notes (2/3)`, `Drum Velocity (3/3)`).
+## Known bugs
 
-![The Drum Notes page](docs/ui/drum-notes-page.png)
-
-Knobs **A–H** are lanes 1–8, in the same layout as the screen: A–D the top row (BD, SD,
-CH, OH), E–H the bottom row (CP, LT, HT, CY).
-
-- **Drum Notes:** each cell shows the lane's note name and number (`D3 38`). Turning a knob
-  plays each new note, so you can find the right sound on your drum machine by ear.
-- **Drum Velocity:** each cell shows the lane's velocity (1–127); a muted lane says `MUTE`.
-
-The selected lane's cell (TRIG + pad) is inverted. On a MIDI track without Drum Mode the
-pages say `DRUM MODE IS OFF`, and the knobs do nothing there.
-
-Holding a pad and turning A/B still works too, from any page.
-
-### Live recording
-
-Start live recording as usual: **hold RECORD and press PLAY**. Play the pads; each hit
-is written into the pattern at the nearest step (a hit in the first half of a step lands
-on it, in the second half on the next one). Several pads on one step become one trig
-with several notes. Stop with STOP.
-
-Recorded hits are normal MIDI trigs: you see them on the grid with Drum Mode off, and
-they save, copy and clear like any trig. On playback a step plays at the loudest of its
-pads' velocities.
-
-- Recording always snaps to the nearest step; the stock "Live Rec: Quantized/Unquantized"
-  setting doesn't apply to the pads.
-- A step holds up to 8 notes, so all 8 pads fit on one step.
-
-### Programming a lane on the grid
-
-1. **Select a lane:** press its pad (1–8). It plays, and from then on its key stays lit
-   **dim white** (red if the lane is muted) and a line under its box in the strip marks the
-   selected lane. During live recording a pad doesn't change the selection. To select
-   without hearing it, hold the **TRIG** page key and press the pad (the corner shows
-   `EDIT CH`).
-2. Press **RECORD** (while stopped) for GRID RECORDING, as you would to place trigs.
-3. The 16 trig keys are now the selected lane's steps. Press a key to put the lane on
-   that step, press it again to take it off. The keys light **red** where the selected
-   lane plays; the rest stay dark, even if other drums play there.
-4. To switch lanes, leave GRID RECORDING, press another pad (or TRIG + pad at any time),
-   and the keys show that lane's steps.
-5. For patterns longer than 16 steps, **PAGE** moves through the pages as usual.
-6. 0.9.2: a held step is the stock's held trig: parameter locks (knobs), micro timing
-   (LEFT/RIGHT), trig copy (RECORD) and paste (STOP) work on drum steps, for the whole step.
-   A quick tap adds or takes out the lane; held long or used while held, it stays.
-
-Steps are stored the same way live recording stores them: a normal trig, with several
-drums on one step as its chord notes. Taking the last drum off a step removes its trig.
-You can mix grid editing and live recording freely.
-
-In GRID RECORDING, a Drum Mode track's trig keys belong to the lane, so holding a trig
-key to p-lock it isn't available there.
-
-### The trig key LEDs
-
-Outside GRID RECORDING, pads 1–8 light **white** while held or when the sequencer plays
-their lane, and a muted lane's pad is **dim red**. Keys 9–16 stay dark.
-
-### Muting a lane
-
-**FUNC + a pad** mutes that lane: the pattern plays on without it, and its steps stay
-in the pattern. FUNC + the pad again unmutes it. Not in any recording mode (0.9.3): there
-FUNC + a trig key is the stock's (lock trigs in GRID RECORDING). The corner shows `BD MUTE` / `BD ON`,
-and in the lane strip a muted lane is a dash instead of a box. On a step with several
-drums only the muted one drops out. The pad itself still plays (and records) when you
-hit it.
-
-The notes, velocities, mutes and which tracks have Drum Mode on are saved with the project.
-A project made without Drum Mode starts with the GM notes above and Drum Mode off.
-
-While Drum Mode is on for the selected track, trig keys 9–16 do nothing outside GRID
-RECORDING. FUNC + trig keys 9–16 still do what they normally do.
-
-**OS 1.44 only** from 0.4: it uses firmware addresses found in OS 1.44.
-
-## What it will do
-
-- Turn DrumMode on per MIDI track (A–D).
-- Nice to have: an 8 × 16 overview of all lanes on the screen.
-- All lanes send only on the MIDI track's own channel.
-
-## Milestones
-
-1. Groundwork: build setup on core 5.x, an empty mod that loads and changes nothing
-2. Live lanes: trig 1–8 send lane notes in KEYBOARD mode
-3. Lane playback through the sequencer hook
-4. Lane storage in the pattern, drum map in the project
-5. Grid editing, lane select and per-lane trig LEDs *(0.7)*
-6. *Nice to have:* screen grid of all lanes. Lightest form: an 8 × 16 overview shown only while
-   TRIG is held (as when selecting a lane), the selected lane highlighted. Waiting on hardware testing.
-7. Polish: lane mute, DRUM page, LIVE REC *(lane mute 0.5, live rec 0.4, DRUM pages 0.8)*
-
-**Nice to have, after hardware testing:** a revised DRUM settings page (its place behind LFO,
-its layout, what it shows) once it has been used on a unit.
-
-**Nice to have:** drum kit presets: save a Drum Mode track's setup (8 notes, velocities, mutes)
-as a kit and load it onto any MIDI track. Kits saved in the project are possible now; kits
-shared across projects need storage outside the project, which the Digitone mk1's core doesn't
-offer yet (a SysEx dump to the computer and back would be the workaround).
-
-**Nice to have:** synth tracks as extra drum tracks. More than 8 tracks isn't realistic (the
-pattern and project format has exactly 4 synth + 4 MIDI tracks), but a synth track you don't
-need could send its steps as MIDI through Drum Mode, its own voice kept silent: up to 8 drum
-tracks. The same could make a synth track a **normal MIDI track** (its steps sent as plain
-MIDI notes, without Drum Mode's lanes), for up to 8 MIDI tracks of any kind. The hard part is
-timing (sending each note at the moment it plays, plus its note-off), so this waits until the
-current version has run on a unit.
-
-**Improvement (asked 2026-11-18, after the first working hardware test; done in 0.9):** pick a lane with
-its pad alone. Pressing trig key 1-8 selects that lane (voice), and its key stays lit as the
-selected one. When you then press RECORD (GRID RECORDING), the trig keys place and show trigs
-for that lane only, never the other lanes' steps. Today a lane is selected with TRIG held + pad
-(a pad on its own plays the drum), and GRID RECORDING already shows only the selected lane, so
-the change is mainly selecting by the pad itself and the lit key. Decided: a pad still plays
-its drum when pressed to select it; during live recording a pad only plays and records, it
-doesn't change the selected lane.
-
-**Improvement (asked 2026-11-19; done in 0.9.1): keys 9–16 show the sequence's timing.**
-While playing, each key stands for 2 steps of the 16-step page that plays and blinks white
-on each, in time; longer tracks follow the page, shorter and odd lengths leave the keys after
-the last step dark (a key with one step blinks once).
-
-**Improvement (asked 2026-11-18; done in 0.10, to test on the unit): Drum Mode settings per
-pattern and per track,** like an instrument on a track. Each pattern keeps, for each MIDI track,
-its own Drum Mode on/off, mutes, notes and velocities.
-- *How it's stored (decided 2026-11-19, option 2 of 3):* core keeps all mods' project data in
-  480 bytes of the project file (DigiArp's block takes 272), so 128 patterns' full settings
-  (about 9 KB) can't go there. Each pattern stores, in one core lane parameter (id 191, saved
-  with the pattern), each track's on/off, mutes and **kit** number; the kits (8 notes + 8
-  velocities each) are in the project, **at most 10** different ones (identical ones are shared;
-  a kit used by one pattern track is edited in place, one used by more is copied first). With
-  all 10 in use a new note or velocity is refused and the corner says `KIT MEM FULL`. It takes
-  one of a pattern's 80 lock rows.
-- *A new pattern (to try out, the user's choice):* a pattern without settings yet takes a copy
-  of the pattern you came from. Whether this is how it should work is to be decided after
-  testing; the alternative is the defaults.
-- *Copy/paste:* FUNC + RECORD then FUNC + STOP (the active pattern) carries the settings
-  along, once the pasted steps match the copied pattern's. The other route (PTN + trig key +
-  RECORD, held trig keys + STOP) is part of the pattern copy/paste point below, to look into.
-- *Pattern reload* (FUNC + NO) brings the saved settings back with the pattern.
-- *Older projects* (saved with 0.9.x) open with Drum Mode off and the default kit: the old
-  project-wide block is gone (its 80 bytes are needed for the kits).
-- `tests/test_pattern_settings.py` (18 checks: per pattern, copy on first visit, on/off per
-  pattern, paste, save and load, the 10-kit limit); saving and loading together with DigiArp
-  checked too.
-
-## Known bugs (possible fixes)
-
-- **Recorded beats don't play back on the unit (fixed in 0.8.2, confirmed on the unit 2026-11-18).** Found on
-  hardware with 0.8 (2026-11-17). Live recording with Drum Mode on writes trigs at the
-  right moments, but pressing PLAY afterwards sends nothing at all (the drum machine's MIDI
-  light stays dark), with Drum Mode still on. Pads play fine, nothing is muted, velocities
-  are normal. A normal trig placed with Drum Mode off plays on the same track; setting
-  ROOT to the drum's note on a recorded step doesn't help. In the emulator the same steps
-  (lanes' notes changed, velocities changed, mute/unmute, then live recording) record the
-  right note (67) and play it back. Holding a recorded step shows ROOT C5 (60) in both
-  places: Drum Mode stores the drum as the step's note, which ROOT doesn't show (a display
-  issue to fix too). Debug build 1 (DRMD) on the unit: recorded steps never
-  reach Drum Mode's playback with a note, while normal trigs do and come out as 67, so the
-  fault is in what recording stores. Debug build 2 (DRD2): the step is stored right (trig
-  on, note 67) but the sequencer never sees it. *Cause:* the project keeps a set of track
-  edit objects per pattern (128); 0.8 always used A01's, so on any other pattern the beats
-  went into A01. 0.8.1 also tried A02's (enough for the emulator test on A02, not for the
-  unit on H02; debug build 3 showed it). *Fix (0.8.2):* use the active pattern's own set.
-  Reproduced and fixed in the emulator on H02 (`tests/test_other_pattern.py`). The process and
-  results: [docs/debugging.md](docs/debugging.md).
-
-- **The DRUM pages came up empty after picking a pattern (fixed in 0.8.3, to confirm on the
-  unit).** Reported on the unit 2026-11-18 on H02: Drum Notes and Drum Velocity showed their
-  empty knob boxes, not the 8 lanes. *Cause:* picking a pattern with BANK or PTN leaves one of
-  the firmware's views on top of the page, empty and invisible; Drum Mode drew only while the
-  page itself was on top, so it drew nothing at all (the corner strip went too). Reproduced in
-  digiemu (A01 draws, H02 picked with BANK didn't). *Fix (0.8.3):* Drum Mode looks past that
-  view. `tests/test_other_pattern.py` checks the Drum Notes page on H02.
-
-- **Stock trig key functions blocked on a Drum Mode track (fixed in 0.9.2 for the
-  essential ones, to confirm on the unit).** Drum Mode took every trig key press on a Drum
-  Mode track, so stock functions that use the trig keys didn't work there. Checked
-  against the manual (2026-11-19):
-  - *Fixed in 0.9.2:* pattern select (PTN then a trig key, or PTN held + a trig key), bank
-    select (BANK, trig 9–16, a pattern) and chains: the trig keys go to the stock while its
-    select view is open (0x401c68dc on top), PTN or BANK is held, or a trig key it took is
-    still held. And holding a step in GRID RECORDING: the stock now sees the step held, so
-    parameter locks, micro timing, trig copy/paste and clearing locks work (for the whole
-    step); Drum Mode's quick tap still adds or takes out the lane, and before the release it
-    tells the stock the key was held long, so the stock never deletes the step.
-    `tests/test_stock_keys.py`.
-  - *To look into / fix later:* MUTE mode (FUNC + BANK, then the trig keys mute tracks;
-    the pads would play), STEP RECORDING (RECORD + STOP; the trig keys would play pads, maybe
-    wanted for drums), and pattern copy/paste (PTN + trig key, then RECORD / STOP).
-  - *Fixed in 0.9.3 (decided 2026-11-19):* FUNC + trig keys 1–8 no longer mute a lane in any
-    recording mode (GRID, STEP or LIVE RECORDING): there they're the stock's (in GRID
-    RECORDING its lock trigs). Outside recording FUNC + pad still mutes.
-  - *Not decided yet:* trig keys while a menu or other screen is open (Drum Mode doesn't
-    check the screen for keys); not tied to recording. To find out first whether any stock
-    menu uses the trig keys at all.
-  - *Known limits:* a NOTE lock on a drum step changes its notes; a velocity lock is kept
-    but Drum Mode plays the step at its lanes' velocity, so it has no effect.
-  - *To check (on the unit):* the 1.5-second rule. The stock's bank select seems to swallow
-    the release of the bank's trig key (seen in digiemu after BANK + trig 16), so 0.9.2
-    counts a trig key it left to the stock as released after 1.5 s without events. Check on
-    the unit that the release really goes missing (or whether it's the emulator), that the
-    trig keys come back to Drum Mode after a bank pick (pads play, GRID RECORDING edits
-    lanes), that a chain held longer than 1.5 s still works (a held key should keep sending
-    repeats), and whether a cleaner fix exists: finding the release where the stock takes it,
-    or reading the keys' held state from the firmware instead of a timer.
-
-- **Step 1 after PLAY follows the old setting (fixed in 0.9.4, to confirm on the unit).** The Digitone prepares each step one step
-  ahead, and step 1 of a new run is prepared when the previous run stops. So right after you
-  turn Drum Mode off or on, or change a mute or velocity while stopped, step 1 of the next run
-  still plays the old way; from step 2, and from the next run on, everything follows the new
-  setting. *Fix (0.9.4):* after Drum Mode on/off, a mute, a lane note or a velocity changes,
-  Drum Mode calls seq-events' `sq_rearm` for the track, which has the sequencer prepare step 1
-  again while stopped. `tests/test_drum_off.py` now checks the first bar after each change.
-  Found in the emulator with `tests/test_drum_off.py`; details in
-  [docs/design.md](docs/design.md) ("Drum Mode off").
-- **The UI froze with the Mod Menu open (emulator only, cause unknown).** In one exact
-  sequence of `tests/test_drum_off.py` (Drum Mode turned off, two bars played, trig key 1
-  pressed, then the Mod Menu opened with YES straight after letting go of the track key), the
-  screen and keys stopped responding while the sequencer and audio kept running. It happened
-  every time in that sequence, but not with a short pause before YES, not without the trig
-  key press, and not in shorter scripts with the same steps, so it may be the emulator, the
-  core's Mod Menu, the stock OS or Drum Mode. *Next:* watch for it on the unit (the Mod Menu
-  stops responding to YES, NO and the page keys). Details in
+**Open**
+- **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) on a Drum Mode track: not
+  checked; the trig keys may play pads, and the Drum Mode settings don't follow this route yet
+  (FUNC + RECORD / FUNC + STOP does both).
+- **MUTE mode** (FUNC + BANK, then the trig keys mute tracks) and **STEP RECORDING** (RECORD +
+  STOP) on a Drum Mode track: not checked; the trig keys may play pads (in step recording that
+  may even be wanted).
+- **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. Not decided; first
+  to find out whether any stock menu uses the trig keys.
+- **The DRUM pages clash with DigiTables** (both claim mod page 27). DigiTables is OS 1.43 only
+  so far. *Possible fix:* pages 28 and 29 (29 clashes with CTRL-PLUS, which needs an older
+  core anyway; 30 is core's second TRIG page once a mod puts knobs there).
+- **ROOT shows C5 on a recorded step:** Drum Mode stores the drum as the step's note, which the
+  stock's ROOT doesn't show. A display issue only.
+- **The UI froze with the Mod Menu open (emulator only, cause unknown),** in one exact sequence
+  of `tests/test_drum_off.py`. *Next:* watch for it on the unit. Details in
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
-- **The lane strip sometimes disappears when switching pages (on the unit).** Reported on
-  hardware (0.8, 2026-11-17) while browsing between pages, e.g. LFO and then SYN1; not seen in
-  the emulator, where the strip was there after every page switch. To check: whether it
-  happened on Drum Notes / Drum Velocity (the strip is left out there on purpose, so the title
-  stays readable), and whether it comes back by itself or only on a pad hit. *Possible fix:*
-  Drum Mode redraws the corner only when something in it changes; if the Digitone sometimes
-  repaints the whole page after Drum Mode has drawn, the strip stays wiped until the next
-  change. Also asking for a redraw whenever the shown page changes would cover that.
-  *Probably the same cause as the empty DRUM pages (fixed in 0.8.3):* after a pattern change
-  the strip went too, until something else took that view off the stack. To confirm on 0.8.3.
-- **The DRUM pages clash with DigiTables.** Drum Mode's two pages use mod page slots 27 and
-  28; DigiTables (irpina) also claims 27, so the two can't be built into one firmware.
-  DigiTables only exists for OS 1.43 so far, so this doesn't matter on 1.44 yet. *Possible
-  fix:* move the pages to 28 and 29 (29 clashes with CTRL-PLUS instead, which needs an older
-  core anyway). Slot 30 is out: core claims it for the second TRIG page as soon as a mod puts
-  knobs there (DigiChoke, DigiLoop, DigiPCSound).
+
+**To check on the unit**
+- **The lane strip sometimes disappeared when switching pages** (0.8). Probably the same cause
+  as the empty DRUM pages, fixed in 0.8.3.
+- **The 1.5-second rule (0.9.2):** after a bank pick (BANK + trig 16) the emulator never sent
+  that key's release, so a trig key Drum Mode left to the stock counts as released after 1.5 s
+  without events. Check that the release really goes missing on the unit, that the trig keys
+  come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works, and
+  whether a cleaner way exists (the firmware's own held-key state).
+- Everything from 0.9 to 0.10.
+
+**Known limits**
+- A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode
+  plays the step at its lanes' velocity, so it has no effect.
+- **At most 10 kits** per project (`KIT MEM FULL`), and the per-pattern settings take one of a
+  pattern's 80 lock rows.
+- **Saving on the stock OS** drops Drum Mode's settings (the steps stay).
+
+**Fixed** (details in the [debugging log](docs/debugging.md) and the
+[design notes](docs/design.md))
+- Recorded beats didn't play back on the unit: written into another pattern's data (0.8.2,
+  confirmed on the unit).
+- The DRUM pages came up empty and the corner strip vanished after picking a pattern with BANK
+  or PTN: an empty firmware view stayed on top (0.8.3).
+- Pattern and bank select, chains and held grid steps didn't reach the stock on a Drum Mode
+  track (0.9.2); FUNC + pad muted a lane while recording (0.9.3).
+- Step 1 after PLAY followed the setting from before a change made while stopped (0.9.4).
+- Per-pattern settings weren't saved: the first design didn't fit core's 480 bytes of project
+  data (redone before release, 0.10).
 
 ## Building
 
@@ -321,17 +133,13 @@ press keys and check the MIDI the Digitone sends:
 ```
 git clone https://github.com/irpina/digiemu ~/digiemu
 cd ~/digiemu && uv sync && tools/install-patched-unicorn.sh
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_lanes.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_grid_edit.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_drum_page.py out/Digitone_OS1.44_DrumMode.syx
-DIGIEMU=~/digiemu uv run --project ~/digiemu python tests/test_drum_off.py out/Digitone_OS1.44_DrumMode.syx
+for t in tests/test_*.py; do
+    DIGIEMU=~/digiemu uv run --project ~/digiemu python "$t" out/Digitone_OS1.44_DrumMode.syx
+done
 ```
 
-The first run sets up the firmware (a few minutes); screenshots land in the work folder.
+Each test set takes a few minutes; screenshots land in its work folder. All 13 sets
+(210 checks) pass on 0.10.
 
 ## Layout
 
@@ -348,8 +156,16 @@ The first run sets up the firmware (a few minutes); screenshots land in the work
 | `tests/test_strip_playback.py` | The strip blinking on playback, on time; not over menus (11 checks) |
 | `tests/test_grid_edit.py` | Lane select, grid editing with pages, the trig key LEDs (26 checks) |
 | `tests/test_drum_page.py` | The DRUM pages: knobs set notes and velocities, the pages underneath untouched (15 checks) |
-| `tests/test_drum_off.py` | A beat with Drum Mode on, off and on again: what plays, what's kept (17 checks) |
-| `docs/design.md` | Design and build plan |
+| `tests/test_drum_off.py` | A beat with Drum Mode on, off and on again: what plays, what's kept, step 1 at once (17 checks) |
+| `tests/test_other_pattern.py` | Recording and the DRUM pages on a pattern far from A01 (H02) (7 checks) |
+| `tests/test_lane_select.py` | A pad selects its lane, its key lit; not in live recording (15 checks) |
+| `tests/test_run_light.py` | Keys 9–16 as the running light: 16, odd and longer lengths, on time (9 checks) |
+| `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording (25 checks) |
+| `tests/test_pattern_settings.py` | Settings per pattern: copy on first visit, paste, save/load, the 10-kit limit (18 checks) |
+| `debug/` | The debug builds used on the unit (patches and a build script; see the debugging log) |
+| `docs/MANUAL.md` | The user manual |
+| `docs/design.md` | Design, build plan and findings |
+| `docs/debugging.md` | The log of debugging on the unit |
 | `docs/ui/` | The screen UI explained, with screenshots |
 
 ## Disclaimer

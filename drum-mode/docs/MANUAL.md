@@ -1,13 +1,13 @@
 # Drum Mode user manual
 
-**Drum Mode 0.9.4 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.10 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.9.4 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
+> **Beta.** 0.10 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -59,7 +59,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D094**).
+  **D100**).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -83,7 +83,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and the OS version on its boot screen now reads **D094**
+The Digitone starts as normal, and the OS version on its boot screen now reads **D100**
 instead of 1.44.
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
@@ -281,10 +281,22 @@ More detail, with every screen: [Drum Mode UI additions](ui/README.md).
 
 ## Saving, loading and the stock OS
 
-- **Saved with the project:** which MIDI tracks have Drum Mode on, each track's 8 notes
-  and velocities, and the mutes.
-- **Saved in the patterns:** the steps themselves, as normal MIDI trigs.
-- **A project made without Drum Mode** opens with Drum Mode off and the GM notes.
+- **Per pattern and per track** (0.10): each pattern keeps, for each MIDI track, whether
+  Drum Mode is on, the mutes, and the notes and velocities. Change the kit on A02 and A01
+  keeps its own.
+- **A new pattern** (one you haven't used with Drum Mode yet) starts as a copy of the
+  pattern you came from, so your kit carries over until you change it there. *This is being
+  tried out; it may change to starting from the defaults.*
+- **Copy and paste a pattern** with FUNC + RECORD and FUNC + STOP, and its Drum Mode
+  settings come along.
+- **Up to 10 different kits per project.** A kit is a set of 8 notes and 8 velocities;
+  patterns and tracks with the same notes and velocities share one. With all 10 in use, a
+  new note or velocity isn't kept and the corner says `KIT MEM FULL`: set another pattern
+  back to an existing kit to free one.
+- **Saved in the patterns:** the steps themselves as normal MIDI trigs, and each pattern's
+  Drum Mode settings. **Saved with the project:** the kits.
+- **A project made without Drum Mode, or with Drum Mode before 0.10,** opens with Drum Mode
+  off and the GM notes.
 - **Back on the stock OS**, your projects still load, and the patterns play their steps as
   normal MIDI trigs with chords. Mutes and Drum Mode's settings don't apply there, but the
   stock OS keeps them, so they're back when you reinstall Drum Mode.

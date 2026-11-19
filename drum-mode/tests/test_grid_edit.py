@@ -45,7 +45,7 @@ def main():
         return sorted([sl[0]] + [sl[0] + iv for iv in sl[1:] if iv])
 
     def selected():
-        return d.mem(S['dm'] + 6, 1)[0] & 7     # dm.selected[0], track A's nibble
+        return d.mem(S['dm_store'] + 6, 1)[0] & 7   # dm_store.selected[0], track A's nibble (0.10)
 
     def select(pad):
         d.press('TRIG', after_ms=60)

@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.9.4, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.10, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.9.4)
+## Using it (0.10)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -175,15 +175,29 @@ While playing, each key stands for 2 steps of the 16-step page that plays and bl
 on each, in time; longer tracks follow the page, shorter and odd lengths leave the keys after
 the last step dark (a key with one step blinks once).
 
-**Improvement (asked 2026-11-18): Drum Mode settings per pattern and per track,** like an
-instrument on a track. Today one set of settings is saved for the whole project: which MIDI
-tracks are Drum Mode tracks, and each track's 8 lane notes, velocities and mutes apply to every
-pattern. Instead, each pattern should keep its own for each track, so changing a kit on H02
-leaves A01 alone. Options: core's lane parameters are saved with the pattern but core gives a
-mod only 10 of them (Drum Mode needs about 18 values a track); or Drum Mode's own project data
-grows to a copy per pattern (128 patterns × 4 MIDI tracks × about 18 bytes, about 9 KB). To
-work out: what a new or copied pattern starts with (the current pattern's settings, or the
-defaults), and pattern copy/paste carrying them.
+**Improvement (asked 2026-11-18; done in 0.10, to test on the unit): Drum Mode settings per
+pattern and per track,** like an instrument on a track. Each pattern keeps, for each MIDI track,
+its own Drum Mode on/off, mutes, notes and velocities.
+- *How it's stored (decided 2026-11-19, option 2 of 3):* core keeps all mods' project data in
+  480 bytes of the project file (DigiArp's block takes 272), so 128 patterns' full settings
+  (about 9 KB) can't go there. Each pattern stores, in one core lane parameter (id 191, saved
+  with the pattern), each track's on/off, mutes and **kit** number; the kits (8 notes + 8
+  velocities each) are in the project, **at most 10** different ones (identical ones are shared;
+  a kit used by one pattern track is edited in place, one used by more is copied first). With
+  all 10 in use a new note or velocity is refused and the corner says `KIT MEM FULL`. It takes
+  one of a pattern's 80 lock rows.
+- *A new pattern (to try out, the user's choice):* a pattern without settings yet takes a copy
+  of the pattern you came from. Whether this is how it should work is to be decided after
+  testing; the alternative is the defaults.
+- *Copy/paste:* FUNC + RECORD then FUNC + STOP (the active pattern) carries the settings
+  along, once the pasted steps match the copied pattern's. The other route (PTN + trig key +
+  RECORD, held trig keys + STOP) is part of the pattern copy/paste point below, to look into.
+- *Pattern reload* (FUNC + NO) brings the saved settings back with the pattern.
+- *Older projects* (saved with 0.9.x) open with Drum Mode off and the default kit: the old
+  project-wide block is gone (its 80 bytes are needed for the kits).
+- `tests/test_pattern_settings.py` (18 checks: per pattern, copy on first visit, on/off per
+  pattern, paste, save and load, the 10-kit limit); saving and loading together with DigiArp
+  checked too.
 
 ## Known bugs (possible fixes)
 
@@ -294,7 +308,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**D094** on the unit.
+**D100** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

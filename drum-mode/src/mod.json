@@ -1,6 +1,6 @@
 {
  "id": "drummode",
- "version": "0.9.4",
+ "version": "0.10",
  "license": "GPL-2.0-or-later",
  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
  "category": "Sequencer",
@@ -60,6 +60,11 @@
    "event": "ev_key_leds",
    "fn": "dm_leds",
    "order": 50
+  },
+  {
+   "event": "ev_pattern_op",
+   "fn": "dm_pattern_op",
+   "order": 50
   }
  ],
  "contribute": [
@@ -114,12 +119,26 @@
      0
     ]
    ]
+  },
+  {
+   "to": "core_params",
+   "order": 50,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:dm_lane_param",
+     0
+    ]
+   ]
   }
  ],
  "resources": {
   "core": "5.3",
   "names": [
-   "projdata:DRUM",
+   "projdata:DRMK",
+   "param:191",
    "page:27",
    "page:28"
   ]

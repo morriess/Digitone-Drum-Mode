@@ -285,6 +285,20 @@ both mods' tests pass; until 2026-11-19 the folder digiarp-core5 in this repo).
   copy of the event: the stock reads up to +20), so the stock keeps the step and Drum Mode takes
   only its lane out. Track data: velocity locks at +128 + step, micro timing at +256 + step.
 
+- **Settings per pattern (0.10).** Core keeps all mods' project data in the gap of the project's
+  storage block between its header and first record (0x20-0x200: 480 bytes, 'ELKP', then per block
+  tag, size and bytes; a block that doesn't fit is left out of that save). DigiArp's block is 264
+  bytes (+8), so 128 patterns' settings (about 9 KB) can't fit: a first try saved nothing. Instead
+  each pattern keeps its tracks' on/off, mutes and kit number in one core lane parameter (id 191,
+  CORE_LANE_NOLOCK, 0-0x3fff: 0x2000 set, 0x1000 on, kit << 8, mutes; core saves the 8 tracks'
+  values as one lock row of the pattern), and the project keeps up to 10 kits with use counts in a
+  variable block "DRMK" (20 + 16 per kit, at most 180 bytes; with DigiArp 468 of 480). A mod can
+  read only the playing pattern's lane values, so FUNC + RECORD keeps the copied pattern's settings
+  in RAM, and a paste is confirmed by comparing the 8 tracks' data. Core's ev_pattern_op marks a
+  FUNC + NO reload; the use counts are dropped before it and taken again from the reloaded values.
+  A pattern without a value takes dm (the pattern played before) in the UI tick; at interrupt level
+  pattern_follow only reads.
+
 ## What the emulator can't show
 
 Everything above was tested in [digiemu](https://github.com/irpina/digiemu). Its own docs

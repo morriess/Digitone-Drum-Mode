@@ -29,6 +29,8 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
+ * - 0.10: Drum Mode's settings per pattern and per track (on/off, mutes, kit), the kits (notes, velocities) in the
+ *   project, at most 10; a new pattern takes a copy of the one played before; FUNC + RECORD / STOP carries them.
  * - 0.9.4: a change to Drum Mode on/off, a mute, a lane note or a velocity reaches step 1 of the next run too.
  * - 0.9.2: the stock keeps its trig key functions: pattern/bank select and chains (while its select view is open,
  *   PTN or BANK is held, or a trig key it took is still held), and in GRID RECORDING a held step is the stock's held
@@ -120,6 +122,8 @@ typedef void (*led_set_fn)(void *mgr, int32_t led, int32_t layer, int32_t colour
 #define DM_LANES        8
 
 #define KEY_TRIG        20              /* the TRIG page key: held, a pad selects its lane */
+#define KEY_RECORD      10              /* 0.10: FUNC + RECORD copies the pattern, FUNC + STOP pastes it */
+#define KEY_STOP        12
 #define KEY_PTN         4               /* 0.9.2: PTN and BANK, held: the trig keys pick patterns and banks */
 #define KEY_BANK        5
 #define KEY_STEP1       26              /* trig keys 1-16: 26-41 */
@@ -158,6 +162,55 @@ struct dm_save {
 };
 static struct dm_save dm;
 
+/* 0.10: Drum Mode's settings per pattern and per track. dm is the playing pattern's working copy; what's kept:
+ * - in each pattern, one core lane parameter (id 191, a value per track, saved with the pattern): the track's Drum
+ *   Mode on/off, its 8 lanes' mutes and the number of its kit (LV_ below); 0 means the pattern has none yet;
+ * - in the project ("DRMK", a variable block: core keeps all mods' project data in 480 bytes, DigiArp's takes 272):
+ *   up to 10 kits (8 notes and 8 velocities), each with the number of pattern tracks using it, and the selected
+ *   lanes. A kit used by one pattern track is edited in place, one used by more is copied first; identical kits
+ *   are merged. A pattern without settings yet takes a copy of the one the player came from. */
+#define DM_LANE_ID      191
+#define LV_SET          0x2000          /* the pattern track has settings */
+#define LV_ON           0x1000          /* Drum Mode on */
+#define LV_KIT_SHIFT    8               /* kit number, 4 bits */
+#define LV_MAX          0x3fff
+#define MAX_KITS        10
+#define DM_PATTERNS     128
+#define KITS_VERSION    1
+struct dm_kit {
+    uint8_t note[DM_LANES];
+    uint8_t velocity[DM_LANES];
+};
+struct dm_kitstore {
+    uint32_t bytes;                     /* +0  what the block holds now (core's variable block) */
+    uint8_t version;                    /* +4 */
+    uint8_t nkits;                      /* +5  kits 0..nkits-1 are in the block */
+    uint8_t selected[2];                /* +6  the selected lane per track, a nibble each */
+    uint8_t refs[12];                   /* +8  pattern tracks using each kit (10 used) */
+    struct dm_kit kit[MAX_KITS];        /* +20 */
+};
+#define KITS_HEAD       20
+static struct dm_kitstore dm_store;
+
+/* The lane parameter itself (core_params): a track value only, on no page or knob; 0-0x3fff, 0 none yet. */
+static void dm_lane_format(int32_t value, char *buf)
+{
+    static const char hex[] = "0123456789ABCDEF";
+    value >>= 8;
+    buf[0] = hex[(value >> 12) & 0xf];
+    buf[1] = hex[(value >> 8) & 0xf];
+    buf[2] = hex[(value >> 4) & 0xf];
+    buf[3] = hex[value & 0xf];
+    buf[4] = 0;
+}
+const struct core_param dm_lane_param = {
+    DM_LANE_ID, 16, CORE_SLOT_LANE, 0, LV_MAX << 8, 0, 0, -1, -1, -1, 0,
+    "Drum Mode", "Drum", "DRM", dm_lane_format, fw_str_empty, 0, CORE_LANE_NOLOCK
+};
+static int8_t dm_kit_of[DM_TRACKS];     /* the kit each track of the playing pattern uses, -1 none yet */
+static volatile uint8_t dm_unset;       /* bit t: the playing pattern has no settings for track t yet */
+volatile int32_t dm_cur_pat = -1;       /* the pattern dm belongs to, -1 none yet (after a load) */
+
 /* What each trig key is sounding, so its release ends the same note on the same track, whatever changed since. */
 struct dm_held {
     int8_t track;                       /* firmware track 4-7, or -1: nothing held */
@@ -173,6 +226,11 @@ static uint32_t dm_taken;               /* bit k: trig key k's press was ours; i
  * so their release keeps the lane; dm_grid_remove: a quick tap takes the selected lane out on release. */
 volatile uint32_t dm_stock, dm_grid_keys, dm_grid_long, dm_grid_remove;
 volatile int32_t dm_ptn_held, dm_bank_held;
+/* 0.10: the pattern FUNC + RECORD copied (-1 none), and a FUNC + STOP waiting to be checked: after the stock's paste
+ * the target's steps must equal the copied pattern's before its Drum Mode settings follow. */
+volatile int32_t dm_clip = -1, dm_paste_dst = -1;
+static int32_t dm_paste_ticks;
+#define PASTE_TICKS     15
 /* A key left to the stock that sends nothing for this long counts as released: the stock's bank select swallows the
  * release of the bank's trig key (measured in digiemu), while a held key keeps sending repeats (every ~0.1 s after the
  * first ~0.4 s). In UI ticks. */
@@ -195,12 +253,12 @@ volatile int32_t dm_grid_edits;         /* steps toggled in GRID RECORDING, for 
 
 static int32_t selected_lane(int32_t t)
 {
-    return (dm.selected[t >> 1] >> (4 * (t & 1))) & 7;
+    return (dm_store.selected[t >> 1] >> (4 * (t & 1))) & 7;
 }
 
 static void select_lane(int32_t t, int32_t lane)
 {
-    uint8_t *b = &dm.selected[t >> 1];
+    uint8_t *b = &dm_store.selected[t >> 1];
     *b = (uint8_t)((*b & ~(0xf << (4 * (t & 1)))) | (lane << (4 * (t & 1))));
 }
 
@@ -232,8 +290,165 @@ static int32_t drum_track(int32_t track)
 /* 0.9.4: a setting the sequencer applies when it prepares a step changed (Drum Mode on/off, a lane's mute, note or
  * velocity). While stopped the sequencer prepared step 1 when the last run stopped, so step 1 of the next run would
  * still play the old way: seq-events prepares it again at the end of this UI tick. The UI task. */
+
+static int32_t kit_same(const struct dm_kit *k, int32_t t)
+{
+    for (int32_t l = 0; l < DM_LANES; l++)
+        if (k->note[l] != dm.note[t][l] || k->velocity[l] != dm.velocity[t][l])
+            return 0;
+    return 1;
+}
+
+static void kit_put(struct dm_kit *k, int32_t t)
+{
+    for (int32_t l = 0; l < DM_LANES; l++) {
+        k->note[l] = dm.note[t][l];
+        k->velocity[l] = dm.velocity[t][l];
+    }
+}
+
+static void kit_get(const struct dm_kit *k, int32_t t)
+{
+    for (int32_t l = 0; l < DM_LANES; l++) {
+        dm.note[t][l] = k->note[l] > 127 ? dm_default_notes[l] : k->note[l];
+        dm.velocity[t][l] = k->velocity[l] < 1 || k->velocity[l] > 127 ? 100 : k->velocity[l];
+    }
+}
+
+/* The block's size follows the last kit in use (core saves only what it holds). */
+static void kits_trim(void)
+{
+    int32_t n = MAX_KITS;
+    while (n > 0 && !dm_store.refs[n - 1])
+        n--;
+    dm_store.nkits = (uint8_t)n;
+    dm_store.bytes = KITS_HEAD + sizeof(struct dm_kit) * (uint32_t)n;
+}
+
+/* A kit holding track t's notes and velocities (dm): an identical one, else a free slot. Its use count goes up.
+ * -> its number, or -1 when all 10 are in use. */
+static int32_t kit_take(int32_t t)
+{
+    int32_t free_k = -1;
+    for (int32_t k = 0; k < MAX_KITS; k++) {
+        if (dm_store.refs[k] && kit_same(&dm_store.kit[k], t)) {
+            dm_store.refs[k]++;
+            return k;
+        }
+        if (!dm_store.refs[k] && free_k < 0)
+            free_k = k;
+    }
+    if (free_k < 0)
+        return -1;
+    kit_put(&dm_store.kit[free_k], t);
+    dm_store.refs[free_k] = 1;
+    kits_trim();
+    return free_k;
+}
+
+static void kit_drop(int32_t k)
+{
+    if (k >= 0 && k < MAX_KITS && dm_store.refs[k]) {
+        dm_store.refs[k]--;
+        kits_trim();
+    }
+}
+
+static int32_t lane_value(int32_t t)
+{
+    return LV_SET | (((dm.enabled >> t) & 1) ? LV_ON : 0) | ((dm_kit_of[t] & 0xf) << LV_KIT_SHIFT) | dm.mutes[t];
+}
+
+static int32_t pattern_index(void)
+{
+    uint32_t idx = (uint32_t)(fw_pattern - fw_patterns) / PATTERN_SIZE;
+    return idx < DM_PATTERNS ? (int32_t)idx : -1;
+}
+
+/* Keep dm on the pattern that plays: when it changed, each track's settings come from the new pattern's lane value,
+ * and a track without any keeps what dm holds (the pattern it came from) until the UI tick writes it there
+ * (settle_unset). From the UI tick and the sequencer's stages (interrupt level: reads only). -> 1 when it changed. */
+static int32_t pattern_follow(void)
+{
+    int32_t idx = pattern_index();
+    uint8_t unset = 0;
+    if (idx < 0 || idx == dm_cur_pat)
+        return 0;
+    for (int32_t t = 0; t < DM_TRACKS; t++) {
+        int32_t v = core_lane_track(DM_LANE_ID, DM_FIRST + t), k = (v >> LV_KIT_SHIFT) & 0xf;
+        if (v < 0 || !(v & LV_SET) || k >= MAX_KITS || !dm_store.refs[k]) {
+            unset |= (uint8_t)(1u << t);
+            continue;
+        }
+        dm.enabled = (uint8_t)((dm.enabled & ~(1u << t)) | ((v & LV_ON) ? 1u << t : 0));
+        dm.mutes[t] = (uint8_t)(v & 0xff);
+        dm_kit_of[t] = (int8_t)k;
+        kit_get(&dm_store.kit[k], t);
+    }
+    dm_unset = unset;
+    dm_cur_pat = idx;
+    return 1;
+}
+
+/* The UI task: a track of the playing pattern without settings gets dm's (a kit for its notes, the lane value). */
+static void settle_unset(void)
+{
+    uint8_t unset = dm_unset;
+    if (!unset || dm_cur_pat != pattern_index())
+        return;
+    for (int32_t t = 0; t < DM_TRACKS; t++) {
+        int32_t k;
+        if (!((unset >> t) & 1))
+            continue;
+        k = kit_take(t);
+        if (k < 0) {
+            say("KIT MEM FULL", 0);
+            continue;                   /* plays dm's settings, keeps none */
+        }
+        dm_kit_of[t] = (int8_t)k;
+        core_lane_set(DM_LANE_ID, DM_FIRST + t, -1, lane_value(t));
+        dm_unset &= (uint8_t)~(1u << t);
+    }
+}
+
+/* A setting of track changed in dm (Drum Mode on/off, a mute, a lane's note or velocity): the playing pattern keeps
+ * it. Its kit is edited in place if only this pattern track uses it, else copied; an identical kit is shared. With
+ * all 10 kits in use a new note or velocity can't be kept: dm goes back to the kit and the corner says so. Then
+ * step 1 is prepared again (0.9.4). The UI task. */
 static void rearm(int32_t track)
 {
+    int32_t t = track - DM_FIRST, k;
+    if (t < 0 || t >= DM_TRACKS)
+        return;
+    if (dm_cur_pat >= 0 && dm_cur_pat == pattern_index() && !((dm_unset >> t) & 1)) {
+        k = dm_kit_of[t];
+        if (k < 0 || k >= MAX_KITS || !kit_same(&dm_store.kit[k], t)) {
+            int32_t same = -1;
+            for (int32_t m = 0; m < MAX_KITS; m++)
+                if (m != k && dm_store.refs[m] && kit_same(&dm_store.kit[m], t)) {
+                    same = m;
+                    break;
+                }
+            if (same >= 0) {            /* an identical kit: share it */
+                kit_drop(k);
+                dm_store.refs[same]++;
+                dm_kit_of[t] = (int8_t)same;
+            } else if (k >= 0 && k < MAX_KITS && dm_store.refs[k] == 1) {
+                kit_put(&dm_store.kit[k], t);   /* only this pattern track uses it: in place */
+            } else {
+                int32_t n = kit_take(t);
+                if (n < 0) {
+                    if (k >= 0 && k < MAX_KITS)
+                        kit_get(&dm_store.kit[k], t);
+                    say("KIT MEM FULL", 0);
+                } else {
+                    kit_drop(k);
+                    dm_kit_of[t] = (int8_t)n;
+                }
+            }
+        }
+        core_lane_set(DM_LANE_ID, track, -1, lane_value(t));
+    }
     sq_rearm(1u << track);
 }
 
@@ -523,6 +738,7 @@ void dm_gen_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
     (void)trig;
     if (!first || track < DM_FIRST || track >= DM_FIRST + DM_TRACKS)
         return;
+    pattern_follow();                   /* 0.10: a pattern change while playing reaches its first steps */
     f = &dm_fire[track - DM_FIRST];
     f->prev_step = f->step;
     f->prev_time = f->time;
@@ -540,6 +756,7 @@ void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
     int32_t keep[SQ_NOTES];
     uint8_t mutes, lanes = 0;
     (void)step;
+    pattern_follow();                   /* 0.10: the playing pattern's settings */
     if (!drum_track(track))
         return;
     mutes = dm.mutes[t];
@@ -615,34 +832,46 @@ static void release_track(int32_t track)
 
 /* ---- boot and the project -------------------------------------------------------------------- */
 /* The project may load before the UI starts (dm_loaded first): only the held keys are reset here. */
+static void store_reset(void)
+{
+    fw_memset(&dm_store, 0, sizeof dm_store);
+    dm_store.version = KITS_VERSION;
+    kits_trim();
+}
+
 void dm_boot(void)
 {
     for (int32_t k = 0; k < KEY_STEPS; k++)
         dm_held[k].track = -1;
-    for (int32_t t = 0; t < DM_TRACKS; t++)
+    for (int32_t t = 0; t < DM_TRACKS; t++) {
         dm_fire[t].step = dm_fire[t].prev_step = -1;
+        dm_kit_of[t] = -1;
+    }
     if (dm.version != SAVE_VERSION)
         defaults();
+    if (dm_store.version != KITS_VERSION)
+        store_reset();
 }
 
-/* After every project load: the project's Drum Mode, or the defaults for a project that has none (all zeros).
- * The engine task, before the UI sees the project. A note or velocity out of range is put back to its default. */
+/* After every project load ("DRMK"): its kits and selected lanes; none (a new project, or one saved without 0.10):
+ * no kits, Drum Mode off with the default kit, and the patterns' settings start from there. Each pattern's on/off,
+ * mutes and kit number come back with the pattern itself (core's lanes); the first pattern_follow reads them.
+ * The engine task, before the UI sees the project. */
 static void dm_loaded(int32_t found)
 {
-    if (!found || dm.version != SAVE_VERSION) {
-        defaults();
-        return;
-    }
+    dm_cur_pat = -1;
+    dm_unset = 0;
+    defaults();
     for (int32_t t = 0; t < DM_TRACKS; t++)
-        for (int32_t l = 0; l < DM_LANES; l++) {
-            if (dm.note[t][l] > 127)
-                dm.note[t][l] = dm_default_notes[l];
-            if (dm.velocity[t][l] < 1 || dm.velocity[t][l] > 127)
-                dm.velocity[t][l] = 100;
-        }
-    dm.enabled &= (1u << DM_TRACKS) - 1;
+        dm_kit_of[t] = -1;
+    if (!found || dm_store.version != KITS_VERSION || dm_store.nkits > MAX_KITS)
+        store_reset();
+    else
+        for (int32_t k = dm_store.nkits; k < MAX_KITS; k++)
+            dm_store.refs[k] = 0;
 }
-const struct core_projdata dm_projdata = { 0x4452554du /* "DRUM" */, sizeof dm, &dm, dm_loaded };
+const struct core_projdata dm_projdata = { 0x44524d4bu /* "DRMK" */, CORE_PROJDATA_VARIABLE | sizeof dm_store,
+                                           &dm_store, dm_loaded };
 
 /* ---- the DRUM pages --------------------------------------------------------------------------- */
 /* Pages 27 and 28 follow the MIDI tracks' LFO page (23), so LFO pressed again on a MIDI track steps to them. Not after
@@ -719,6 +948,7 @@ static void page_turn(int32_t page, int32_t enc, int32_t counts)
  * mute; FUNC + 9-16 is left to the stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
  * press played, and a key the stock saw go down is never kept from it on the way up. */
 static int32_t select_open(void);
+static void clip_copy(void);
 
 int32_t dm_key(void *brain, void *ev)
 {
@@ -735,6 +965,14 @@ int32_t dm_key(void *brain, void *ev)
     }
     if (key == KEY_PTN)
         dm_ptn_held = !up;              /* watched, never taken */
+    if (!up && !(flags & CORE_KEY_REPEAT) && (flags & CORE_KEY_FUNC) && !grid_recording()) {
+        if (key == KEY_RECORD) {        /* the stock copies the active pattern (watched, never taken) */
+            clip_copy();
+        } else if (key == KEY_STOP && dm_clip >= 0) {
+            dm_paste_dst = -1;          /* the stock pastes into the active pattern: checked a moment later */
+            dm_paste_ticks = PASTE_TICKS;
+        }
+    }
     if (key == KEY_BANK)
         dm_bank_held = !up;
     if (key < KEY_STEP1 || key >= KEY_STEP1 + KEY_STEPS) {
@@ -928,8 +1166,90 @@ const struct item dm_menu = { "DRUM MODE", dm_open, CORE_MENU_ICON, dm_icon };
 /* ---- the screen ------------------------------------------------------------------------------ */
 /* The UI task, 60 times a second: count down the flashes and the messages, and ask for a redraw while anything
  * we draw changes. ctrl + 0x20: the redraw flag (as digisolo sets it). */
+/* 0.10: the pattern menu's FUNC + NO reloads the active pattern from its saved copy, lanes included: its tracks
+ * stop using their kits now, and take the reloaded ones a moment later (dm_reload_ticks, then reload_done). */
+static int32_t dm_reload_ticks;
+#define RELOAD_TICKS    10
+
+void dm_pattern_op(int32_t op, int32_t index, int32_t what)
+{
+    (void)index;
+    if (op != CORE_PATTERN_RELOAD || !(what & CORE_PATTERN_SEQ) || dm_cur_pat < 0)
+        return;
+    for (int32_t t = 0; t < DM_TRACKS; t++)
+        if (!((dm_unset >> t) & 1))
+            kit_drop(dm_kit_of[t]);
+    dm_unset = 0xf;                     /* nothing held until the reload is read */
+    dm_reload_ticks = RELOAD_TICKS;
+}
+
+static void reload_done(void)
+{
+    dm_cur_pat = -1;
+    pattern_follow();
+    for (int32_t t = 0; t < DM_TRACKS; t++)
+        if (!((dm_unset >> t) & 1))
+            dm_store.refs[dm_kit_of[t]]++;
+    kits_trim();
+    sq_rearm(0xf0u);
+    dm_dirty = 1;
+}
+
+/* 0.10: what FUNC + RECORD copied, per track (only the playing pattern's lane values can be read, so they're kept
+ * here): Drum Mode on/off, mutes and the kit's notes and velocities. */
+static uint8_t dm_clip_on, dm_clip_mutes[DM_TRACKS];
+static struct dm_kit dm_clip_kit[DM_TRACKS];
+
+static void clip_copy(void)
+{
+    pattern_follow();
+    settle_unset();
+    dm_clip = dm_cur_pat;
+    dm_clip_on = dm.enabled;
+    for (int32_t t = 0; t < DM_TRACKS; t++) {
+        dm_clip_mutes[t] = dm.mutes[t];
+        kit_put(&dm_clip_kit[t], t);
+    }
+}
+
+/* A pattern paste the stock did (FUNC + STOP): the playing pattern's 8 tracks now equal the copied pattern's, so its
+ * Drum Mode settings follow. */
+static void paste_check(void)
+{
+    int32_t dst = pattern_index(), src = dm_clip;
+    const uint8_t *a, *b;
+    if (src < 0 || dst < 0 || src == dst || dst != dm_cur_pat)
+        return;
+    a = fw_patterns + PATTERN_SIZE * src;
+    b = fw_patterns + PATTERN_SIZE * dst;
+    for (int32_t i = 0; i < 976 * 8; i++)
+        if (a[i] != b[i])
+            return;
+    for (int32_t k = 0; k < KEY_STEPS; k++)
+        if (dm_held[k].track >= 0)
+            lane_off(k);
+    settle_unset();
+    dm.enabled = dm_clip_on;
+    for (int32_t t = 0; t < DM_TRACKS; t++) {
+        dm.mutes[t] = dm_clip_mutes[t];
+        kit_get(&dm_clip_kit[t], t);
+        rearm(DM_FIRST + t);
+    }
+    dm_paste_dst = dst;
+    dm_dirty = 1;
+}
+
 void dm_tick(void *ctrl)
 {
+    if (pattern_follow()) {             /* the pattern changed (0.10): its settings are in dm */
+        sq_rearm(0xf0u);
+        dm_dirty = 1;
+    }
+    settle_unset();
+    if (dm_reload_ticks > 0 && --dm_reload_ticks == 0)
+        reload_done();
+    if (dm_paste_ticks > 0 && --dm_paste_ticks == 0)
+        paste_check();
     for (int32_t k = 0; k < KEY_STEPS; k++)
         if (((dm_stock >> k) & 1) && ++dm_stock_age[k] >= STOCK_KEY_TICKS)
             dm_stock &= ~(1u << k);     /* its release never came */

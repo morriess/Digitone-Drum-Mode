@@ -1,13 +1,13 @@
 # Drum Mode user manual
 
-**Drum Mode 0.9.1 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.9.2 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.9.1 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
+> **Beta.** 0.9.2 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -59,7 +59,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D091**).
+  **D092**).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -83,7 +83,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and the OS version on its boot screen now reads **D091**
+The Digitone starts as normal, and the OS version on its boot screen now reads **D092**
 instead of 1.44.
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
@@ -211,6 +211,12 @@ You can also place drums step by step, one drum at a time, like on a Digitakt.
    time. The keys then show the new drum's steps.
 5. **Longer patterns:** press **PAGE** to reach steps 17–32, 33–48 and 49–64, as usual.
 6. Press **RECORD** again to leave GRID RECORDING.
+
+A step works like a normal trig key too: **hold** it to lock parameters with the knobs,
+set micro timing with **LEFT/RIGHT**, copy it with **RECORD** and paste it onto another
+held step with **STOP**. A quick tap adds or removes the selected drum; a step held long
+or used while held keeps it. Locks apply to the whole step (all drums on it): see
+[Limitations](#limitations).
 
 ![The trig key LEDs in GRID RECORDING](ui/leds-grid.png)
 
@@ -349,13 +355,19 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; 0.9's lane select and 0.9.1's running light not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; 0.9's lane select, 0.9.1's running light and 0.9.2's stock trig keys not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.
 - **All MIDI tracks** get the two DRUM pages in their LFO list, including tracks without
   Drum Mode.
-- **No p-locks by holding a trig key** in GRID RECORDING on a Drum Mode track.
+- **Locks on drum steps apply to the whole step**, all drums on it. A **NOTE** lock changes the
+  step's notes, so it can turn a drum into another one. A **velocity** lock is kept, but on
+  playback Drum Mode plays the step at its drums' velocity setting (the loudest one), so the
+  lock has no effect.
+- **Not yet checked with Drum Mode on:** MUTE mode (FUNC + BANK, then trig keys), STEP
+  RECORDING (RECORD + STOP) and pattern copy/paste (PTN + trig key, RECORD / STOP). The trig
+  keys may play pads there instead.
 - **Combining with DigiArp MIDI** needs the rebuilt DigiArp in this repo's
   [digiarp-core5](../../digiarp-core5/) folder: the Mod Shop's version is built on an older
   elekloader core and can't go into one firmware with Drum Mode. Other combinations are

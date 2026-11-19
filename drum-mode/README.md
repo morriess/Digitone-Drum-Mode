@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.9.1, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.9.2, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.9.1)
+## Using it (0.9.2)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -95,6 +95,9 @@ pads' velocities.
 4. To switch lanes, leave GRID RECORDING, press another pad (or TRIG + pad at any time),
    and the keys show that lane's steps.
 5. For patterns longer than 16 steps, **PAGE** moves through the pages as usual.
+6. 0.9.2: a held step is the stock's held trig: parameter locks (knobs), micro timing
+   (LEFT/RIGHT), trig copy (RECORD) and paste (STOP) work on drum steps, for the whole step.
+   A quick tap adds or takes out the lane; held long or used while held, it stays.
 
 Steps are stored the same way live recording stores them: a normal trig, with several
 drums on one step as its chord notes. Taking the last drum off a step removes its trig.
@@ -210,12 +213,26 @@ defaults), and pattern copy/paste carrying them.
   digiemu (A01 draws, H02 picked with BANK didn't). *Fix (0.8.3):* Drum Mode looks past that
   view. `tests/test_other_pattern.py` checks the Drum Notes page on H02.
 
-- **PATTERN or BANK + a trig key plays a pad instead of choosing the pattern** (found in
-  the emulator, 0.8.1). On a Drum Mode track, Drum Mode takes every trig key press, also
-  right after [PTN] or [BANK], so pattern and bank select (and chains) don't work there.
-  *Possible fix:* after [PTN] or [BANK], leave the trig keys to the stock until the
-  selection ends (a pick, [NO], or its four seconds). Until then: pick the pattern on
-  another track, or with Drum Mode off.
+- **Stock trig key functions blocked on a Drum Mode track (fixed in 0.9.2 for the
+  essential ones, to confirm on the unit).** Drum Mode took every trig key press on a Drum
+  Mode track, so stock functions that use the trig keys didn't work there. Checked
+  against the manual (2026-11-19):
+  - *Fixed in 0.9.2:* pattern select (PTN then a trig key, or PTN held + a trig key), bank
+    select (BANK, trig 9–16, a pattern) and chains: the trig keys go to the stock while its
+    select view is open (0x401c68dc on top), PTN or BANK is held, or a trig key it took is
+    still held. And holding a step in GRID RECORDING: the stock now sees the step held, so
+    parameter locks, micro timing, trig copy/paste and clearing locks work (for the whole
+    step); Drum Mode's quick tap still adds or takes out the lane, and before the release it
+    tells the stock the key was held long, so the stock never deletes the step.
+    `tests/test_stock_keys.py`.
+  - *To look into / fix later:* MUTE mode (FUNC + BANK, then the trig keys mute tracks;
+    the pads would play), STEP RECORDING (RECORD + STOP; the trig keys would play pads, maybe
+    wanted for drums), and pattern copy/paste (PTN + trig key, then RECORD / STOP).
+  - *Not decided yet:* FUNC + trig keys 1–8 in GRID RECORDING (the stock's lock trigs; Drum
+    Mode mutes the lane instead), and trig keys while a menu or other screen is open (Drum
+    Mode doesn't check the screen for keys).
+  - *Known limits:* a NOTE lock on a drum step changes its notes; a velocity lock is kept
+    but Drum Mode plays the step at its lanes' velocity, so it has no effect.
 
 - **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
   ahead, and step 1 of a new run is prepared when the previous run stops. So right after you
@@ -264,7 +281,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**D091** on the unit.
+**D092** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

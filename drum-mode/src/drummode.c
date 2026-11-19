@@ -29,6 +29,9 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
+ * - 0.9.2: the stock keeps its trig key functions: pattern/bank select and chains (while its select view is open,
+ *   PTN or BANK is held, or a trig key it took is still held), and in GRID RECORDING a held step is the stock's held
+ *   trig (locks, micro timing, copy/paste) while a quick tap still adds or takes out the lane.
  * - 0.9.1: while playing, keys 9-16 are a running light: each key 2 steps of the playing 16-step page, lit white for
  *   the first half of each of its steps (two blinks a key), dark when stopped.
  *
@@ -115,6 +118,8 @@ typedef void (*led_set_fn)(void *mgr, int32_t led, int32_t layer, int32_t colour
 #define DM_LANES        8
 
 #define KEY_TRIG        20              /* the TRIG page key: held, a pad selects its lane */
+#define KEY_PTN         4               /* 0.9.2: PTN and BANK, held: the trig keys pick patterns and banks */
+#define KEY_BANK        5
 #define KEY_STEP1       26              /* trig keys 1-16: 26-41 */
 #define KEY_STEPS       16
 #define ENC_A           1               /* ev_enc's encoders: 1-8, A-H */
@@ -160,6 +165,17 @@ struct dm_held {
 };
 static struct dm_held dm_held[KEY_STEPS];
 static uint32_t dm_taken;               /* bit k: trig key k's press was ours; its repeats and release are too */
+/* 0.9.2: trig keys left to the stock. dm_stock: pressed while the stock's pattern/bank select or a chain had the
+ * trig keys, their repeats and release go to the stock too. dm_grid_keys: steps held in GRID RECORDING, which the
+ * stock sees held (its parameter locks, micro timing, trig copy/paste); dm_grid_long: held long or used while held,
+ * so their release keeps the lane; dm_grid_remove: a quick tap takes the selected lane out on release. */
+volatile uint32_t dm_stock, dm_grid_keys, dm_grid_long, dm_grid_remove;
+volatile int32_t dm_ptn_held, dm_bank_held;
+/* A key left to the stock that sends nothing for this long counts as released: the stock's bank select swallows the
+ * release of the bank's trig key (measured in digiemu), while a held key keeps sending repeats (every ~0.1 s after the
+ * first ~0.4 s). In UI ticks. */
+#define STOCK_KEY_TICKS 45
+static uint8_t dm_stock_age[KEY_STEPS];
 static int32_t dm_last_pad = -1;        /* the pad pressed last, while it is held: the knobs edit its lane */
 static int32_t dm_enc_acc[2];           /* counts towards the next detent, A and B */
 
@@ -444,18 +460,39 @@ static void remove_note(int32_t track, int32_t step, int32_t note)
         FW_STEP_NOTE(obj, step, k < n ? keep[k] - keep[0] : 0, k);
 }
 
-/* A trig key in GRID RECORDING: the selected lane on or off on that step of the shown page. */
-static void grid_toggle(int32_t track, int32_t key)
+/* A trig key pressed in GRID RECORDING (0.9.2): the selected lane goes on that step of the shown page at once if it
+ * isn't there; if it is, a quick tap takes it out on release (grid_remove), while a step held long or used while
+ * held (the stock's parameter locks, micro timing, copy and paste) keeps it, as the stock treats its own trigs.
+ * -> 1 when the step has a trig the stock can see held, 0 for a key past the track's length. */
+static int32_t grid_press(int32_t track, int32_t key)
 {
     int32_t t = track - DM_FIRST, lane = selected_lane(t), note = dm.note[t][lane];
     int32_t step = 16 * grid_page(track) + key;
     uint8_t *data = track_data(track_obj(track));
+    uint32_t bit = 1u << key;
     if (!data || step >= track_len(track))
-        return;
+        return 0;
+    dm_grid_long &= ~bit;
     if (step_has(data, step, note))
-        remove_note(track, step, note);
-    else
+        dm_grid_remove |= bit;
+    else {
         record_note(track, step, note);
+        dm_grid_remove &= ~bit;
+        dm_grid_edits++;
+        dm_flash[t][lane] = FLASH_TICKS;
+    }
+    dm_dirty = 1;
+    return 1;
+}
+
+static void grid_remove(int32_t track, int32_t key)
+{
+    int32_t t = track - DM_FIRST, lane = selected_lane(t), note = dm.note[t][lane];
+    int32_t step = 16 * grid_page(track) + key;
+    uint8_t *data = track_data(track_obj(track));
+    if (!data || step >= track_len(track) || !step_has(data, step, note))
+        return;
+    remove_note(track, step, note);
     dm_grid_edits++;
     dm_flash[t][lane] = FLASH_TICKS;
     dm_dirty = 1;
@@ -662,6 +699,8 @@ static void page_turn(int32_t page, int32_t enc, int32_t counts)
 /* The UI task, each key event. On a Drum Mode track a trig key's press is taken (FUNC + pad 1-8 toggles its lane's
  * mute; FUNC + 9-16 is left to the stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
  * press played, and a key the stock saw go down is never kept from it on the way up. */
+static int32_t select_open(void);
+
 int32_t dm_key(void *brain, void *ev)
 {
     int32_t key = CORE_KEY_ID(ev);
@@ -675,10 +714,51 @@ int32_t dm_key(void *brain, void *ev)
         dm_trig_held = !up;             /* watched, never taken: the page key still works */
         return 0;
     }
-    if (key < KEY_STEP1 || key >= KEY_STEP1 + KEY_STEPS)
+    if (key == KEY_PTN)
+        dm_ptn_held = !up;              /* watched, never taken */
+    if (key == KEY_BANK)
+        dm_bank_held = !up;
+    if (key < KEY_STEP1 || key >= KEY_STEP1 + KEY_STEPS) {
+        if (dm_grid_keys && !up)
+            dm_grid_long |= dm_grid_keys;   /* a key with steps held (arrows, RECORD, STOP, PLAY): the stock's */
         return 0;
+    }
     k = key - KEY_STEP1;
     bit = 1u << k;
+
+    if ((dm_stock & bit) && !up && !(flags & CORE_KEY_REPEAT))
+        dm_stock &= ~bit;               /* pressed again: its release was lost; decided afresh below */
+    if (dm_stock & bit) {               /* the stock's press: its repeats and release too */
+        dm_stock_age[k] = 0;
+        if (up)
+            dm_stock &= ~bit;
+        return 0;
+    }
+    if (dm_grid_keys & bit) {           /* a step held in GRID RECORDING (0.9.2) */
+        if (!up) {
+            if (flags & CORE_KEY_REPEAT)
+                dm_grid_long |= bit;
+            return 0;
+        }
+        if (!(dm_grid_long & bit)) {    /* a quick tap: the stock must not take the step's trig away on release */
+            uint8_t copy[32];
+            for (int32_t i = 0; i < 32; i++)
+                copy[i] = ((const uint8_t *)ev)[i];
+            CORE_KEY_FLAGS(copy) = (flags & ~CORE_KEY_UP) | CORE_KEY_DOWN | CORE_KEY_REPEAT;
+            fw_brain_key(brain, copy);
+            if ((dm_grid_remove & bit) && drum_track(track))
+                grid_remove(track, k);
+        }
+        dm_grid_keys &= ~bit;
+        dm_grid_long &= ~bit;
+        dm_grid_remove &= ~bit;
+        return 0;
+    }
+    if (!up && !(dm_taken & bit) && (dm_ptn_held || dm_bank_held || dm_stock || select_open())) {
+        dm_stock |= bit;                /* pattern/bank select, chains: the stock's (0.9.2) */
+        dm_stock_age[k] = 0;
+        return 0;
+    }
 
     if (dm_taken & bit) {
         if (up) {
@@ -710,11 +790,15 @@ int32_t dm_key(void *brain, void *ev)
         say(dm_select_msg[k], 0);
         return 1;
     }
-    dm_taken |= bit;
     if (grid_recording()) {             /* GRID RECORDING: the 16 keys are the selected lane's steps */
-        grid_toggle(track, k);
+        if (grid_press(track, k)) {
+            dm_grid_keys |= bit;        /* the stock sees the step held (0.9.2) */
+            return 0;
+        }
+        dm_taken |= bit;
         return 1;
     }
+    dm_taken |= bit;
     if (k < DM_LANES) {
         if (!live_recording() && selected_lane(track - DM_FIRST) != k) {
             select_lane(track - DM_FIRST, k);   /* 0.9: a pad selects its lane as it plays (not in LIVE RECORDING) */
@@ -739,6 +823,10 @@ int32_t dm_enc(void *brain, void *ev)
     struct dm_held *h;
     dm_brain = brain;
 
+    if (dm_grid_keys) {                 /* steps held in GRID RECORDING: the knobs are the stock's locks (0.9.2) */
+        dm_grid_long |= dm_grid_keys;
+        return 0;
+    }
     if (k < 0 || !(dm_taken & (1u << k)) || dm_held[k].track < 0) {
         int32_t page = drum_track(fw_active_track) ? drum_page() : 0;
         if (!page || enc < 1 || enc > 8)
@@ -819,6 +907,9 @@ const struct item dm_menu = { "DRUM MODE", dm_open, CORE_MENU_ICON, dm_icon };
  * we draw changes. ctrl + 0x20: the redraw flag (as digisolo sets it). */
 void dm_tick(void *ctrl)
 {
+    for (int32_t k = 0; k < KEY_STEPS; k++)
+        if (((dm_stock >> k) & 1) && ++dm_stock_age[k] >= STOCK_KEY_TICKS)
+            dm_stock &= ~(1u << k);     /* its release never came */
     for (int32_t t = 0; t < DM_TRACKS; t++) {
         uint8_t hits = dm_seq_hits[t];
         if (!hits)
@@ -918,6 +1009,21 @@ void dm_leds(void *mgr)
  * - else on a Drum Mode track the 8 lanes as small boxes (x 94-127), filled while held or just hit, kept narrow so
  *   the title bar's text beside it stays readable. */
 static int32_t dm_info_lane = -1, dm_info_track = -1;
+
+/* 0.9.2: the stock's pattern/bank select waiting for its trig key (after a press of PTN or BANK, until a pick, NO or
+ * its four seconds): its view (first word 0x401c68dc, measured in digiemu) is on top of the main stack. */
+#define SELECT_VIEW_VTABLE  0x401c68dcu
+
+static int32_t select_open(void)
+{
+    uint8_t *ms = *(uint8_t *const volatile *)MAIN_SCREEN_PP, *node, *v;
+    if (!ms)
+        return 0;
+    node = *(uint8_t *const volatile *)(ms + 0x58);
+    if (!node || node == ms + 0x54 || !(v = *(uint8_t *const volatile *)(node + 8)))
+        return 0;
+    return *(volatile uint32_t *)v == SELECT_VIEW_VTABLE;
+}
 
 static void *shown_view(void)
 {

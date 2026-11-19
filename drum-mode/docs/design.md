@@ -269,6 +269,18 @@ those two names changed, it goes into one firmware with Drum Mode: see
   0.8.3 walks the stack (MainScreen at 0x419f0e50, head +0x54, top +0x58, next +4, view +8) past
   that view. Again a pattern-dependent bug the A01-only tests missed.
 
+- **Leaving the trig keys to the stock (0.9.2).** Measured in digiemu: after a press of PTN or
+  BANK the stock pushes a select view (first word 0x401c68dc) on top of the main stack until a
+  pick, NO or its four seconds; with PTN held there is no view, the key itself says it. The
+  stock's bank select swallows the release of the bank's trig key, so a key Drum Mode left to the
+  stock counts as released after 1.5 s without events (a held key repeats every ~0.1 s). The
+  stock's GRID RECORDING: a trig key on an empty step places a trig on press; on an existing trig
+  a quick release removes it, a release after a long hold (the key's REPEAT) or an edit keeps it.
+  Drum Mode adds the lane on press, lets the stock see the press (an existing trig to it), and
+  before a quick release replays the key to the stock with REPEAT set (`fw_brain_key`, a 32-byte
+  copy of the event: the stock reads up to +20), so the stock keeps the step and Drum Mode takes
+  only its lane out. Track data: velocity locks at +128 + step, micro timing at +256 + step.
+
 ## What the emulator can't show
 
 Everything above was tested in [digiemu](https://github.com/irpina/digiemu). Its own docs

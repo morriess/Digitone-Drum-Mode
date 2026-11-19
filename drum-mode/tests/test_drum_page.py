@@ -71,10 +71,11 @@ def main():
     d.tap('LFO', after_ms=500)
     d.screen_png(os.path.join(work, 'page-velocity.png'))
     d.take_midi()
-    d.turn('B', -20)
+    d.turn('B', -20, after_ms=30)               # one continuous turn: the stock's dead zone swallows the first
+                                                # detents after a pause, which timing shifts can cause (0.10.1)
     check('on Drum Velocity knob B sets the snare to 80', vel(0, 1) == 80, str(vel(0, 1)))
     check('a velocity turn plays nothing', ons() == [])
-    d.turn('A', 30)
+    d.turn('A', 30, after_ms=30)
     check('velocity stops at 127', vel(0, 0) == 127, str(vel(0, 0)))
 
     d.tap('TRIG', after_ms=400)

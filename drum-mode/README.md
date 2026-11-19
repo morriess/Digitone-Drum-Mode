@@ -86,8 +86,11 @@ unit)
 - **The DRUM pages clash with DigiTables** (both claim mod page 27). DigiTables is OS 1.43 only
   so far. *Possible fix:* pages 28 and 29 (29 clashes with CTRL-PLUS, which needs an older
   core anyway; 30 is core's second TRIG page once a mod puts knobs there).
-- **ROOT shows C5 on a recorded step:** Drum Mode stores the drum as the step's note, which the
-  stock's ROOT doesn't show. A display issue only.
+- **ROOT on a held step shows the step's first note, not the selected lane's** (later). Since
+  0.9.2 a step held in GRID RECORDING shows its note in the TRIG page's ROOT box, but on a step
+  with several drums it's the first one (e.g. the kick, with the snare selected). *Planned:* draw
+  the selected lane's note in the ROOT box while a step is held. Tried on 2026-11-19 (it worked
+  in the emulator) and set aside for later.
 - **The UI froze with the Mod Menu open (emulator only, cause unknown),** in one exact sequence
   of `tests/test_drum_off.py`. *Next:* watch for it on the unit. Details in
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").

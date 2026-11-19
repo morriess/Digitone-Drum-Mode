@@ -273,7 +273,9 @@ those two names changed, it goes into one firmware with Drum Mode: see
   BANK the stock pushes a select view (first word 0x401c68dc) on top of the main stack until a
   pick, NO or its four seconds; with PTN held there is no view, the key itself says it. The
   stock's bank select swallows the release of the bank's trig key, so a key Drum Mode left to the
-  stock counts as released after 1.5 s without events (a held key repeats every ~0.1 s). The
+  stock counts as released after 1.5 s without events (a held key repeats every ~0.1 s). *To check on the unit:*
+  whether the release really goes missing there, chains held past 1.5 s, and a cleaner way (the
+  firmware's own held-key state) instead of the timer. The
   stock's GRID RECORDING: a trig key on an empty step places a trig on press; on an existing trig
   a quick release removes it, a release after a long hold (the key's REPEAT) or an edit keeps it.
   Drum Mode adds the lane on press, lets the stock see the press (an existing trig to it), and

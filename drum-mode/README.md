@@ -233,6 +233,14 @@ defaults), and pattern copy/paste carrying them.
     Mode doesn't check the screen for keys).
   - *Known limits:* a NOTE lock on a drum step changes its notes; a velocity lock is kept
     but Drum Mode plays the step at its lanes' velocity, so it has no effect.
+  - *To check (on the unit):* the 1.5-second rule. The stock's bank select seems to swallow
+    the release of the bank's trig key (seen in digiemu after BANK + trig 16), so 0.9.2
+    counts a trig key it left to the stock as released after 1.5 s without events. Check on
+    the unit that the release really goes missing (or whether it's the emulator), that the
+    trig keys come back to Drum Mode after a bank pick (pads play, GRID RECORDING edits
+    lanes), that a chain held longer than 1.5 s still works (a held key should keep sending
+    repeats), and whether a cleaner fix exists: finding the release where the stock takes it,
+    or reading the keys' held state from the firmware instead of a timer.
 
 - **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
   ahead, and step 1 of a new run is prepared when the previous run stops. So right after you

@@ -15,7 +15,9 @@ Looking for a MIDI-track arpeggiator? DigiArp MIDI by aleks-karachevtsev is in t
 [elekloader Mod Shop](https://elekloader.github.io/shop/). To use it together with Drum Mode
 it has to be rebuilt on core 5.3: that lives in its own fork,
 [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3), with a build script for one
-firmware with both mods.
+firmware with both mods. *To do later:* try the two together on the unit, then offer DigiArp's
+author the core 5.3 change as a pull request (see the fork's
+[CORE5.md](https://github.com/morriess/Digitone-MIDI-Arpeggiator/blob/core-5.3/CORE5.md#to-do-later)).
 
 ## Future ideas
 

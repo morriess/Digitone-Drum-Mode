@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.9.2, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.9.3, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.9.2)
+## Using it (0.9.3)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -114,7 +114,8 @@ their lane, and a muted lane's pad is **dim red**. Keys 9–16 stay dark.
 ### Muting a lane
 
 **FUNC + a pad** mutes that lane: the pattern plays on without it, and its steps stay
-in the pattern. FUNC + the pad again unmutes it. The corner shows `BD MUTE` / `BD ON`,
+in the pattern. FUNC + the pad again unmutes it. Not in any recording mode (0.9.3): there
+FUNC + a trig key is the stock's (lock trigs in GRID RECORDING). The corner shows `BD MUTE` / `BD ON`,
 and in the lane strip a muted lane is a dash instead of a box. On a step with several
 drums only the muted one drops out. The pad itself still plays (and records) when you
 hit it.
@@ -228,9 +229,12 @@ defaults), and pattern copy/paste carrying them.
   - *To look into / fix later:* MUTE mode (FUNC + BANK, then the trig keys mute tracks;
     the pads would play), STEP RECORDING (RECORD + STOP; the trig keys would play pads, maybe
     wanted for drums), and pattern copy/paste (PTN + trig key, then RECORD / STOP).
-  - *Not decided yet:* FUNC + trig keys 1–8 in GRID RECORDING (the stock's lock trigs; Drum
-    Mode mutes the lane instead), and trig keys while a menu or other screen is open (Drum
-    Mode doesn't check the screen for keys).
+  - *Fixed in 0.9.3 (decided 2026-11-19):* FUNC + trig keys 1–8 no longer mute a lane in any
+    recording mode (GRID, STEP or LIVE RECORDING): there they're the stock's (in GRID
+    RECORDING its lock trigs). Outside recording FUNC + pad still mutes.
+  - *Not decided yet:* trig keys while a menu or other screen is open (Drum Mode doesn't
+    check the screen for keys); not tied to recording. To find out first whether any stock
+    menu uses the trig keys at all.
   - *Known limits:* a NOTE lock on a drum step changes its notes; a velocity lock is kept
     but Drum Mode plays the step at its lanes' velocity, so it has no effect.
   - *To check (on the unit):* the 1.5-second rule. The stock's bank select seems to swallow
@@ -289,7 +293,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**D092** on the unit.
+**D093** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

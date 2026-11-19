@@ -17,7 +17,7 @@
  *   its lane's note added to the step's notes (a step holds up to 8: a note and 7 intervals, the stock's chord), so
  *   recorded hits play, show, copy, clear and save as stock trigs. The pads bypass the stock's own recorder. A step whose notes are lanes plays at the loudest of their velocities.
  *
- * - FUNC + a pad mutes or unmutes its lane: the sequencer leaves a muted lane's note out of every step it plays (a step
+ * - FUNC + a pad mutes or unmutes its lane (0.9.3: not in any recording mode, where FUNC + trig keys are the stock's): the sequencer leaves a muted lane's note out of every step it plays (a step
  *   of muted lanes only plays nothing); its steps stay in the pattern. The pad itself still plays and records. The
  *   corner strip shows a muted lane as a dash. Saved with the project.
  *
@@ -103,6 +103,7 @@ typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
  * The trig keys are LEDs 1-16 (the Digitakt II's numbering too: a trig key's code - 25); colours are the panel's palette (2 dark, 3 red, 5 dim red, 20 white). */
 #define REC_GRID_ON         0x161
 #define REC_GRID            0x168
+#define REC_STEP            0x16a   /* 0.9.3: STEP RECORDING (RECORD + STOP; it sets REC_GRID too) */
 #define FW_GRID_PAGE        (*(volatile int32_t *)0x41368ce8)
 typedef void (*led_set_fn)(void *mgr, int32_t led, int32_t layer, int32_t colour);
 #define FW_LED_SET          ((led_set_fn)0x40016e62)
@@ -397,6 +398,13 @@ static int32_t midi_channel(int32_t track)
 }
 
 /* ---- grid editing -------------------------------------------------------------------------- */
+/* 0.9.3: any recording mode: GRID, STEP or LIVE RECORDING (armed or running). */
+static int32_t any_recording(void)
+{
+    uint8_t *rec = FW_REC_OBJ;
+    return rec && rec[REC_GRID_ON] && (rec[REC_GRID] || rec[REC_LIVE] || rec[REC_STEP]);
+}
+
 static int32_t grid_recording(void)
 {
     uint8_t *rec = FW_REC_OBJ;
@@ -777,8 +785,8 @@ int32_t dm_key(void *brain, void *ev)
         return 0;
     if (flags & CORE_KEY_FUNC) {
         int32_t t = track - DM_FIRST;
-        if (k >= DM_LANES)
-            return 0;                   /* FUNC + 9-16: the stock's */
+        if (k >= DM_LANES || any_recording())
+            return 0;                   /* FUNC + 9-16, and FUNC + any trig key while recording: the stock's (0.9.3) */
         dm.mutes[t] ^= (uint8_t)(1u << k);
         dm_taken |= bit;                /* its release is ours too; no note */
         say(((dm.mutes[t] >> k) & 1) ? dm_mute_msg[k] : dm_unmute_msg[k], 0);

@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-"""Drum Mode 0.9.2 in digiemu: the stock's own trig key functions on a Drum Mode track.
+"""Drum Mode 0.9.3 in digiemu: the stock's own trig key functions on a Drum Mode track.
 
     uv run --project $DIGIEMU python drum-mode/tests/test_stock_keys.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Pattern select (PTN then a trig key, or PTN held + a trig key), bank select (BANK, a trig key 9-16, then a pattern)
 and chains (PTN held + a trig key, then more trig keys while one is held) go to the stock, not to the pads. In GRID
 RECORDING a step is the stock's held trig too: a quick tap still adds or takes out the selected lane, a long hold
-keeps it, and a held step takes the stock's parameter locks, micro timing and trig copy/paste.
+keeps it, and a held step takes the stock's parameter locks, micro timing and trig copy/paste. FUNC + a trig key in
+any recording mode is the stock's (a lock trig in GRID RECORDING), not a lane mute.
 """
 import os
 import struct
@@ -127,7 +128,31 @@ def main():
     d.release('9', after_ms=300)
     check('hold step 9 + STOP (paste): step 9 plays the copied kick, not the hat', notes(8) == [36], str(notes(8)))
     check('with step 5\'s velocity lock', trk_byte(128 + 8) == trk_byte(128 + 4), '%d %d' % (trk_byte(128 + 8), trk_byte(128 + 4)))
+
+    # 0.9.3: FUNC + a trig key in any recording mode is the stock's, not a lane mute. In GRID RECORDING the stock
+    # places a lock trig (bit 1 of the step word) on an empty step.
+    def mutes():
+        return d.mem(S['dm'] + 2, 1)[0]         # dm.mutes[0], track A
+    def word(step, track=4):
+        return int.from_bytes(d.mem(d.peek32(S['fw_pattern']) + 976 * track + 2 * step, 2), 'big')
+    d.press('FUNC', after_ms=60)
+    d.tap('3', after_ms=200)
+    d.release('FUNC', after_ms=300)
+    check('GRID RECORDING: FUNC + trig 3 mutes nothing', mutes() == 0, bin(mutes()))
+    check('and the stock places a lock trig on step 3', word(2) & 2 and not word(2) & 1, hex(word(2)))
     d.tap('RECORD', after_ms=400)
+    d.press('RECORD')
+    d.tap('PLAY', hold_ms=50, after_ms=50)
+    d.release('RECORD', after_ms=300)
+    d.press('FUNC', after_ms=60)
+    d.tap('4', after_ms=200)
+    d.release('FUNC', after_ms=300)
+    check('LIVE RECORDING: FUNC + trig 4 mutes nothing', mutes() == 0, bin(mutes()))
+    d.tap('STOP', after_ms=500)
+    d.press('FUNC', after_ms=60)
+    d.tap('4', after_ms=200)
+    d.release('FUNC', after_ms=300)
+    check('not recording: FUNC + trig 4 still mutes lane 4', mutes() == 8, bin(mutes()))
     check('the firmware is still running', not d.halted, str(d.halted))
 
     failed = [n for n, ok in results if not ok]

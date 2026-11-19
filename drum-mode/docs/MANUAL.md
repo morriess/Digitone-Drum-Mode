@@ -1,13 +1,13 @@
 # Drum Mode user manual
 
-**Drum Mode 0.9.2 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.9.3 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.9.2 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
+> **Beta.** 0.9.3 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -59,7 +59,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D092**).
+  **D093**).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -83,7 +83,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and the OS version on its boot screen now reads **D092**
+The Digitone starts as normal, and the OS version on its boot screen now reads **D093**
 instead of 1.44.
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
@@ -229,7 +229,9 @@ or used while held keeps it. Locks apply to the whole step (all drums on it): se
 
 ## Muting a drum
 
-Hold **FUNC** and press a pad to mute that drum; do it again to unmute it.
+Hold **FUNC** and press a pad to mute that drum; do it again to unmute it. This works when
+you're not recording: in GRID, STEP or LIVE RECORDING, FUNC + a trig key does its normal
+Digitone job (in GRID RECORDING it places a lock trig).
 
 - The pattern plays on without the muted drum, and its steps stay in the pattern.
 - On a step with several drums, only the muted one drops out.
@@ -314,7 +316,7 @@ On a Drum Mode track:
 | Play a drum | trig keys **1–8** |
 | Change a drum's note / velocity | hold its pad + turn **A** / **B** |
 | Set all notes / velocities | **LFO**, **LFO** → Drum Notes, **LFO** → Drum Velocity; knobs **A–H** |
-| Mute / unmute a drum | **FUNC** + its pad |
+| Mute / unmute a drum | **FUNC** + its pad (not while recording) |
 | Select a drum for grid editing | its pad (or hold **TRIG** + its pad: silent) |
 | Program the selected drum's steps | **RECORD** (stopped), then trig keys **1–16**; **PAGE** for more steps |
 | Live record | hold **RECORD** + **PLAY**, play the pads, **STOP** |
@@ -355,7 +357,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; 0.9's lane select, 0.9.1's running light and 0.9.2's stock trig keys not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; 0.9's lane select, 0.9.1's running light and 0.9.2/0.9.3's stock trig keys not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

@@ -238,8 +238,9 @@ both mods' tests pass; until 2026-11-19 the folder digiarp-core5 in this repo).
   - **Step 1 of a run follows the state of the run before.** The sequencer prepares a step one step
     early, and step 1 of a new run when the previous run stops (or earlier), so ev_fire_notes and
     ev_fire_vel see it then, not at PLAY. A change made while stopped (on/off, a mute, a velocity)
-    reaches step 1 from the following run. A possible fix: ask the sequencer to prepare step 1 again
-    when such a setting changes while stopped; the routine that does it isn't known yet.
+    reached step 1 only from the following run. *Fixed in 0.9.4:* after such a change Drum Mode calls
+    seq-events' `sq_rearm(1 << track)`, which has the sequencer prepare step 1 again at the end of the
+    UI tick while stopped; the first bar after each change now plays the new way.
   - With Drum Mode off, trig key 1 sends nothing while stopped outside KEYBOARD mode (the stock's
     GRID mode), as on any MIDI track.
 - **Open: a UI hang in the emulator.** In one exact sequence of test_drum_off.py (the full beat,

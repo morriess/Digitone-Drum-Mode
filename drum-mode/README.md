@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.9.3, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.9.4, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.9.3)
+## Using it (0.9.4)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -246,12 +246,13 @@ defaults), and pattern copy/paste carrying them.
     repeats), and whether a cleaner fix exists: finding the release where the stock takes it,
     or reading the keys' held state from the firmware instead of a timer.
 
-- **Step 1 after PLAY follows the old setting.** The Digitone prepares each step one step
+- **Step 1 after PLAY follows the old setting (fixed in 0.9.4, to confirm on the unit).** The Digitone prepares each step one step
   ahead, and step 1 of a new run is prepared when the previous run stops. So right after you
   turn Drum Mode off or on, or change a mute or velocity while stopped, step 1 of the next run
   still plays the old way; from step 2, and from the next run on, everything follows the new
-  setting. *Possible fix:* when such a setting changes while stopped, have the sequencer
-  prepare step 1 again. First step: find where the firmware prepares that step (OS 1.44).
+  setting. *Fix (0.9.4):* after Drum Mode on/off, a mute, a lane note or a velocity changes,
+  Drum Mode calls seq-events' `sq_rearm` for the track, which has the sequencer prepare step 1
+  again while stopped. `tests/test_drum_off.py` now checks the first bar after each change.
   Found in the emulator with `tests/test_drum_off.py`; details in
   [docs/design.md](docs/design.md) ("Drum Mode off").
 - **The UI froze with the Mod Menu open (emulator only, cause unknown).** In one exact
@@ -293,7 +294,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**D093** on the unit.
+**D094** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

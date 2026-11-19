@@ -10,8 +10,9 @@ each change:
 2. Drum Mode off (Mod Menu): the pattern data is unchanged, and the stock OS plays it: the same notes, the hats back,
    every note at the trig's own velocity (100); the pads are the stock trig keys again;
 3. Drum Mode on again: as in 1 (the mute and the velocities were kept).
-The first bar after each change shows step 1 as it was prepared before the change (the sequencer prepares a step one
-step early, step 1 of a new run at the end of the run before). Prints what each bar sent; results in docs/design.md.
+The sequencer prepares a step one step early, step 1 of a new run at the end of the run before; since 0.9.4 Drum Mode
+has it prepare step 1 again after a change (seq-events' sq_rearm), so already the first bar after each change plays
+the new way. Prints what each bar sent; results in docs/design.md.
 """
 import os
 import struct
@@ -126,13 +127,12 @@ def main():
           '%s, mutes %s' % (list(vel), bin(d.mem(S['dm'] + 2, 1)[0])))
     before = pattern()
 
-    # Each setting change is followed by two bars: the first bar's step 1 was prepared before the change (the
-    # sequencer prepares a step one step early, and step 1 of a new run at the end of the run before), so the
-    # second bar is the one that shows the new state.
+    # Each setting change is followed by two bars. Step 1 of a run is prepared at the end of the run before; 0.9.4
+    # has it prepared again after each change, so both bars show the new state (0.9.3 and before: the first bar's
+    # step 1 still played the old way).
     print('Drum Mode on, hat muted, kick 90 / snare 70:')
     first, _ = play_bar()
-    check('ON, 1st bar: step 1 still as prepared before the mute and velocities (kick + hat at 100)',
-          first == [(KICK, 100), (HAT, 100)], str(first))
+    check('ON, 1st bar: step 1 already kick at 90, the hat muted (0.9.4)', first == [(KICK, 90)], str(first))
     first, rest = play_bar()
     check('ON, 2nd bar: step 1 is kick at 90, the hat muted', first == [(KICK, 90)], str(first))
     check('ON: steps 5, 9, 13: kick x3, snare x2, all at 90 (a step plays at its loudest lane\'s velocity), no hats',
@@ -144,7 +144,8 @@ def main():
     check('OFF: the pattern data is unchanged (all 64 steps, trigs and notes)', pattern() == before)
     print('Drum Mode off:')
     first, _ = play_bar()
-    check('OFF, 1st bar: step 1 still as Drum Mode prepared it (kick at 90, no hat)', first == [(KICK, 90)], str(first))
+    check('OFF, 1st bar: step 1 already the stock\'s: kick + hat at 100 (0.9.4)', first == [(KICK, 100), (HAT, 100)],
+          str(first))
     first, rest = play_bar()
     check('OFF, 2nd bar: step 1 is the stock\'s: kick + hat at 100', first == [(KICK, 100), (HAT, 100)], str(first))
     check('OFF: the rest as programmed, every note at the trig\'s velocity (100): kick x3, snare x2, hat x7',
@@ -161,8 +162,7 @@ def main():
           list(d.mem(S['dm'] + 40, 2)) == [90, 70])
     print('Drum Mode on again:')
     first, _ = play_bar()
-    check('ON again, 1st bar: step 1 still the stock\'s (kick + hat at 100)', first == [(KICK, 100), (HAT, 100)],
-          str(first))
+    check('ON again, 1st bar: step 1 already kick at 90, the hat muted (0.9.4)', first == [(KICK, 90)], str(first))
     again = play_bar()
     check('ON again, 2nd bar: plays exactly as before turning it off', again == on_bar, str(again))
     check('the firmware is still running', not d.halted, str(d.halted))

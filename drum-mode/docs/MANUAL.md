@@ -1,13 +1,13 @@
 # Drum Mode user manual
 
-**Drum Mode 0.9.3 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.9.4 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.9.3 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
+> **Beta.** 0.9.4 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -59,7 +59,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D093**).
+  **D094**).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -83,7 +83,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and the OS version on its boot screen now reads **D093**
+The Digitone starts as normal, and the OS version on its boot screen now reads **D094**
 instead of 1.44.
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.

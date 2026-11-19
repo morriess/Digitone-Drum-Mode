@@ -29,6 +29,7 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
+ * - 0.9.4: a change to Drum Mode on/off, a mute, a lane note or a velocity reaches step 1 of the next run too.
  * - 0.9.2: the stock keeps its trig key functions: pattern/bank select and chains (while its select view is open,
  *   PTN or BANK is held, or a trig key it took is still held), and in GRID RECORDING a held step is the stock's held
  *   trig (locks, micro timing, copy/paste) while a quick tap still adds or takes out the lane.
@@ -226,6 +227,14 @@ static void defaults(void)
 static int32_t drum_track(int32_t track)
 {
     return track >= DM_FIRST && track < DM_FIRST + DM_TRACKS && ((dm.enabled >> (track - DM_FIRST)) & 1);
+}
+
+/* 0.9.4: a setting the sequencer applies when it prepares a step changed (Drum Mode on/off, a lane's mute, note or
+ * velocity). While stopped the sequencer prepared step 1 when the last run stopped, so step 1 of the next run would
+ * still play the old way: seq-events prepares it again at the end of this UI tick. The UI task. */
+static void rearm(int32_t track)
+{
+    sq_rearm(1u << track);
 }
 
 /* ---- live recording ------------------------------------------------------------------------- */
@@ -690,6 +699,7 @@ static void page_turn(int32_t page, int32_t enc, int32_t counts)
         if (n == dm.note[t][lane])
             return;
         dm.note[t][lane] = (uint8_t)n;
+        rearm(track);
         ch = midi_channel(track);
         if (ch >= 0) {
             FW_MIDI_NOTE_ON(ch, n, dm.velocity[t][lane]);
@@ -699,6 +709,7 @@ static void page_turn(int32_t page, int32_t enc, int32_t counts)
     } else {
         int32_t v = dm.velocity[t][lane] + steps;
         dm.velocity[t][lane] = (uint8_t)(v < 1 ? 1 : v > 127 ? 127 : v);
+        rearm(track);
     }
     dm_dirty = 1;
 }
@@ -788,6 +799,7 @@ int32_t dm_key(void *brain, void *ev)
         if (k >= DM_LANES || any_recording())
             return 0;                   /* FUNC + 9-16, and FUNC + any trig key while recording: the stock's (0.9.3) */
         dm.mutes[t] ^= (uint8_t)(1u << k);
+        rearm(track);
         dm_taken |= bit;                /* its release is ours too; no note */
         say(((dm.mutes[t] >> k) & 1) ? dm_mute_msg[k] : dm_unmute_msg[k], 0);
         return 1;
@@ -866,12 +878,14 @@ int32_t dm_enc(void *brain, void *ev)
         if (n != dm.note[t][lane]) {
             int32_t track = h->track;
             dm.note[t][lane] = (uint8_t)n;
+            rearm(track);
             lane_off(k);                /* hear the new note: the old one off, the new one on */
             lane_on(k, track, lane);
         }
     } else {
         int32_t v = dm.velocity[t][lane] + steps;
         dm.velocity[t][lane] = (uint8_t)(v < 1 ? 1 : v > 127 ? 127 : v);
+        rearm(h->track);
     }
     dm_info_ticks = INFO_TICKS;
     dm_note_ticks = 0;
@@ -903,6 +917,7 @@ static void dm_open(void *brain, void *event, int32_t track)
     }
     bit = (uint8_t)(1u << (track - DM_FIRST));
     dm.enabled ^= bit;
+    rearm(track);
     if (!(dm.enabled & bit))
         release_track(track);
     say((dm.enabled & bit) ? "DRUM %c ON" : "DRUM %c OFF", 'A' + track - DM_FIRST);

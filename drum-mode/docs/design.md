@@ -261,6 +261,14 @@ those two names changed, it goes into one firmware with Drum Mode: see
   into A01. 0.8.1 took A01's or A02's set (it fixed an A02 test, not the unit); 0.8.2 takes
   the active pattern's, checked by its data pointer. Lesson: test on a pattern far from A01.
 
+- **An empty view over the page after a pattern pick (0.8.3).** Picking a pattern with BANK or
+  PTN leaves one of the firmware's permanent views (first word 0x401c3cf0, built at boot by
+  0x400af2ec) on the main view stack above the page; it draws nothing, so the page looks normal,
+  but fw_view() returns it. Drum Mode only drew while the page class (0x401c3f34) was on top, so
+  on such a pattern it drew nothing: DRUM pages empty, corner strip gone (seen on the unit on H02).
+  0.8.3 walks the stack (MainScreen at 0x419f0e50, head +0x54, top +0x58, next +4, view +8) past
+  that view. Again a pattern-dependent bug the A01-only tests missed.
+
 ## What the emulator can't show
 
 Everything above was tested in [digiemu](https://github.com/irpina/digiemu). Its own docs

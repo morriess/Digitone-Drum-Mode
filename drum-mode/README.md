@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.8.2, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.8.3, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.8.2)
+## Using it (0.8.3)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -194,6 +194,14 @@ defaults), and pattern copy/paste carrying them.
   Reproduced and fixed in the emulator on H02 (`tests/test_other_pattern.py`). The process and
   results: [docs/debugging.md](docs/debugging.md).
 
+- **The DRUM pages came up empty after picking a pattern (fixed in 0.8.3, to confirm on the
+  unit).** Reported on the unit 2026-11-18 on H02: Drum Notes and Drum Velocity showed their
+  empty knob boxes, not the 8 lanes. *Cause:* picking a pattern with BANK or PTN leaves one of
+  the firmware's views on top of the page, empty and invisible; Drum Mode drew only while the
+  page itself was on top, so it drew nothing at all (the corner strip went too). Reproduced in
+  digiemu (A01 draws, H02 picked with BANK didn't). *Fix (0.8.3):* Drum Mode looks past that
+  view. `tests/test_other_pattern.py` checks the Drum Notes page on H02.
+
 - **PATTERN or BANK + a trig key plays a pad instead of choosing the pattern** (found in
   the emulator, 0.8.1). On a Drum Mode track, Drum Mode takes every trig key press, also
   right after [PTN] or [BANK], so pattern and bank select (and chains) don't work there.
@@ -226,6 +234,8 @@ defaults), and pattern copy/paste carrying them.
   Drum Mode redraws the corner only when something in it changes; if the Digitone sometimes
   repaints the whole page after Drum Mode has drawn, the strip stays wiped until the next
   change. Also asking for a redraw whenever the shown page changes would cover that.
+  *Probably the same cause as the empty DRUM pages (fixed in 0.8.3):* after a pattern change
+  the strip went too, until something else took that view off the stack. To confirm on 0.8.3.
 - **The DRUM pages clash with DigiTables.** Drum Mode's two pages use mod page slots 27 and
   28; DigiTables (irpina) also claims 27, so the two can't be built into one firmware.
   DigiTables only exists for OS 1.43 so far, so this doesn't matter on 1.44 yet. *Possible
@@ -246,7 +256,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DR82** on the unit.
+**DR83** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

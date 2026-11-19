@@ -7,7 +7,7 @@ The project keeps a set of track edit objects per pattern, and the active patter
 0.8 always wrote through A01's set and 0.8.1 through A01's or A02's: on another pattern the recorded beats went into
 a pattern that wasn't playing (the bug found on the unit, on H02). This switches to H02 (BANK + trig 16, then trig 2)
 before turning Drum Mode on, live records four kicks, and checks they are in H02, not in A01 or A02, and that
-playback sends them on the DIN wire.
+playback sends them on the DIN wire. Then the DRUM pages must still be drawn there (0.8.3).
 """
 import os
 import sys
@@ -81,6 +81,14 @@ def main():
     data = b''.join(wire)
     ons = [i for i in range(len(data) - 2) if data[i] & 0xF0 == 0x90 and data[i + 1] == kick and data[i + 2] > 0]
     check('playback sends the kicks on the DIN wire', len(ons) >= 4, data.hex(' ')[:200])   # a loop may wrap: 4 or more
+
+    # 0.8.3: picking a pattern with BANK/PTN leaves an empty firmware view on top of the page; Drum Mode drew
+    # nothing under it (the DRUM pages came up empty on the unit, on H02).
+    d.tap('LFO', after_ms=500)
+    d.tap('LFO', after_ms=500)
+    d.screen_png(os.path.join(work, 'h02-drum-notes.png'))
+    cells = sum(d.pixel(x, y) for x in range(21, 22) for y in range(13, 36))
+    check('on H02, LFO twice shows Drum Notes with its cells drawn', cells > 15, str(cells))
 
     failed = [n for n, ok in results if not ok]
     print('\n%d of %d passed' % (len(results) - len(failed), len(results)))

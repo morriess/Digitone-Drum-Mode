@@ -80,6 +80,14 @@ typedef int32_t (*midi_off_fn)(int32_t channel, int32_t note);
  * vtable: the corner is drawn only while one of them is the view on top (fw_view), not over the settings menus, the
  * project list, TEMPO or the pattern screens, which measured as other classes in digiemu. */
 #define PAGE_VTABLE         0x401c3f34u
+/* 0.8.3: after a pattern or bank selection (PTN/BANK + a trig key) one of the firmware's permanent views (its first
+ * word 0x401c3cf0, built at boot by 0x400af2ec) stays on the main view stack above the page, drawing nothing; with
+ * it on top fw_view() isn't the page, so Drum Mode drew nothing on any pattern picked that way (measured in digiemu:
+ * on H02 the DRUM pages came up empty and the corner strip was gone). The stack is walked here past such views:
+ * MainScreen (its pointer at 0x419f0e50 on OS 1.44, as core's fw_view reads it), the list's head at +0x54, the top
+ * node at +0x58, a node's next at +4 and its view at +8. */
+#define MAIN_SCREEN_PP      0x419f0e50u
+#define IDLE_VIEW_VTABLE    0x401c3cf0u
 /* 0.7: GRID RECORDING is byte +0x168 of the recorder's state, read only while +0x161 is set (the stock's getter,
  * 0x400adcb4); the page of steps the trig keys show is the long at 0x41368ce8 (0 = steps 1-16; measured in digiemu,
  * a press of PAGE on a 48-step track counting 0, 1, 2, 0); the LED setter, set(mgr, led, layer, colour), the one
@@ -837,9 +845,25 @@ void dm_leds(void *mgr)
  *   the title bar's text beside it stays readable. */
 static int32_t dm_info_lane = -1, dm_info_track = -1;
 
+static void *shown_view(void)
+{
+    uint8_t *ms = *(uint8_t *const volatile *)MAIN_SCREEN_PP, *head, *node, *v;
+    if (!ms)
+        return fw_view();
+    head = ms + 0x54;
+    node = *(uint8_t *const volatile *)(ms + 0x58);
+    for (int32_t i = 0; i < 4 && node && node != head; i++) {
+        v = *(uint8_t *const volatile *)(node + 8);
+        if (!v || *(volatile uint32_t *)v != IDLE_VIEW_VTABLE)
+            return v;
+        node = *(uint8_t *const volatile *)(node + 4);
+    }
+    return 0;
+}
+
 static int32_t on_page(void)
 {
-    void *v = fw_view();
+    void *v = shown_view();
     return v && *(volatile uint32_t *)v == PAGE_VTABLE;
 }
 

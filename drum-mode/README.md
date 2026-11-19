@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.8.3, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.9, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.8.3)
+## Using it (0.9)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -83,14 +83,17 @@ pads' velocities.
 
 ### Programming a lane on the grid
 
-1. **Select a lane:** hold the **TRIG** page key and press a pad (1–8). No note plays; the
-   corner shows `EDIT CH`, and a line under the lane's box in the strip marks the selected
-   lane.
+1. **Select a lane:** press its pad (1–8). It plays, and from then on its key stays lit
+   **dim white** (red if the lane is muted) and a line under its box in the strip marks the
+   selected lane. During live recording a pad doesn't change the selection. To select
+   without hearing it, hold the **TRIG** page key and press the pad (the corner shows
+   `EDIT CH`).
 2. Press **RECORD** (while stopped) for GRID RECORDING, as you would to place trigs.
 3. The 16 trig keys are now the selected lane's steps. Press a key to put the lane on
    that step, press it again to take it off. The keys light **red** where the selected
    lane plays; the rest stay dark, even if other drums play there.
-4. Select another lane (TRIG + pad) at any time: the keys switch to that lane's steps.
+4. To switch lanes, leave GRID RECORDING, press another pad (or TRIG + pad at any time),
+   and the keys show that lane's steps.
 5. For patterns longer than 16 steps, **PAGE** moves through the pages as usual.
 
 Steps are stored the same way live recording stores them: a normal trig, with several
@@ -154,7 +157,7 @@ MIDI notes, without Drum Mode's lanes), for up to 8 MIDI tracks of any kind. The
 timing (sending each note at the moment it plays, plus its note-off), so this waits until the
 current version has run on a unit.
 
-**Improvement (asked 2026-11-18, after the first working hardware test):** pick a lane with
+**Improvement (asked 2026-11-18, after the first working hardware test; done in 0.9):** pick a lane with
 its pad alone. Pressing trig key 1-8 selects that lane (voice), and its key stays lit as the
 selected one. When you then press RECORD (GRID RECORDING), the trig keys place and show trigs
 for that lane only, never the other lanes' steps. Today a lane is selected with TRIG held + pad
@@ -256,7 +259,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DR83** on the unit.
+**DRM9** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

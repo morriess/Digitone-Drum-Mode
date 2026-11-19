@@ -9,7 +9,7 @@ set -euo pipefail
 
 ELEKLOADER_REPO="https://github.com/irpina/elekloader.git"
 ELEKLOADER_COMMIT="9281c991e27c1516b43749dfb39a53c2c057859b"   # core-dn1 5.3, seq-events-dn1 0.1
-VERSION_LABEL="DR83"
+VERSION_LABEL="DRM9"
 
 here="$(cd "$(dirname "$0")" && pwd)"
 stock="${1:?usage: ./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx [output.syx]}"

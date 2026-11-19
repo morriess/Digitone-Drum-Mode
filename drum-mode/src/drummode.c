@@ -21,11 +21,14 @@
  *   of muted lanes only plays nothing); its steps stay in the pattern. The pad itself still plays and records. The
  *   corner strip shows a muted lane as a dash. Saved with the project.
  *
- * - Hold the TRIG page key and press a pad: that lane is selected (no note plays). The corner strip underlines it.
+ * - 0.9: a pad press selects its lane as it plays (not during live recording, where pads only play and record); its
+ *   key stays lit dim white (red when muted). Holding the TRIG page key and pressing a pad still selects without a
+ *   note. The corner strip underlines the selected lane.
  * - GRID RECORDING (RECORD while stopped) on a Drum Mode track: the 16 trig keys are the shown page's steps for the
  *   selected lane. A press adds the lane's note to the step (as live recording does) or takes it out (the step's
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
- *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted.
+ *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
+ *   selected lane's dim white.
  *
  * - 0.8: two DRUM pages behind the MIDI track's LFO key (LFO, then Drum Notes, then Drum Velocity): knobs
  *   A-H set lanes 1-8's notes (each new note plays, so it can be found by ear) and velocities.
@@ -103,6 +106,7 @@ typedef void (*led_set_fn)(void *mgr, int32_t led, int32_t layer, int32_t colour
 #define LED_RED             3
 #define LED_DIM_RED         5
 #define LED_WHITE           20
+#define LED_DIM_WHITE       21      /* 0.9: the selected lane's pad (the stock's own dim white) */
 
 #define DM_TRACKS       4               /* MIDI tracks A-D: firmware tracks 4-7 */
 #define DM_FIRST        4
@@ -662,6 +666,10 @@ int32_t dm_key(void *brain, void *ev)
         return 1;
     }
     if (k < DM_LANES) {
+        if (!live_recording() && selected_lane(track - DM_FIRST) != k) {
+            select_lane(track - DM_FIRST, k);   /* 0.9: a pad selects its lane as it plays (not in LIVE RECORDING) */
+            dm_dirty = 1;
+        }
         lane_on(k, track, k);
         if (dm_last_pad != k)
             dm_info_ticks = 0;
@@ -827,11 +835,13 @@ void dm_leds(void *mgr)
         return;
     }
     for (int32_t k = 0; k < KEY_STEPS; k++) {
-        int32_t c = LED_DARK;
+        int32_t c = LED_DARK, muted = (dm.mutes[t] >> k) & 1, sel = k == selected_lane(t);
         if (k < DM_LANES) {
             if (((dm_lit_held[t] >> k) & 1) || dm_flash[t][k])
                 c = LED_WHITE;
-            else if ((dm.mutes[t] >> k) & 1)
+            else if (sel)
+                c = muted ? LED_RED : LED_DIM_WHITE;    /* 0.9: the selected lane stays lit */
+            else if (muted)
                 c = LED_DIM_RED;
         }
         FW_LED_SET(mgr, k + 1, LED_LAYER, c);

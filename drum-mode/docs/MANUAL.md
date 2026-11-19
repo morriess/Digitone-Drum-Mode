@@ -1,13 +1,13 @@
 # Drum Mode user manual
 
-**Drum Mode 0.8.3 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.9 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.8.3 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
+> **Beta.** 0.9 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -59,7 +59,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **DR83**).
+  **DRM9**).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -83,7 +83,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and the OS version on its boot screen now reads **DR83**
+The Digitone starts as normal, and the OS version on its boot screen now reads **DRM9**
 instead of 1.44.
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
@@ -198,14 +198,17 @@ how hard a lane plays, both when you hit its pad and when the sequencer plays it
 
 You can also place drums step by step, one drum at a time, like on a Digitakt.
 
-1. **Select a drum:** hold the **TRIG** page key and press its pad (1–8). Nothing
-   plays. The corner says, for example, `EDIT CH`, and a small line under that drum's
-   box in the corner strip marks it as selected.
+1. **Select a drum:** press its pad (1–8). You hear it, and its key stays lit **dim
+   white** (red if the drum is muted), with a small line under its box in the corner
+   strip. During live recording a pad doesn't change the selection. To select a drum
+   without hearing it, hold the **TRIG** page key and press its pad (the corner says, for
+   example, `EDIT CH`).
 2. **Enter GRID RECORDING:** press **RECORD** while the sequencer is stopped.
 3. **Place steps:** the 16 trig keys are now the selected drum's 16 steps. Press a key to
    put the drum on that step; press it again to take it off. Keys light **red** where the
    selected drum plays.
-4. **Switch drums** at any time with TRIG + pad. The keys then show the new drum's steps.
+4. **Switch drums:** leave GRID RECORDING and press another pad, or use TRIG + pad at any
+   time. The keys then show the new drum's steps.
 5. **Longer patterns:** press **PAGE** to reach steps 17–32, 33–48 and 49–64, as usual.
 6. Press **RECORD** again to leave GRID RECORDING.
 
@@ -250,7 +253,8 @@ seconds. While you hold or edit a pad, the corner shows its note and velocity in
 ### The trig key LEDs
 
 Outside GRID RECORDING, pads 1–8 light **white** while held or when their drum plays,
-and **dim red** when muted. Keys 9–16 stay dark.
+and **dim red** when muted. The selected drum's pad stays **dim white** (**red** if it's
+muted). Keys 9–16 stay dark.
 
 ![The trig key LEDs while playing](ui/leds-pads.png)
 
@@ -297,7 +301,7 @@ On a Drum Mode track:
 | Change a drum's note / velocity | hold its pad + turn **A** / **B** |
 | Set all notes / velocities | **LFO**, **LFO** → Drum Notes, **LFO** → Drum Velocity; knobs **A–H** |
 | Mute / unmute a drum | **FUNC** + its pad |
-| Select a drum for grid editing | hold **TRIG** + its pad |
+| Select a drum for grid editing | its pad (or hold **TRIG** + its pad: silent) |
 | Program the selected drum's steps | **RECORD** (stopped), then trig keys **1–16**; **PAGE** for more steps |
 | Live record | hold **RECORD** + **PLAY**, play the pads, **STOP** |
 
@@ -337,7 +341,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; 0.9's lane select not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

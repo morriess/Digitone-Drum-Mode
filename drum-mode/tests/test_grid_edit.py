@@ -14,7 +14,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from emu_session import Digitone          # noqa: E402
 
-RED, DARK, DIM_RED, WHITE = 3, 2, 5, 20
+RED, DARK, DIM_RED, WHITE, DIM_WHITE = 3, 2, 5, 20, 21
 results = []
 
 
@@ -130,7 +130,8 @@ def main():
     d.tap('RECORD', after_ms=400)
     check('GRID RECORDING is off', d.mem(rec + 0x168, 1)[0] == 0)
     l = leds()
-    check('pads dark when idle', all(l[k] == DARK for k in range(16)), str(l))
+    check('pads dark when idle, the selected lane (3) dim white (0.9)',
+          all(l[k] == (DIM_WHITE if k == 2 else DARK) for k in range(16)), str(l))
     d.press('1', after_ms=250)
     l = d.leds()
     check('a held pad lights white', l[0] == WHITE, str(l))
@@ -140,7 +141,8 @@ def main():
     d.tap('3', after_ms=200)
     d.release('FUNC', after_ms=300)
     l = leds()
-    check('a muted lane\'s pad is dim red', l[2] == DIM_RED and l[0] == DARK, str(l))
+    check('a muted lane\'s pad is dim red; pad 1, played, is now the selected lane (0.9)',
+          l[2] == DIM_RED and l[0] == DIM_WHITE, str(l))
     check('the firmware is still running', not d.halted, str(d.halted))
 
     failed = [n for n, ok in results if not ok]

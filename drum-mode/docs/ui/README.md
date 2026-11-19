@@ -33,7 +33,7 @@ MIDI track with Drum Mode on (a "Drum Mode track"):
 | Mod Menu | a **DRUM MODE** tile that turns Drum Mode on or off for the selected MIDI track | 0.1 |
 | Screen, top-right corner | the **lane strip**: 8 boxes that light when a lane plays; short **messages**; the held pad's **info** | 0.2–0.7 |
 | Screen, two new pages | **Drum Notes** and **Drum Velocity**, behind the MIDI track's LFO page | 0.8 |
-| Trig keys | pads 1–8 play the lanes; TRIG + pad selects a lane; FUNC + pad mutes; in GRID RECORDING the keys edit the selected lane | 0.1–0.7 |
+| Trig keys | pads 1–8 play the lanes and select them (0.9; not while live recording); TRIG + pad selects silently; FUNC + pad mutes; in GRID RECORDING the keys edit the selected lane | 0.1–0.7 |
 | Trig key LEDs | the pads' state, or in GRID RECORDING the selected lane's steps | 0.7 |
 
 Drum Mode works on the 8 lanes of one MIDI track at a time:
@@ -82,7 +82,7 @@ Eight tiny boxes, one per lane, in pad order (BD on the left, CY on the right).
 | Outline (looks like a small "0") | Lane active, not playing right now |
 | Filled | The pad is held or was just hit, or the sequencer just played the lane (a short blink) |
 | Dash | Lane muted (FUNC + pad) |
-| Line under a box | The selected lane, the one GRID RECORDING edits (TRIG + pad) |
+| Line under a box | The selected lane, the one GRID RECORDING edits (its pad, or TRIG + pad) |
 
 ![The strip at three moments: idle, a pad held, a lane muted](lane-strip.png)
 
@@ -146,7 +146,7 @@ you can find the right drum on your drum machine by ear.
 **Drum Velocity.** Each cell shows the lane's name and velocity (1–127). A muted lane's
 cell also says `MUTE`. Turning a knob changes the velocity and plays nothing.
 
-**The selected lane** (TRIG + pad) is shown with its cell inverted, white with black
+**The selected lane** (its pad, or TRIG + pad) is shown with its cell inverted, white with black
 text, on both pages.
 
 **On a MIDI track without Drum Mode** the two pages still appear in the LFO list (they
@@ -210,6 +210,7 @@ mode.
 | --- | --- |
 | Pad 1–8 held, or its lane just played | white |
 | Pad 1–8 of a muted lane | dim red |
+| Pad of the selected lane (0.9) | dim white; red if muted |
 | Any other key | dark |
 
 Drum Mode sets its LEDs first in each LED update, so they take priority over the stock

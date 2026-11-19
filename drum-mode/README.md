@@ -51,6 +51,20 @@ Digitone mk1 core and its sequencer-events mod.
   sends its steps as MIDI (its voice silent), for up to 8 drum or MIDI tracks. Not more tracks:
   the format has exactly 4 synth + 4 MIDI. The hard part is timing each note and its note-off.
 
+**Possible additions after v1** (ideas from 2026-11-19, once the current features work on the
+unit)
+- **Ratchets / rolls per step:** a step plays 2, 3 or 4 times within its 16th, for hi-hat rolls
+  and snare fills. The Digitone mk1 has no retrigs (the Digitakt does), so this fills a real
+  gap. Needs notes sent between steps, which DigiArp shows is possible.
+- **Note repeat on the pads:** hold a pad and it repeats at 1/8, 1/16 or 1/32 in time with the
+  tempo (MPC-style), and is recorded during live recording.
+- **Euclidean / fill generator per voice:** pick a voice, set e.g. 5 hits over 16 steps and an
+  offset, and Drum Mode writes the steps.
+- **Different lengths per voice:** e.g. kick over 16 steps, hats over 12, percussion over 7, for
+  polyrhythms. Ambitious: a Digitone track has a single length.
+- **Probability and humanize per voice:** e.g. hats play 70% of the time, or small random
+  velocity and timing shifts. The stock trig conditions work per step, not per voice.
+
 **To decide after testing**
 - A new pattern copies the last pattern's Drum Mode settings (the user's choice, 2026-11-19), or
   starts from the defaults.

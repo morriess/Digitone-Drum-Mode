@@ -23,7 +23,7 @@ each drum as it plays.
 8. [Programming steps on the grid](#programming-steps-on-the-grid)
 9. [Muting a drum](#muting-a-drum)
 10. [What the screen and LEDs show](#what-the-screen-and-leds-show)
-11. [Saving, loading and the stock OS](#saving-loading-and-the-stock-os)
+11. [Settings per pattern, saving and the stock OS](#settings-per-pattern-saving-and-the-stock-os)
 12. [Quick reference](#quick-reference)
 13. [Troubleshooting](#troubleshooting)
 14. [Limitations](#limitations)
@@ -134,9 +134,16 @@ labels: any lane can play any note.
 - A pad sends a note-on when pressed and a note-off when released, on the MIDI track's
   channel, at that lane's velocity.
 - Play as many pads at once as you like.
-- Trig keys **9–16** do nothing outside GRID RECORDING.
-- Drum Mode is set per MIDI track: you can have it on for MIDI A and off for MIDI B.
-  To turn it off, choose DRUM MODE in the Mod Menu again (`DRUM A OFF`).
+- Pressing a pad also **selects** that drum for grid editing (not during live recording);
+  its key stays lit dim white.
+- Trig keys **9–16** don't play anything; while the sequencer runs they show where the
+  pattern is (see [the trig key LEDs](#the-trig-key-leds)).
+- **Patterns and banks** are picked as usual on a Drum Mode track: PTN then a trig key, PTN
+  held + a trig key, BANK + trig 9–16 then a pattern, and chains. The trig keys go to the
+  Digitone for those, not to the pads.
+- Drum Mode is set per MIDI track, and per pattern: you can have it on for MIDI A and off
+  for MIDI B, and on in A01 but off in A02. To turn it off, choose DRUM MODE in the Mod Menu
+  again (`DRUM A OFF`).
 
 ## Setting each drum's note and velocity
 
@@ -279,7 +286,7 @@ step currently playing shows the Digitone's normal playhead.
 
 More detail, with every screen: [Drum Mode UI additions](ui/README.md).
 
-## Saving, loading and the stock OS
+## Settings per pattern, saving and the stock OS
 
 - **Per pattern and per track** (0.10): each pattern keeps, for each MIDI track, whether
   Drum Mode is on, the mutes, and the notes and velocities. Change the kit on A02 and A01
@@ -298,13 +305,15 @@ More detail, with every screen: [Drum Mode UI additions](ui/README.md).
 - **A project made without Drum Mode, or with Drum Mode before 0.10,** opens with Drum Mode
   off and the GM notes.
 - **Back on the stock OS**, your projects still load, and the patterns play their steps as
-  normal MIDI trigs with chords. Mutes and Drum Mode's settings don't apply there, but the
-  stock OS keeps them, so they're back when you reinstall Drum Mode.
+  normal MIDI trigs with chords. Mutes and Drum Mode's settings don't apply there. **Don't
+  save a project on the stock OS** if you want to keep its Drum Mode settings: the stock OS
+  doesn't write them back, so they'd be gone when you reinstall Drum Mode (the steps stay).
 
 ### Turning Drum Mode off
 
-Turning Drum Mode off for a track (Mod Menu → DRUM MODE) leaves its pattern untouched, and
-the Digitone keeps playing it as ordinary MIDI trigs. Tested in the emulator:
+Turning Drum Mode off for a track (Mod Menu → DRUM MODE) applies to the pattern you're on
+(each pattern has its own on/off). It leaves the pattern's steps untouched, and the Digitone
+keeps playing them as ordinary MIDI trigs. Tested in the emulator:
 
 - **The same notes play**, so your drum machine plays the same drums.
 - **Mutes stop applying:** a muted drum plays again. The mutes are kept, and work again when
@@ -312,11 +321,8 @@ the Digitone keeps playing it as ordinary MIDI trigs. Tested in the emulator:
 - **Velocities change** to the trig's own velocity (VEL on the TRIG page, 100 by default).
   With Drum Mode on, each step plays at the loudest velocity among its drums.
 - **The trig keys** are normal trig keys again.
-- **The first step after PLAY** can still follow the old setting. The Digitone prepares each
-  step one step ahead, and step 1 of a new run was prepared when the previous run stopped.
-  So right after turning Drum Mode off, on, or changing a mute or velocity while stopped,
-  step 1 of the next run plays the old way; from step 2, and from the following run on,
-  everything follows the new setting.
+- **From the first step:** a change made while stopped (Drum Mode off or on, a mute, a note
+  or a velocity) already applies to step 1 of the next run.
 
 ## Quick reference
 
@@ -332,6 +338,9 @@ On a Drum Mode track:
 | Select a drum for grid editing | its pad (or hold **TRIG** + its pad: silent) |
 | Program the selected drum's steps | **RECORD** (stopped), then trig keys **1–16**; **PAGE** for more steps |
 | Live record | hold **RECORD** + **PLAY**, play the pads, **STOP** |
+| Lock a step, micro timing, copy/paste a step | in GRID RECORDING hold the step + knob / **LEFT**·**RIGHT** / **RECORD**, then another step + **STOP** |
+| Pick a pattern or bank, chains | as usual: **PTN** / **BANK** + trig keys |
+| Copy a pattern with its Drum Mode settings | **FUNC** + **RECORD**, go to the other pattern, **FUNC** + **STOP** |
 
 ## Troubleshooting
 
@@ -353,9 +362,20 @@ A synth track is selected. Select a MIDI track first (hold MIDI, press a track k
 Drum Mode may be on but the track has no channel set: see the first answer. Or you're
 in GRID RECORDING (keys edit steps, they don't play): press RECORD to leave it.
 
-**Trig keys 9–16 don't work.**
-Outside GRID RECORDING they're unused on a Drum Mode track. FUNC + 9–16 still do their
-stock jobs.
+**Trig keys 9–16 don't play anything.**
+That's right: on a Drum Mode track they only show where the pattern is while it plays
+(the running light). In GRID RECORDING they're steps 9–16. FUNC + 9–16 still do their stock
+jobs.
+
+**`KIT MEM FULL` appears.**
+The project already has 10 different kits (sets of 8 notes and velocities), the most it
+can keep. The new note or velocity wasn't kept. Set a pattern you don't need back to the
+same notes as another one, or reuse an existing kit, to free one up.
+
+**A pattern has the wrong drum setup.**
+Each pattern keeps its own Drum Mode settings, and a pattern you hadn't used before took a
+copy of the one you came from. Set it up on that pattern, or copy a pattern with FUNC +
+RECORD / FUNC + STOP.
 
 **The Digitone won't start after installing.**
 Reinstall the stock OS from the startup menu: see
@@ -369,7 +389,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; 0.9's lane select, 0.9.1's running light and 0.9.2/0.9.3's stock trig keys not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; the features from 0.9 to 0.10 not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

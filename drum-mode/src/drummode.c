@@ -29,6 +29,8 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
+ * - 0.9.1: while playing, keys 9-16 are a running light: each key 2 steps of the playing 16-step page, lit white for
+ *   the first half of each of its steps (two blinks a key), dark when stopped.
  *
  * - 0.8: two DRUM pages behind the MIDI track's LFO key (LFO, then Drum Notes, then Drum Velocity): knobs
  *   A-H set lanes 1-8's notes (each new note plays, so it can be found by ear) and velocities.
@@ -284,6 +286,54 @@ static int32_t hit_step(int32_t track)
     if (s < 0)
         s += len;
     return s;
+}
+
+/* 0.9.1: keys 9-16 as a running light while playing (not in GRID RECORDING). Each key stands for 2 steps of the
+ * 16-step page that plays (steps 1-2 key 9 ... 15-16 key 16; a page of a longer track starts over at key 9), lit white
+ * for the first half of each of its steps, so it blinks twice; a short or odd length leaves the keys after its last
+ * step dark, and a key with one step blinks once. The step playing is the one before the clock's (the fired one), it started
+ * playing when the clock moved to it; a step's length is the time between two clock steps (the track's speed and
+ * swing), else a 16th. -> the key 8-15 (0-based) that is lit now, or -1. */
+volatile int32_t dm_run_key = -1;      /* the lit key 9-16 (0-based 8-15) or -1, for the tests */
+volatile int32_t dm_run_len;            /* the track length it went by, for the tests */
+
+/* The step clock seen from the UI tick: seq-events' sq_clock (every step, trig or not; the fired step, one before the
+ * one playing), with the timeline when its step changed and the step length between two changes. */
+static struct { int32_t step; uint32_t time, len; } dm_clock[DM_TRACKS];
+
+static void clock_tick(int32_t track)
+{
+    int32_t t = track - DM_FIRST;
+    uint32_t last = sq_clock[track].last, now = fw_timeline;
+    if (fw_transport != 1 || last == SQ_CLOCK_NONE) {
+        dm_clock[t].step = -1;
+        return;
+    }
+    if ((int32_t)last != dm_clock[t].step) {
+        uint32_t dd = now - dm_clock[t].time;
+        if (dm_clock[t].step >= 0 && dd > TIMELINE_16TH / 8 && dd < TIMELINE_16TH * 16)
+            dm_clock[t].len = dd;       /* the track's speed scale and swing, as it plays */
+        if (!dm_clock[t].len)
+            dm_clock[t].len = TIMELINE_16TH;
+        dm_clock[t].step = (int32_t)last;
+        dm_clock[t].time = now;
+    }
+}
+
+static int32_t run_key(int32_t track)
+{
+    int32_t t = track - DM_FIRST, s = dm_clock[t].step, len, pos;
+    struct sq_track info;
+    if (fw_transport != 1 || s < 0)
+        return -1;
+    if (fw_timeline - dm_clock[t].time >= dm_clock[t].len / 2)
+        return -1;                      /* the dark half of the step */
+    len = sq_track_info(track, &info, sizeof info) < 0 || info.len < 1 ? 16 : info.len > 64 ? 64 : info.len;
+    dm_run_len = len;
+    pos = (s - LEAD_STEPS) % len;
+    if (pos < 0)
+        pos += len;
+    return KEY_STEPS / 2 + (pos % 16) / 2;
 }
 
 /* Add a note to a step of a track as the stock's live recorder does: a trig if there is none (the note in slot 0,
@@ -801,6 +851,19 @@ void dm_tick(void *ctrl)
         last_page = p;
         last_track = track;
     }
+    {                                   /* keys 9-16 follow the playing step (0.9.1): an LED frame when the lit key changes */
+        static int32_t last_run = -2;
+        int32_t track = fw_active_track, r = -1;
+        if (drum_track(track)) {
+            clock_tick(track);
+            if (!grid_recording())
+                r = run_key(track);
+        }
+        if (r != last_run)
+            dm_dirty = 1;               /* an LED frame (with a redraw: the frame alone isn't sent) */
+        last_run = r;
+        dm_run_key = r;
+    }
     if (dm_dirty || dm_note_ticks > 0) {
         *((unsigned char *)ctrl + 0x20) = 1;    /* redraw */
         *((unsigned char *)ctrl + 0x21) = 1;    /* and an LED frame */
@@ -834,8 +897,9 @@ void dm_leds(void *mgr)
         }
         return;
     }
+    int32_t run = run_key(track);
     for (int32_t k = 0; k < KEY_STEPS; k++) {
-        int32_t c = LED_DARK, muted = (dm.mutes[t] >> k) & 1, sel = k == selected_lane(t);
+        int32_t c = k == run ? LED_WHITE : LED_DARK, muted = (dm.mutes[t] >> k) & 1, sel = k == selected_lane(t);
         if (k < DM_LANES) {
             if (((dm_lit_held[t] >> k) & 1) || dm_flash[t][k])
                 c = LED_WHITE;

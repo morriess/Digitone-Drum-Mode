@@ -211,6 +211,7 @@ mode.
 | Pad 1–8 held, or its lane just played | white |
 | Pad 1–8 of a muted lane | dim red |
 | Pad of the selected lane (0.9) | dim white; red if muted |
+| Keys 9–16 while playing (0.9.1) | a running light: each key 2 steps of the playing page, white for the first half of each step |
 | Any other key | dark |
 
 Drum Mode sets its LEDs first in each LED update, so they take priority over the stock

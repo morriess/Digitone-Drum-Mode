@@ -9,7 +9,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Status: 0.9, live lanes, live recording, lane mutes, a lane strip that follows
+> **Status: 0.9.1, live lanes, live recording, lane mutes, a lane strip that follows
 > playback, grid editing per lane, and DRUM pages.** Trig keys 1–8 play 8 drum lanes on a
 > MIDI track; live recording writes the pads into the pattern; FUNC + a pad mutes its lane;
 > in GRID RECORDING the 16 trig keys edit and show one lane's steps; two DRUM pages set all
@@ -25,7 +25,7 @@ Digitone mk1 core and its sequencer-events mod.
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting) and
 the [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds).
 
-## Using it (0.9)
+## Using it (0.9.1)
 
 1. Select a MIDI track (hold MIDI, press a track key) and give it a channel: on its
    SRC page (SYN1), **FUNC + push encoder A** enables CHAN, then turn A to your
@@ -166,6 +166,11 @@ the change is mainly selecting by the pad itself and the lit key. Decided: a pad
 its drum when pressed to select it; during live recording a pad only plays and records, it
 doesn't change the selected lane.
 
+**Improvement (asked 2026-11-19; done in 0.9.1): keys 9–16 show the sequence's timing.**
+While playing, each key stands for 2 steps of the 16-step page that plays and blinks white
+on each, in time; longer tracks follow the page, shorter and odd lengths leave the keys after
+the last step dark (a key with one step blinks once).
+
 **Improvement (asked 2026-11-18): Drum Mode settings per pattern and per track,** like an
 instrument on a track. Today one set of settings is saved for the whole project: which MIDI
 tracks are Drum Mode tracks, and each track's 8 lane notes, velocities and mutes apply to every
@@ -259,7 +264,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**DRM9** on the unit.
+**D091** on the unit.
 
 **Never commit Elektron's OS files or built firmware to this repo**: `.gitignore`
 blocks `*.syx`, `*.bin` and `*.elemod`.

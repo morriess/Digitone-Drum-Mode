@@ -1,7 +1,7 @@
 diff -ru a/drummode.c b/drummode.c
---- a/drummode.c	2026-11-19 08:19:48.684404196 +0100
-+++ b/drummode.c	2026-11-19 08:19:48.687686662 +0100
-@@ -226,6 +226,7 @@
+--- a/drummode.c	2026-11-19 09:23:45.022585461 +0100
++++ b/drummode.c	2026-11-19 09:23:45.025647519 +0100
+@@ -228,6 +228,7 @@
  static volatile uint8_t dm_seq_next[DM_TRACKS];
  static volatile uint8_t dm_seq_hits[DM_TRACKS];
  
@@ -9,7 +9,7 @@ diff -ru a/drummode.c b/drummode.c
  volatile int32_t dm_rec_count;          /* hits recorded, for the tests */
  volatile int32_t dm_rec_last_step = -1;
  
-@@ -318,6 +319,8 @@
+@@ -368,6 +369,8 @@
      }
      dm_rec_count++;
      dm_rec_last_step = step;
@@ -18,7 +18,7 @@ diff -ru a/drummode.c b/drummode.c
  }
  
  /* A MIDI track's output channel (0-15), or -1 when its CHAN is off. track: the firmware's, 4-7. */
-@@ -413,10 +416,13 @@
+@@ -463,10 +466,13 @@
  
  /* seq-events, interrupt level. The trig stage: note each Drum Mode track's fired step and its time (first read only;
   * the trig is left as it is). */
@@ -32,7 +32,7 @@ diff -ru a/drummode.c b/drummode.c
      if (!first || track < DM_FIRST || track >= DM_FIRST + DM_TRACKS)
          return;
      f = &dm_fire[track - DM_FIRST];
-@@ -438,6 +444,15 @@
+@@ -488,6 +494,15 @@
      (void)step;
      if (!drum_track(track))
          return;
@@ -48,7 +48,7 @@ diff -ru a/drummode.c b/drummode.c
      mutes = dm.mutes[t];
      if (notes[0] >= 0)
          for (int32_t i = 0; i < SQ_NOTES; i++) {
-@@ -465,13 +480,21 @@
+@@ -515,13 +530,21 @@
      }
      dm_step_vel[t] = (uint8_t)vel;
      dm_seq_next[t] = lanes;
@@ -70,16 +70,16 @@ diff -ru a/drummode.c b/drummode.c
  }
  
  static void lane_on(int32_t key, int32_t track, int32_t lane)
-@@ -801,6 +824,8 @@
-         last_page = p;
-         last_track = track;
+@@ -864,6 +887,8 @@
+         last_run = r;
+         dm_run_key = r;
      }
 +    if (fw_transport == 1)
 +        dm_dirty = 1;
      if (dm_dirty || dm_note_ticks > 0) {
          *((unsigned char *)ctrl + 0x20) = 1;    /* redraw */
          *((unsigned char *)ctrl + 0x21) = 1;    /* and an LED frame */
-@@ -920,6 +945,21 @@
+@@ -984,6 +1009,21 @@
      if (!on_page())
          return;                         /* a menu or another screen is on top: leave it alone */
      page = (track >= DM_FIRST && track < DM_FIRST + DM_TRACKS) ? drum_page() : 0;
@@ -102,13 +102,13 @@ diff -ru a/drummode.c b/drummode.c
          draw_drum_page(bmp, page, track);
          if (!(dm_note_ticks > 0 && dm_note))
 diff -ru a/mod.json b/mod.json
---- a/mod.json	2026-11-19 08:19:48.684438533 +0100
-+++ b/mod.json	2026-11-19 08:19:48.710363725 +0100
+--- a/mod.json	2026-11-19 09:23:45.022619889 +0100
++++ b/mod.json	2026-11-19 09:23:45.045538733 +0100
 @@ -1,6 +1,6 @@
  {
   "id": "drummode",
-- "version": "0.9",
-+ "version": "0.9-debug2",
+- "version": "0.9.1",
++ "version": "0.9.1-debug2",
   "license": "GPL-2.0-or-later",
   "title": "Drum Mode (Digitone MIDI track drum sequencer)",
   "category": "Sequencer",

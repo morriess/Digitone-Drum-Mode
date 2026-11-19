@@ -17,6 +17,18 @@ it has to be rebuilt on core 5.3: that lives in its own fork,
 [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3), with a build script for one
 firmware with both mods.
 
+## Future ideas
+
+- **A generative melody mod (separate from Drum Mode).** Turing-machine-style melodies that
+  slowly change, for MIDI and synth tracks. The trigs give the rhythm and the mod gives the
+  pitch: as the sequencer plays a trig, its note is replaced by the next value of a looping
+  sequence (the same hook Drum Mode uses for its notes, so no extra timing work). Controls on a
+  page of its own: LENGTH (how many notes before it repeats, 2–16), CHANGE (the chance a note
+  mutates on each pass: 0 locked, 100% random), RANGE and SCALE (the keyboard's ROOT/SCALE
+  could be used), and a key combo to lock a melody you like. On or off per track, so it can sit
+  next to Drum Mode and DigiArp on other tracks. To work out: keeping each loop per pattern
+  within core's 480 bytes of project data (a 16-note loop is small) or in the pattern itself.
+
 ## Rules for this repo
 
 - Never commit Elektron's OS files (`.syx`) or firmware built from them. Each user

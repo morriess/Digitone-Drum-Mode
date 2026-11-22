@@ -67,10 +67,12 @@ unit)
 
 **To decide after testing**
 - A new pattern copies the last pattern's Drum Mode settings (the user's choice, 2026-11-19), or
-  starts from the defaults. *Decided on the unit (2026-11-22):* it copies the kit and mutes but
-  **not on/off**; a new pattern starts with Drum Mode **off**, and you turn it on per pattern.
-  Seen on the unit: with on/off copied, all older patterns took Drum Mode on and it looked global.
-  To change in the next version.
+  starts from the defaults. *Chosen on the unit (2026-11-22), to try for now:* a new pattern
+  copies **nothing**: it starts with Drum Mode **off** and the default (GM) notes, and you turn it
+  on per pattern. Copying on purpose stays with FUNC + RECORD / FUNC + STOP. Seen on the unit:
+  with the copy, all older patterns took on/off and the notes from the pattern you came from, so
+  it looked global (also notes changed with pad + knob). To change in the next version; to look
+  at again later.
 
 **Done** (asked by the user): a pad selects its lane, lit (0.9); keys 9–16 as a running light
 (0.9.1); settings per pattern and per track (0.10).

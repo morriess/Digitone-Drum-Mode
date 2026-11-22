@@ -83,6 +83,12 @@ unit)
   2026-11-22). Changing the pattern works, but the trig keys don't show the stock's pattern and
   bank LEDs. Probably Drum Mode still draws its own trig key LEDs then. *To fix:* leave the trig
   key LEDs to the stock while PTN or BANK is held (or the pattern/bank select view is open).
+- **Pattern chains don't work on a Drum Mode track** (found on the unit, 0.10, 2026-11-22).
+  Holding PTN and pressing several trig keys only plays the last pattern pressed, not a chain.
+  The emulator test passed, so the unit behaves differently: maybe the order or timing of the
+  key events Drum Mode passes on (the replayed press/release), or the stock seeing PTN as
+  released between presses. *To fix:* reproduce with real timing, compare with a non-Drum Mode
+  track.
 - **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) on a Drum Mode track: not
   checked; the trig keys may play pads, and the Drum Mode settings don't follow this route yet
   (FUNC + RECORD / FUNC + STOP does both).

@@ -947,7 +947,6 @@ static void page_turn(int32_t page, int32_t enc, int32_t counts)
 /* The UI task, each key event. On a Drum Mode track a trig key's press is taken (FUNC + pad 1-8 toggles its lane's
  * mute; FUNC + 9-16 is left to the stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
  * press played, and a key the stock saw go down is never kept from it on the way up. */
-static int32_t select_open(void);
 static int32_t stock_keys(void);
 static void clip_copy(void);
 
@@ -1016,8 +1015,8 @@ int32_t dm_key(void *brain, void *ev)
         dm_grid_remove &= ~bit;
         return 0;
     }
-    if (!up && !(dm_taken & bit) && (dm_ptn_held || dm_bank_held || dm_stock || select_open())) {
-        dm_stock |= bit;                /* pattern/bank select, chains: the stock's (0.9.2) */
+    if (!up && !(dm_taken & bit) && stock_keys()) {
+        dm_stock |= bit;                /* pattern/bank select, chains, the SCALE menu: the stock's (0.9.2, 0.10.1) */
         dm_stock_age[k] = 0;
         return 0;
     }
@@ -1362,8 +1361,11 @@ static int32_t dm_info_lane = -1, dm_info_track = -1;
 /* 0.9.2: the stock's pattern/bank select waiting for its trig key (after a press of PTN or BANK, until a pick, NO or
  * its four seconds): its view (first word 0x401c68dc, measured in digiemu) is on top of the main stack. */
 #define SELECT_VIEW_VTABLE  0x401c68dcu
+/* 0.10.1: the SCALE menu (FUNC + PAGE): PAGE sets the total length and the trig keys the number of steps, so its trig
+ * keys are the stock's (measured in digiemu: this view on top of the main stack). */
+#define SCALE_VIEW_VTABLE   0x401c6a84u
 
-static int32_t select_open(void)
+static int32_t top_view_is(uint32_t vtable)
 {
     uint8_t *ms = *(uint8_t *const volatile *)MAIN_SCREEN_PP, *node, *v;
     if (!ms)
@@ -1371,13 +1373,19 @@ static int32_t select_open(void)
     node = *(uint8_t *const volatile *)(ms + 0x58);
     if (!node || node == ms + 0x54 || !(v = *(uint8_t *const volatile *)(node + 8)))
         return 0;
-    return *(volatile uint32_t *)v == SELECT_VIEW_VTABLE;
+    return *(volatile uint32_t *)v == vtable;
 }
 
-/* 0.10.1: the trig keys are the stock's now: PTN or BANK held, its pattern/bank select open, or a chain's key held. */
+static int32_t select_open(void)
+{
+    return top_view_is(SELECT_VIEW_VTABLE);
+}
+
+/* 0.10.1: the trig keys are the stock's now: PTN or BANK held, its pattern/bank select open, a chain's key held, or
+ * the SCALE menu open (the trig keys set the length there). */
 static int32_t stock_keys(void)
 {
-    return dm_ptn_held || dm_bank_held || dm_stock || select_open();
+    return dm_ptn_held || dm_bank_held || dm_stock || select_open() || top_view_is(SCALE_VIEW_VTABLE);
 }
 
 static void *shown_view(void)

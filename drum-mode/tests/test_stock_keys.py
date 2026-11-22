@@ -109,6 +109,30 @@ def main():
     d.tap('1', hold_ms=80, after_ms=300)
     check('afterwards pad 1 plays the kick again', ons() == [36])
 
+    # 0.10.1: the SCALE menu (FUNC + PAGE): the trig keys set the length, not the pads, and show the stock's LEDs.
+    # The length byte depends on the scale mode (per track: track data + 0x3c6; per pattern elsewhere), so the check
+    # is a byte of the pattern going 16 -> 5 -> 16.
+    def pat():
+        return d.mem(d.peek32(S['fw_pattern']), 0x1611d)
+    free = d.leds()
+    d.press('FUNC', after_ms=100)
+    d.tap('PAGE', after_ms=100)
+    d.release('FUNC', after_ms=600)
+    check('SCALE menu: the trig keys show the stock LEDs', d.leds() != free)
+    before = pat()
+    d.tap('5', after_ms=500)
+    mid = pat()
+    changed = [i for i in range(len(before)) if before[i] != mid[i]]
+    check('SCALE menu + trig 5: the length goes to 5', [(before[i], mid[i]) for i in changed] == [(16, 5)],
+          str([(hex(i), before[i], mid[i]) for i in changed]))
+    check('and plays no pad', ons() == [])
+    d.tap('16', after_ms=500)
+    check('SCALE menu + trig 16: length 16 again', pat() == before)
+    d.tap('NO', after_ms=600)
+    d.take_midi()
+    d.tap('1', hold_ms=80, after_ms=300)
+    check('menu closed: pad 1 plays the kick again', ons() == [36])
+
     # GRID RECORDING: quick taps add and take out the selected lane (the kick).
     d.tap('RECORD', after_ms=400)
     d.tap('5', after_ms=200)

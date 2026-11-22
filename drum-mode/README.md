@@ -11,7 +11,7 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
 > recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
-> bugs were found; 0.10.1 fixes the first one and waits for the unit. See
+> bugs were found; 0.10.2 fixes the first ones and waits for the unit. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -19,7 +19,7 @@ Digitone mk1 core and its sequencer-events mod.
 [design notes](docs/design.md) (how it works inside, findings) and the
 [debugging log](docs/debugging.md).
 
-## What it does (0.10.1)
+## What it does (0.10.2)
 
 - **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
 - **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
@@ -80,10 +80,6 @@ unit)
 ## Known bugs
 
 **Open**
-- **Pattern length can't be set to a specific step on a Drum Mode track** (found on the unit,
-  0.10, 2026-11-22). The stock way, holding PAGE and pressing a trig key, doesn't work; only
-  pressing PAGE (16 / 32 / 48 / 64 steps) does. Probably Drum Mode takes the trig keys while
-  PAGE is held. *To fix:* leave the trig keys to the stock while PAGE is held, like PTN and BANK.
 - **"Drum Mode off" on screen and the track becomes unusable** (found on the unit, 0.10,
   2026-11-22). On some MIDI tracks the screen shows Drum Mode turned off, and the track can't be
   used after that. *Details still to get:* which tracks, what was pressed before, and what
@@ -95,8 +91,8 @@ unit)
 - **MUTE mode** (FUNC + BANK, then the trig keys mute tracks) and **STEP RECORDING** (RECORD +
   STOP) on a Drum Mode track: not checked; the trig keys may play pads (in step recording that
   may even be wanted).
-- **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. Not decided; first
-  to find out whether any stock menu uses the trig keys.
+- **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. The SCALE menu uses
+  them (handed to the stock in 0.10.2); still to find out whether other stock menus do.
 - **The DRUM pages clash with DigiTables** (both claim mod page 27). DigiTables is OS 1.43 only
   so far. *Possible fix:* pages 28 and 29 (29 clashes with CTRL-PLUS, which needs an older
   core anyway; 30 is core's second TRIG page once a mod puts knobs there).
@@ -110,6 +106,10 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
+- **0.10.2: pattern length with the trig keys.** Found on the unit in 0.10: in the SCALE menu
+  (FUNC + PAGE) the trig keys played pads instead of setting the number of steps; only PAGE and
+  the knob worked. 0.10.2 leaves the trig keys and their LEDs to the stock while the SCALE menu is
+  open (passes in the emulator, per track and per pattern length).
 - **0.10.1: the pattern/bank LEDs.** Found on the unit in 0.10: while PTN or BANK was held the
   trig keys showed the pads, not the stock's pattern and bank LEDs. 0.10.1 leaves the trig key
   LEDs to the stock while PTN or BANK is held, the pattern/bank select is open (its 4 seconds) or
@@ -127,8 +127,8 @@ unit)
 - **Unit test of 0.10 (2026-11-22):** passed: boot, pads, live and grid recording, held-step
   locks, running light, lane strip (no longer disappears), DRUM pages, mutes, FUNC + trig keys in
   recording, settings per pattern, copy/paste, FUNC + NO reload, save/load, synth tracks.
-  Bugs found: pattern length and the "Drum Mode off" track (Open), the PTN/BANK LEDs (fixed in
-  0.10.1, to check); chains to try again the manual's way.
+  Bugs found: the "Drum Mode off" track (Open), the PTN/BANK LEDs (0.10.1) and pattern length
+  (0.10.2), fixed and to check; chains to try again the manual's way.
 
 **Known limits**
 - A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode
@@ -202,7 +202,7 @@ Each test set takes a few minutes; screenshots land in its work folder. All 13 s
 | `tests/test_other_pattern.py` | Recording and the DRUM pages on a pattern far from A01 (H02) (7 checks) |
 | `tests/test_lane_select.py` | A pad selects its lane, its key lit; not in live recording (15 checks) |
 | `tests/test_run_light.py` | Keys 9–16 as the running light: 16, odd and longer lengths, on time (9 checks) |
-| `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording, PTN/BANK LEDs (28 checks) |
+| `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording, PTN/BANK LEDs, SCALE menu (33 checks) |
 | `tests/test_pattern_settings.py` | Settings per pattern: copy on first visit, paste, save/load, the 10-kit limit (18 checks) |
 | `debug/` | The debug builds used on the unit (patches and a build script; see the debugging log) |
 | `docs/MANUAL.md` | The user manual |

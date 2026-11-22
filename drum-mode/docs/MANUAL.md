@@ -1,6 +1,6 @@
 # Drum Mode user manual
 
-**Drum Mode 0.10.1 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.10.2 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
@@ -142,7 +142,8 @@ labels: any lane can play any note.
   held + a trig key, BANK + trig 9–16 then a pattern, and chains (hold PTN, press the first
   pattern's trig key, release PTN, and keep that key held while you press the next ones). While
   PTN or BANK is held, and during the stock's pattern/bank select, the trig keys show the stock's
-  pattern and bank LEDs (0.10.1). The trig keys go to the
+  pattern and bank LEDs (0.10.1). In the SCALE menu (FUNC + PAGE) the trig keys set the
+  pattern or track length as usual (0.10.2). The trig keys go to the
   Digitone for those, not to the pads.
 - Drum Mode is set per MIDI track, and per pattern: you can have it on for MIDI A and off
   for MIDI B, and on in A01 but off in A02. To turn it off, choose DRUM MODE in the Mod Menu

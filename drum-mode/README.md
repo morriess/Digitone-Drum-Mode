@@ -45,9 +45,18 @@ Digitone mk1 core and its sequencer-events mod.
   selected lane highlighted.
 - **A revised DRUM settings page** (its place behind LFO, layout, what it shows), after use on
   the unit.
-- **Drum kit presets:** save a track's setup as a kit and load it onto any MIDI track. Within a
-  project this fits the 0.10 kits; across projects it needs storage outside the project (a SysEx
-  dump to the computer and back would be the workaround).
+- **Drum kit presets with a browser** (asked 2026-11-22): double-tap the MIDI track key while
+  Drum Mode is on to open a kit browser, browsed and loaded like a synth Sound (LEVEL/DATA or
+  UP/DOWN to scroll, pads to preview, YES loads onto the track for this pattern, NO closes). The
+  stock does nothing with a double tap on a MIDI track (the Sound Browser is synth only; to check
+  in the emulator); holding the key still opens the Mod Menu. Storage, in steps:
+  1. built-in kits in the firmware (e.g. GM, TR-808, TR-909 note layouts) plus the project's own
+     kits: no storage needed, safe;
+  2. a few named presets of your own in the project: little room (the ~480 bytes all mods share,
+     already used by the 10 kits);
+  3. a library across projects on the +Drive: core can read and write raw +Drive sectors, but
+     Elektron's file system is there too, so first research whether a safe free area exists (a
+     SysEx dump to the computer and back would be the workaround).
 - **Synth tracks as extra drum tracks, or as normal MIDI tracks:** a synth track you don't need
   sends its steps as MIDI (its voice silent), for up to 8 drum or MIDI tracks. Not more tracks:
   the format has exactly 4 synth + 4 MIDI. The hard part is timing each note and its note-off.

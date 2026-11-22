@@ -54,6 +54,9 @@ Digitone mk1 core and its sequencer-events mod.
 
 **Possible additions after v1** (ideas from 2026-11-19, once the current features work on the
 unit)
+- **Step recording for drums:** in STEP RECORDING, pad 1–8 places that lane's note on the active
+  step and moves one step on, like the stock's keyboard (now it works like GRID RECORDING). To
+  add or investigate later.
 - **Ratchets / rolls per step:** a step plays 2, 3 or 4 times within its 16th, for hi-hat rolls
   and snare fills. The Digitone mk1 has no retrigs (the Digitakt does), so this fills a real
   gap. Needs notes sent between steps, which DigiArp shows is possible.
@@ -97,11 +100,11 @@ unit)
   copy/clear) is the stock's already (PTN held); the Sound Browser is for synth tracks only.
 - **MUTE mode (FUNC + BANK)** on a Drum Mode track: the pads still play (stock: the trig keys play
   nothing in MUTE mode, the track keys mute). *To decide:* keep the pads playing, or leave the trig
-  keys to the stock there.
+  keys to the stock there. *Decide later* (the user, 2026-11-22).
 - **STEP RECORDING (RECORD + STOP)** on a Drum Mode track works like GRID RECORDING: the 16 keys
   are the selected lane's steps, no sound (stock: a trig key places its note on the active step and
-  moves one step on). *To decide:* make it pad = that lane's note on the active step, then the
-  next step (like the stock's keyboard), or keep it as it is.
+  moves one step on). *Kept as it is* (the user, 2026-11-22); the drum version is on the list of
+  possible additions.
 - **The DRUM pages clash with DigiTables** (both claim mod page 27). DigiTables is OS 1.43 only
   so far. *Possible fix:* pages 28 and 29 (29 clashes with CTRL-PLUS, which needs an older
   core anyway; 30 is core's second TRIG page once a mod puts knobs there).

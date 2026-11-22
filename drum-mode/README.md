@@ -93,7 +93,15 @@ unit)
   STOP) on a Drum Mode track: not checked; the trig keys may play pads (in step recording that
   may even be wanted).
 - **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. The SCALE menu uses
-  them (handed to the stock in 0.10.2); still to find out whether other stock menus do.
+  them (handed to the stock in 0.10.2). Checked in the emulator (2026-11-22): PTN + trig (pattern
+  copy/clear) is the stock's already (PTN held); the Sound Browser is for synth tracks only.
+- **MUTE mode (FUNC + BANK)** on a Drum Mode track: the pads still play (stock: the trig keys play
+  nothing in MUTE mode, the track keys mute). *To decide:* keep the pads playing, or leave the trig
+  keys to the stock there.
+- **STEP RECORDING (RECORD + STOP)** on a Drum Mode track works like GRID RECORDING: the 16 keys
+  are the selected lane's steps, no sound (stock: a trig key places its note on the active step and
+  moves one step on). *To decide:* make it pad = that lane's note on the active step, then the
+  next step (like the stock's keyboard), or keep it as it is.
 - **The DRUM pages clash with DigiTables** (both claim mod page 27). DigiTables is OS 1.43 only
   so far. *Possible fix:* pages 28 and 29 (29 clashes with CTRL-PLUS, which needs an older
   core anyway; 30 is core's second TRIG page once a mod puts knobs there).

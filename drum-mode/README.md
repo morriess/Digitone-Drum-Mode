@@ -146,6 +146,9 @@ unit)
 - **At most 10 kits** per project (`KIT MEM FULL`), and the per-pattern settings take one of a
   pattern's 80 lock rows.
 - **Saving on the stock OS** drops Drum Mode's settings (the steps stay).
+- **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) copies the steps, but not the
+  Drum Mode settings; FUNC + RECORD / FUNC + STOP copies both. (The trig keys go to the stock
+  there, PTN held.)
 
 **Fixed** (details in the [debugging log](docs/debugging.md) and the
 [design notes](docs/design.md))

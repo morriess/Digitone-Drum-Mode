@@ -75,6 +75,10 @@ unit)
 ## Known bugs
 
 **Open**
+- **Pattern length can't be set to a specific step on a Drum Mode track** (found on the unit,
+  0.10, 2026-11-22). The stock way, holding PAGE and pressing a trig key, doesn't work; only
+  pressing PAGE (16 / 32 / 48 / 64 steps) does. Probably Drum Mode takes the trig keys while
+  PAGE is held. *To fix:* leave the trig keys to the stock while PAGE is held, like PTN and BANK.
 - **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) on a Drum Mode track: not
   checked; the trig keys may play pads, and the Drum Mode settings don't follow this route yet
   (FUNC + RECORD / FUNC + STOP does both).

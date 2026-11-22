@@ -5,11 +5,11 @@ track into an 8-lane drum sequencer, built on [elekloader](https://github.com/ir
 
 > **Beta.** Drum Mode 0.10 was tested on a real Digitone (OS 1.44) on 2026-11-22: almost
 > everything works; the bugs found are listed in [drum-mode](drum-mode/README.md#known-bugs).
-> 0.10.2 (first fixes) waits for the unit.
+> 0.10.3 (first fixes) waits for the unit.
 
 | Mod | What it does | Status |
 | --- | --- | --- |
-| [drum-mode](drum-mode/) | Turns a MIDI track into an 8-lane drum sequencer on one MIDI channel ([manual](drum-mode/docs/MANUAL.md)) | 0.10.2, beta: **working on the unit** (0.10 tested 2026-11-22; a few bugs open) |
+| [drum-mode](drum-mode/) | Turns a MIDI track into an 8-lane drum sequencer on one MIDI channel ([manual](drum-mode/docs/MANUAL.md)) | 0.10.3, beta: **working on the unit** (0.10 tested 2026-11-22; a few bugs open) |
 
 Looking for a MIDI-track arpeggiator? DigiArp MIDI by aleks-karachevtsev is in the
 [elekloader Mod Shop](https://elekloader.github.io/shop/). To use it together with Drum Mode

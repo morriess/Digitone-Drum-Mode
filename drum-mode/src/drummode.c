@@ -365,9 +365,10 @@ static int32_t pattern_index(void)
     return idx < DM_PATTERNS ? (int32_t)idx : -1;
 }
 
-/* Keep dm on the pattern that plays: when it changed, each track's settings come from the new pattern's lane value,
- * and a track without any keeps what dm holds (the pattern it came from) until the UI tick writes it there
- * (settle_unset). From the UI tick and the sequencer's stages (interrupt level: reads only). -> 1 when it changed. */
+/* Keep dm on the pattern that plays: when it changed, each track's settings come from the new pattern's lane value.
+ * A track without any starts like a new project's: Drum Mode off, the default kit, no mutes (0.10.2: nothing copied
+ * from the pattern it came from), and stays without settings until one is changed there (rearm -> settle_track).
+ * From the UI tick and the sequencer's stages (interrupt level: reads only). -> 1 when it changed. */
 static int32_t pattern_follow(void)
 {
     int32_t idx = pattern_index();
@@ -378,6 +379,13 @@ static int32_t pattern_follow(void)
         int32_t v = core_lane_track(DM_LANE_ID, DM_FIRST + t), k = (v >> LV_KIT_SHIFT) & 0xf;
         if (v < 0 || !(v & LV_SET) || k >= MAX_KITS || !dm_store.refs[k]) {
             unset |= (uint8_t)(1u << t);
+            dm.enabled &= (uint8_t)~(1u << t);
+            dm.mutes[t] = 0;
+            dm_kit_of[t] = -1;
+            for (int32_t l = 0; l < DM_LANES; l++) {
+                dm.note[t][l] = dm_default_notes[l];
+                dm.velocity[t][l] = 100;
+            }
             continue;
         }
         dm.enabled = (uint8_t)((dm.enabled & ~(1u << t)) | ((v & LV_ON) ? 1u << t : 0));
@@ -390,25 +398,19 @@ static int32_t pattern_follow(void)
     return 1;
 }
 
-/* The UI task: a track of the playing pattern without settings gets dm's (a kit for its notes, the lane value). */
-static void settle_unset(void)
+/* 0.10.2: a setting changed on a track of the playing pattern that has none yet: it gets its own now (a kit for its
+ * notes, the lane value). -> 1 when kept; 0 with all 10 kits in use (plays dm's settings, keeps none). The UI task. */
+static int32_t settle_track(int32_t t)
 {
-    uint8_t unset = dm_unset;
-    if (!unset || dm_cur_pat != pattern_index())
-        return;
-    for (int32_t t = 0; t < DM_TRACKS; t++) {
-        int32_t k;
-        if (!((unset >> t) & 1))
-            continue;
-        k = kit_take(t);
-        if (k < 0) {
-            say("KIT MEM FULL", 0);
-            continue;                   /* plays dm's settings, keeps none */
-        }
-        dm_kit_of[t] = (int8_t)k;
-        core_lane_set(DM_LANE_ID, DM_FIRST + t, -1, lane_value(t));
-        dm_unset &= (uint8_t)~(1u << t);
+    int32_t k = kit_take(t);
+    if (k < 0) {
+        say("KIT MEM FULL", 0);
+        return 0;
     }
+    dm_kit_of[t] = (int8_t)k;
+    core_lane_set(DM_LANE_ID, DM_FIRST + t, -1, lane_value(t));
+    dm_unset &= (uint8_t)~(1u << t);
+    return 1;
 }
 
 /* A setting of track changed in dm (Drum Mode on/off, a mute, a lane's note or velocity): the playing pattern keeps
@@ -420,7 +422,9 @@ static void rearm(int32_t track)
     int32_t t = track - DM_FIRST, k;
     if (t < 0 || t >= DM_TRACKS)
         return;
-    if (dm_cur_pat >= 0 && dm_cur_pat == pattern_index() && !((dm_unset >> t) & 1)) {
+    if (dm_cur_pat >= 0 && dm_cur_pat == pattern_index() && ((dm_unset >> t) & 1)) {
+        settle_track(t);                /* its first setting (0.10.2) */
+    } else if (dm_cur_pat >= 0 && dm_cur_pat == pattern_index()) {
         k = dm_kit_of[t];
         if (k < 0 || k >= MAX_KITS || !kit_same(&dm_store.kit[k], t)) {
             int32_t same = -1;
@@ -1207,7 +1211,6 @@ static struct dm_kit dm_clip_kit[DM_TRACKS];
 static void clip_copy(void)
 {
     pattern_follow();
-    settle_unset();
     dm_clip = dm_cur_pat;
     dm_clip_on = dm.enabled;
     for (int32_t t = 0; t < DM_TRACKS; t++) {
@@ -1232,7 +1235,6 @@ static void paste_check(void)
     for (int32_t k = 0; k < KEY_STEPS; k++)
         if (dm_held[k].track >= 0)
             lane_off(k);
-    settle_unset();
     dm.enabled = dm_clip_on;
     for (int32_t t = 0; t < DM_TRACKS; t++) {
         dm.mutes[t] = dm_clip_mutes[t];
@@ -1249,7 +1251,6 @@ void dm_tick(void *ctrl)
         sq_rearm(0xf0u);
         dm_dirty = 1;
     }
-    settle_unset();
     if (dm_reload_ticks > 0 && --dm_reload_ticks == 0)
         reload_done();
     if (dm_paste_ticks > 0 && --dm_paste_ticks == 0)

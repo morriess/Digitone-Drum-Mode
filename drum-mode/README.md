@@ -11,7 +11,7 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
 > recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
-> bugs were found; 0.10.2 fixes the first ones and waits for the unit. See
+> bugs were found; 0.10.3 fixes the first ones and waits for the unit. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -19,7 +19,7 @@ Digitone mk1 core and its sequencer-events mod.
 [design notes](docs/design.md) (how it works inside, findings) and the
 [debugging log](docs/debugging.md).
 
-## What it does (0.10.2)
+## What it does (0.10.3)
 
 - **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
 - **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
@@ -33,7 +33,8 @@ Digitone mk1 core and its sequencer-events mod.
 - **On screen and LEDs:** a lane strip that follows playback, the selected lane's pad lit, and
   keys 9–16 as a running light in time with the pattern.
 - **Settings per pattern and per track,** kits (notes and velocities) shared in the project,
-  at most 10; a new pattern takes a copy of the one you came from (being tried out).
+  at most 10; a new pattern starts with Drum Mode off and the default notes (0.10.3, being
+  tried out).
 - **The stock's own trig key functions stay:** pattern and bank select, chains, FUNC + trig in
   recording.
 
@@ -66,13 +67,13 @@ unit)
   velocity and timing shifts. The stock trig conditions work per step, not per voice.
 
 **To decide after testing**
-- A new pattern copies the last pattern's Drum Mode settings (the user's choice, 2026-11-19), or
-  starts from the defaults. *Chosen on the unit (2026-11-22), to try for now:* a new pattern
-  copies **nothing**: it starts with Drum Mode **off** and the default (GM) notes, and you turn it
-  on per pattern. Copying on purpose stays with FUNC + RECORD / FUNC + STOP. Seen on the unit:
-  with the copy, all older patterns took on/off and the notes from the pattern you came from, so
-  it looked global (also notes changed with pad + knob). To change in the next version; to look
-  at again later.
+- **What a new pattern starts with.** Until 0.10.2 it copied the pattern you came from (the
+  user's choice, 2026-11-19). On the unit (2026-11-22) that made Drum Mode look global: all older
+  patterns took on/off and the notes from the pattern you came from (also notes changed with pad
+  + knob). *Since 0.10.3, to try for now:* a new pattern copies **nothing**: Drum Mode **off**,
+  the default (GM) notes, no mutes; you turn it on per pattern. It keeps no settings (and uses no
+  kit) until you change one there. Copying on purpose stays with FUNC + RECORD / FUNC + STOP.
+  To look at again later.
 
 **Done** (asked by the user): a pad selects its lane, lit (0.9); keys 9–16 as a running light
 (0.9.1); settings per pattern and per track (0.10).
@@ -106,6 +107,9 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
+- **0.10.3: a new pattern starts off.** Go to a pattern you haven't used with Drum Mode: Drum
+  Mode is off there, the notes are the defaults, and A01 keeps its own. Turn it on and change a
+  note: only that pattern changes (passes in the emulator).
 - **0.10.2: pattern length with the trig keys.** Found on the unit in 0.10: in the SCALE menu
   (FUNC + PAGE) the trig keys played pads instead of setting the number of steps; only PAGE and
   the knob worked. 0.10.2 leaves the trig keys and their LEDs to the stock while the SCALE menu is
@@ -128,7 +132,8 @@ unit)
   locks, running light, lane strip (no longer disappears), DRUM pages, mutes, FUNC + trig keys in
   recording, settings per pattern, copy/paste, FUNC + NO reload, save/load, synth tracks.
   Bugs found: the "Drum Mode off" track (Open), the PTN/BANK LEDs (0.10.1) and pattern length
-  (0.10.2), fixed and to check; chains to try again the manual's way.
+  (0.10.2), fixed and to check; chains to try again the manual's way. New patterns start off
+  with the default notes (0.10.3).
 
 **Known limits**
 - A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode

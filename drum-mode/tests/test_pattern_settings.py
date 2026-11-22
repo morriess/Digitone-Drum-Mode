@@ -42,7 +42,7 @@ def main():
 
     def kick_note(counts):
         d.press('1', after_ms=150)
-        d.turn('A', counts)
+        d.turn('A', counts, after_ms=30)        # one continuous turn: the stock's dead zone swallows a slow one
         d.wait(150)
         d.release('1', after_ms=300)
 
@@ -51,6 +51,10 @@ def main():
         d.turn('B', counts)
         d.wait(150)
         d.release('2', after_ms=300)
+
+    def toggle():                               # Drum Mode on/off for MIDI A (hold T1, YES in the Mod Menu)
+        d.hold('T1', 700)
+        d.tap('YES', after_ms=800)
 
     def mute(pad):
         d.press('FUNC', after_ms=60)
@@ -70,12 +74,21 @@ def main():
     a01 = state()
     check('A01 set up: kick 40, snare velocity 90, hat muted', a01 == (1, 0b100, 40, 90), str(a01))
 
+    store = S['dm_store']
+    def kits():
+        b = d.mem(store, 20)
+        return b[5], sum(1 for r in b[8:18] if r), int.from_bytes(b[0:4], 'big')
+    used_a01 = kits()[1]
     go('2')
     check('A02 is active', pattern() == 1, str(pattern()))
-    check('A02, new: a copy of A01\'s settings', state() == a01, str(state()))
+    check('A02, new (0.10.3): Drum Mode off, default notes, nothing muted, nothing copied', state() == (0, 0, 36, 100),
+          str(state()))
+    d.wait(1500)
+    check('and visiting it keeps no settings (no kit used)', kits()[1] == used_a01, str(kits()))
 
-    kick_note(-4)                               # 40 -> 36
-    mute('3')                                   # the hat back
+    toggle()                                    # Drum Mode on for A02 only
+    check('Drum Mode on on A02: still the default notes', state() == (1, 0, 36, 100), str(state()))
+    snare_vel(-10)                              # 100 -> 90
     mute('4')                                   # the open hat off
     d.wait(2600)
     a02 = state()
@@ -87,8 +100,7 @@ def main():
     check('and A02 its own', pattern() == 1 and state() == a02, str(state()))
 
     # Drum Mode on/off is per pattern too.
-    d.hold('T1', 700)
-    d.tap('YES', after_ms=800)
+    toggle()
     d.wait(2600)
     check('Drum Mode off on A02', state()[0] == 0, str(state()))
     go('1')
@@ -99,10 +111,8 @@ def main():
     d.tap('RECORD', after_ms=300)
     d.release('FUNC', after_ms=400)
     go('3')
-    check('A03, new: a copy of A01 (the pattern it came from)', pattern() == 2 and state() == a01, str(state()))
-    kick_note(8)                                # A03's own: kick 48
-    d.wait(300)
-    check('A03 changed: kick 48', state()[2] == 48, str(state()))
+    check('A03, new: Drum Mode off, default notes (not A01\'s)', pattern() == 2 and state() == (0, 0, 36, 100),
+          str(state()))
     d.press('FUNC', after_ms=60)
     d.tap('STOP', after_ms=300)
     d.release('FUNC', after_ms=1500)
@@ -124,19 +134,19 @@ def main():
 
     # The kits: at most 10 different note/velocity sets per project (core's project data is small). New kicks on
     # A04-A16 make new kits until all 10 are in use; then a new note can't be kept and stays as it was.
-    store = S['dm_store']
-    def kits():
-        b = d.mem(store, 20)
-        return b[5], sum(1 for r in b[8:18] if r), int.from_bytes(b[0:4], 'big')
-    go('1')                                     # from A01 (Drum Mode on), so the new patterns copy it
+    go('1')
     refused = None
+    kept = {36, 40}                             # the kick notes kits already hold (default/A02/A03, A01)
     for i, key in enumerate(('4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16')):
         go(key)
-        before = state()[2]
-        kick_note(1 + i)
+        toggle()                                # new patterns start off (0.10.3)
+        full = kits()[1] == 10
+        kick_note(1 + i)                        # 37, 38, ... (40 is shared with A01's kit)
         d.wait(300)
-        if state()[2] == before and refused is None:
-            refused = (key, before)
+        note = state()[2]
+        if full and refused is None and note in kept:
+            refused = (key, note)               # no new kit: the note stayed on one a kit holds
+        kept.add(note)
         n, used, size = kits()
         if used > 10 or size > 20 + 16 * 10:
             break

@@ -106,8 +106,11 @@ def main():
     check('a chain picks H01 first', pattern() == 112, name(pattern()))
     check('and its trig keys play no pads', ons() == [])
     d.wait(4500)                                # any select's four seconds
+    d.hold('T1', 700)                           # H01 is new: Drum Mode starts off there (0.10.3), so turn it on
+    d.tap('YES', after_ms=800)
+    d.take_midi()
     d.tap('1', hold_ms=80, after_ms=300)
-    check('afterwards pad 1 plays the kick again', ons() == [36])
+    check('afterwards (Drum Mode on for H01) pad 1 plays the kick again', ons() == [36])
 
     # 0.10.1: the SCALE menu (FUNC + PAGE): the trig keys set the length, not the pads, and show the stock's LEDs.
     # The length byte depends on the scale mode (per track: track data + 0x3c6; per pattern elsewhere), so the check

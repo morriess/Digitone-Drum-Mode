@@ -1,6 +1,6 @@
 {
  "id": "drummode",
- "version": "0.10.2",
+ "version": "0.10.3",
  "license": "GPL-2.0-or-later",
  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
  "category": "Sequencer",

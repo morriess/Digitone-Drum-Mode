@@ -1,6 +1,6 @@
 # Drum Mode user manual
 
-**Drum Mode 0.10.2 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.10.3 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
@@ -295,9 +295,10 @@ More detail, with every screen: [Drum Mode UI additions](ui/README.md).
 - **Per pattern and per track** (0.10): each pattern keeps, for each MIDI track, whether
   Drum Mode is on, the mutes, and the notes and velocities. Change the kit on A02 and A01
   keeps its own.
-- **A new pattern** (one you haven't used with Drum Mode yet) starts as a copy of the
-  pattern you came from, so your kit carries over until you change it there. *This is being
-  tried out; it may change to starting from the defaults.*
+- **A new pattern** (one you haven't used with Drum Mode yet) starts with Drum Mode **off**,
+  the default notes and nothing muted (0.10.3). Turn Drum Mode on there to use it. Nothing is
+  copied from the pattern you came from; to take a pattern's setup along, copy and paste it
+  (below). *This is being tried out.*
 - **Copy and paste a pattern** with FUNC + RECORD and FUNC + STOP, and its Drum Mode
   settings come along.
 - **Up to 10 different kits per project.** A kit is a set of 8 notes and 8 velocities;
@@ -377,9 +378,10 @@ can keep. The new note or velocity wasn't kept. Set a pattern you don't need bac
 same notes as another one, or reuse an existing kit, to free one up.
 
 **A pattern has the wrong drum setup.**
-Each pattern keeps its own Drum Mode settings, and a pattern you hadn't used before took a
-copy of the one you came from. Set it up on that pattern, or copy a pattern with FUNC +
-RECORD / FUNC + STOP.
+Each pattern keeps its own Drum Mode settings, and a pattern you hadn't used before starts
+with Drum Mode off and the default notes. Set it up on that pattern, or copy a pattern with
+FUNC + RECORD / FUNC + STOP. (Before 0.10.3 a new pattern took a copy of the one you came
+from.)
 
 **The Digitone won't start after installing.**
 Reinstall the stock OS from the startup menu: see

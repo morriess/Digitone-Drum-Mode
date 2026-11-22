@@ -58,6 +58,30 @@ def main():
     check('PTN then trig 2 picks A02', pattern() == 1, name(pattern()))
     check('and plays no pad', ons() == [])
 
+    # 0.10.1: while PTN or BANK is held, the trig keys show the stock's LEDs (the active pattern red), not the pads.
+    d.wait(300)
+    free = d.leds()
+    d.press('PTN', after_ms=400)
+    held = d.leds()
+    pal = d.palette()
+    d.press('NO', after_ms=100)
+    d.release('NO', after_ms=100)
+    d.release('PTN', after_ms=600)
+    mid = d.leds()
+    d.wait(4500)                                # the select's four seconds, if NO didn't close it
+    back = d.leds()
+    r, g, b = pal.get(held[1], (0, 0, 0))[:3] if isinstance(pal.get(held[1]), (tuple, list)) else (0, 0, 0)
+    check('PTN held: key 2 (A02, active) shows the stock pattern LED', held[1] != free[1],
+          'held %s free %s rgb %s' % (held[1], free[1], pal.get(held[1])))
+    check('PTN released: the pad LEDs come back', back == free, '%s / %s' % (back, free))
+    d.press('BANK', after_ms=400)
+    bheld = d.leds()
+    d.press('NO', after_ms=100)
+    d.release('NO', after_ms=100)
+    d.release('BANK', after_ms=600)
+    check('BANK held: the trig keys show the stock LEDs', bheld != free, '%s / %s' % (bheld, free))
+    d.take_midi()
+
     # PTN held + a trig key.
     d.press('PTN', after_ms=200)
     d.tap('3', after_ms=300)

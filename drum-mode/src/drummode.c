@@ -948,6 +948,7 @@ static void page_turn(int32_t page, int32_t enc, int32_t counts)
  * mute; FUNC + 9-16 is left to the stock), and then that key's repeats and release, whatever changed meanwhile: a release always ends what its
  * press played, and a key the stock saw go down is never kept from it on the way up. */
 static int32_t select_open(void);
+static int32_t stock_keys(void);
 static void clip_copy(void);
 
 int32_t dm_key(void *brain, void *ev)
@@ -963,8 +964,10 @@ int32_t dm_key(void *brain, void *ev)
         dm_trig_held = !up;             /* watched, never taken: the page key still works */
         return 0;
     }
-    if (key == KEY_PTN)
+    if (key == KEY_PTN) {
         dm_ptn_held = !up;              /* watched, never taken */
+        dm_dirty = 1;                   /* the trig key LEDs go to the stock and back (0.10.1) */
+    }
     if (!up && !(flags & CORE_KEY_REPEAT) && (flags & CORE_KEY_FUNC) && !grid_recording()) {
         if (key == KEY_RECORD) {        /* the stock copies the active pattern (watched, never taken) */
             clip_copy();
@@ -973,8 +976,10 @@ int32_t dm_key(void *brain, void *ev)
             dm_paste_ticks = PASTE_TICKS;
         }
     }
-    if (key == KEY_BANK)
+    if (key == KEY_BANK) {
         dm_bank_held = !up;
+        dm_dirty = 1;
+    }
     if (key < KEY_STEP1 || key >= KEY_STEP1 + KEY_STEPS) {
         if (dm_grid_keys && !up)
             dm_grid_long |= dm_grid_keys;   /* a key with steps held (arrows, RECORD, STOP, PLAY): the stock's */
@@ -1275,15 +1280,16 @@ void dm_tick(void *ctrl)
         dm_dirty = 1;
     if (dm_info_ticks > 0 && dm_last_pad < 0 && --dm_info_ticks == 0)
         dm_dirty = 1;                   /* the info stays while its pad is held, then fades */
-    {                                   /* the LEDs follow GRID RECORDING, its page and the pattern */
-        static int32_t last_grid = -1, last_page = -1, last_track = -1;
+    {                                   /* the LEDs follow GRID RECORDING, its page, the pattern and the stock's keys */
+        static int32_t last_grid = -1, last_page = -1, last_track = -1, last_stock = -1;
         int32_t g = grid_recording(), track = fw_active_track;
-        int32_t p = drum_track(track) ? grid_page(track) : 0;
-        if (g != last_grid || p != last_page || track != last_track)
+        int32_t p = drum_track(track) ? grid_page(track) : 0, st = stock_keys();
+        if (g != last_grid || p != last_page || track != last_track || st != last_stock)
             dm_dirty = 1;
         last_grid = g;
         last_page = p;
         last_track = track;
+        last_stock = st;
     }
     {                                   /* keys 9-16 follow the playing step (0.9.1): an LED frame when the lit key changes */
         static int32_t last_run = -2;
@@ -1312,8 +1318,8 @@ void dm_tick(void *ctrl)
 void dm_leds(void *mgr)
 {
     int32_t track = fw_active_track, t;
-    if (!drum_track(track))
-        return;
+    if (!drum_track(track) || stock_keys())
+        return;                         /* 0.10.1: pattern/bank select and chains show the stock's LEDs */
     t = track - DM_FIRST;
     if (grid_recording()) {
         uint8_t *data = track_data(track_obj(track));
@@ -1366,6 +1372,12 @@ static int32_t select_open(void)
     if (!node || node == ms + 0x54 || !(v = *(uint8_t *const volatile *)(node + 8)))
         return 0;
     return *(volatile uint32_t *)v == SELECT_VIEW_VTABLE;
+}
+
+/* 0.10.1: the trig keys are the stock's now: PTN or BANK held, its pattern/bank select open, or a chain's key held. */
+static int32_t stock_keys(void)
+{
+    return dm_ptn_held || dm_bank_held || dm_stock || select_open();
 }
 
 static void *shown_view(void)

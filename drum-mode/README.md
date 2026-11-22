@@ -9,17 +9,17 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Beta: working on the unit.** First hardware tests on OS 1.44 (2026-11-17/18, 0.8.2): pads,
-> notes, velocities, DRUM pages, mutes and recorded beats work. The features added since (0.9 to
-> 0.10) are tested in the emulator and wait for the unit; see [Known bugs](#known-bugs) and
-> [docs/debugging.md](docs/debugging.md).
+> **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
+> recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
+> bugs were found; 0.10.1 fixes the first one and waits for the unit. See
+> [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
 [UI additions](docs/ui/README.md) (every screen, key and LED Drum Mode adds), the
 [design notes](docs/design.md) (how it works inside, findings) and the
 [debugging log](docs/debugging.md).
 
-## What it does (0.10)
+## What it does (0.10.1)
 
 - **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
 - **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
@@ -84,16 +84,6 @@ unit)
   0.10, 2026-11-22). The stock way, holding PAGE and pressing a trig key, doesn't work; only
   pressing PAGE (16 / 32 / 48 / 64 steps) does. Probably Drum Mode takes the trig keys while
   PAGE is held. *To fix:* leave the trig keys to the stock while PAGE is held, like PTN and BANK.
-- **No pattern/bank LEDs on the trig keys while PTN or BANK is held** (found on the unit, 0.10,
-  2026-11-22). Changing the pattern works, but the trig keys don't show the stock's pattern and
-  bank LEDs. Probably Drum Mode still draws its own trig key LEDs then. *To fix:* leave the trig
-  key LEDs to the stock while PTN or BANK is held (or the pattern/bank select view is open).
-- **Pattern chains don't work on a Drum Mode track** (found on the unit, 0.10, 2026-11-22).
-  Holding PTN and pressing several trig keys only plays the last pattern pressed, not a chain.
-  The emulator test passed, so the unit behaves differently: maybe the order or timing of the
-  key events Drum Mode passes on (the replayed press/release), or the stock seeing PTN as
-  released between presses. *To fix:* reproduce with real timing, compare with a non-Drum Mode
-  track.
 - **"Drum Mode off" on screen and the track becomes unusable** (found on the unit, 0.10,
   2026-11-22). On some MIDI tracks the screen shows Drum Mode turned off, and the track can't be
   used after that. *Details still to get:* which tracks, what was pressed before, and what
@@ -120,6 +110,15 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
+- **0.10.1: the pattern/bank LEDs.** Found on the unit in 0.10: while PTN or BANK was held the
+  trig keys showed the pads, not the stock's pattern and bank LEDs. 0.10.1 leaves the trig key
+  LEDs to the stock while PTN or BANK is held, the pattern/bank select is open (its 4 seconds) or
+  a chain's key is held (passes in the emulator).
+- **Pattern chains, the manual's way.** On the unit (0.10) holding PTN and pressing several trig
+  keys played only the last pattern, but that isn't how the stock makes a chain (the test list
+  was wrong): hold PTN, press the first pattern's trig key, **release PTN**, keep that key held
+  and press the next ones (manual 10.10.1). That way passes in the emulator; to try on the unit,
+  also on a track without Drum Mode.
 - **The 1.5-second rule (0.9.2):** after a bank pick (BANK + trig 16) the emulator never sent
   that key's release, so a trig key Drum Mode left to the stock counts as released after 1.5 s
   without events. Check that the release really goes missing on the unit, that the trig keys
@@ -128,7 +127,8 @@ unit)
 - **Unit test of 0.10 (2026-11-22):** passed: boot, pads, live and grid recording, held-step
   locks, running light, lane strip (no longer disappears), DRUM pages, mutes, FUNC + trig keys in
   recording, settings per pattern, copy/paste, FUNC + NO reload, save/load, synth tracks.
-  Bugs found are under Open (pattern length, PTN/BANK LEDs, chains, "Drum Mode off" track).
+  Bugs found: pattern length and the "Drum Mode off" track (Open), the PTN/BANK LEDs (fixed in
+  0.10.1, to check); chains to try again the manual's way.
 
 **Known limits**
 - A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode
@@ -202,7 +202,7 @@ Each test set takes a few minutes; screenshots land in its work folder. All 13 s
 | `tests/test_other_pattern.py` | Recording and the DRUM pages on a pattern far from A01 (H02) (7 checks) |
 | `tests/test_lane_select.py` | A pad selects its lane, its key lit; not in live recording (15 checks) |
 | `tests/test_run_light.py` | Keys 9–16 as the running light: 16, odd and longer lengths, on time (9 checks) |
-| `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording (25 checks) |
+| `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording, PTN/BANK LEDs (28 checks) |
 | `tests/test_pattern_settings.py` | Settings per pattern: copy on first visit, paste, save/load, the 10-kit limit (18 checks) |
 | `debug/` | The debug builds used on the unit (patches and a build script; see the debugging log) |
 | `docs/MANUAL.md` | The user manual |

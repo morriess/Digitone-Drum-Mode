@@ -1,12 +1,12 @@
 # Drum Mode UI additions
 
-Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10**.
+Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10.3**.
 For how to install and use it step by step, see the [user manual](../MANUAL.md).
 
 The screenshots are of the real firmware running in
 [digiemu](https://github.com/irpina/digiemu). The LED pictures are drawn from the LED
-colours the emulated panel received. 0.8.2 has run on a real unit; what came after (0.9 to
-0.10) has been tested in the emulator only.
+colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-22; the fixes
+after it (0.10.1 to 0.10.3) have been tested in the emulator only.
 
 ## Contents
 
@@ -54,7 +54,8 @@ The short names are labels only. Each lane plays whatever note you give it.
 Hold a track key on its own to open elekloader's Mod Menu. Drum Mode's tile is
 **DRUM MODE**, with a pad-grid icon. Choosing it (YES, or the tile's trig
 key) turns Drum Mode on or off for the selected MIDI track, A–D, in the pattern you're on.
-Each pattern keeps each track's setting (0.10), saved with the pattern.
+Each pattern keeps each track's setting (0.10), saved with the pattern. A pattern you haven't
+used with Drum Mode yet starts with it off and the default notes (0.10.3).
 
 The corner confirms with `DRUM A ON` or `DRUM A OFF` (the letter is the MIDI track). On
 a synth track the tile shows `MIDI TRK ONLY` and changes nothing.
@@ -177,7 +178,8 @@ On a Drum Mode track the 16 trig keys work like this:
 | TRIG (page key) held + trig 1–8 | select that lane, no sound | same |
 | FUNC + trig 1–8 | mute / unmute that lane | the stock's (lock trigs); also in live and step recording |
 | FUNC + trig 9–16 | the stock function | the stock function |
-| PTN / BANK + trig keys, chains | the stock's pattern and bank select | same |
+| PTN / BANK + trig keys, chains | the stock's pattern and bank select, with its LEDs (0.10.1) | same |
+| FUNC + PAGE (SCALE menu) + trig keys | the stock's: set the length (0.10.2) | same |
 
 **GRID RECORDING** is the stock step-programming mode: press RECORD while stopped. In
 it, trig key *n* means step *n* of the page shown, so with **PAGE** you reach steps
@@ -187,8 +189,9 @@ to that step's chord. Removing the last drum from a step removes the step's trig
 **Live recording** (hold RECORD, press PLAY) records pad hits onto the nearest step.
 
 **The stock's own trig key functions:** while the stock's pattern/bank select is open, PTN or
-BANK is held, or a trig key it took is still held (a chain), Drum Mode leaves the trig keys
-alone. In GRID RECORDING it lets the stock see a pressed step as held, so its locks, micro
+BANK is held, a trig key it took is still held (a chain), or the SCALE menu is open (FUNC +
+PAGE, where the trig keys set the length), Drum Mode leaves the trig keys and their LEDs to the
+stock (the LEDs since 0.10.1, the SCALE menu since 0.10.2). In GRID RECORDING it lets the stock see a pressed step as held, so its locks, micro
 timing and copy/paste work; a quick tap still only adds or takes out the selected lane.
 
 **Lane select** works in any mode and on any page. Drum Mode only watches the TRIG key,
@@ -231,7 +234,7 @@ LEDs.
 - Synth tracks and MIDI tracks without Drum Mode work exactly as before (apart from the
   two extra pages in a MIDI track's LFO list).
 - All other keys, pages and menus are stock, and so are FUNC + trig 9–16, FUNC + trig keys
-  while recording, and PTN / BANK + trig keys.
+  while recording, PTN / BANK + trig keys and the SCALE menu's trig keys.
 - Recorded and grid-programmed steps are normal MIDI trigs. With Drum Mode off you see
   and edit them like any trig, and they copy, clear and save like any trig.
 

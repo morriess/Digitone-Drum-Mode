@@ -7,7 +7,8 @@ become drum pads, each playing its own note on the track's MIDI channel, so you 
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.10 works on a real Digitone (OS 1.44), with a few known bugs. Back up your
+> **Beta.** 0.10 works on a real Digitone (OS 1.44), with a few known bugs; the fixes in
+> 0.10.1 to 0.10.3 are tested in the emulator and wait for the unit. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -344,7 +345,9 @@ On a Drum Mode track:
 | Program the selected drum's steps | **RECORD** (stopped), then trig keys **1–16**; **PAGE** for more steps |
 | Live record | hold **RECORD** + **PLAY**, play the pads, **STOP** |
 | Lock a step, micro timing, copy/paste a step | in GRID RECORDING hold the step + knob / **LEFT**·**RIGHT** / **RECORD**, then another step + **STOP** |
-| Pick a pattern or bank, chains | as usual: **PTN** / **BANK** + trig keys |
+| Pick a pattern or bank, chains | as usual: **PTN** / **BANK** + trig keys (a chain: hold **PTN**, first pattern's key, release **PTN**, keep that key held, next keys) |
+| Set the pattern length | as usual: **FUNC** + **PAGE**, then **PAGE** (total) or a trig key (steps) |
+| Use Drum Mode on another pattern | go there and turn it on (a new pattern starts with it off) |
 | Copy a pattern with its Drum Mode settings | **FUNC** + **RECORD**, go to the other pattern, **FUNC** + **STOP** |
 
 ## Troubleshooting
@@ -395,7 +398,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.8.2, 0.8.3; the features from 0.9 to 0.10 not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22; the fixes in 0.10.1 to 0.10.3 not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

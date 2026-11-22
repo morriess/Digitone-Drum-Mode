@@ -89,12 +89,6 @@ unit)
   used after that. *Details still to get:* which tracks, what was pressed before, and what
   "unusable" means (no sound, keys dead, UI stuck). May be linked to the UI hang with the Mod
   Menu open seen once in the emulator (below).
-- **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) on a Drum Mode track: not
-  checked; the trig keys may play pads, and the Drum Mode settings don't follow this route yet
-  (FUNC + RECORD / FUNC + STOP does both).
-- **MUTE mode** (FUNC + BANK, then the trig keys mute tracks) and **STEP RECORDING** (RECORD +
-  STOP) on a Drum Mode track: not checked; the trig keys may play pads (in step recording that
-  may even be wanted).
 - **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. The SCALE menu uses
   them (handed to the stock in 0.10.2). Checked in the emulator (2026-11-22): PTN + trig (pattern
   copy/clear) is the stock's already (PTN held); the Sound Browser is for synth tracks only.

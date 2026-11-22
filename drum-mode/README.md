@@ -120,14 +120,15 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
-- **The lane strip sometimes disappeared when switching pages** (0.8). Probably the same cause
-  as the empty DRUM pages, fixed in 0.8.3.
 - **The 1.5-second rule (0.9.2):** after a bank pick (BANK + trig 16) the emulator never sent
   that key's release, so a trig key Drum Mode left to the stock counts as released after 1.5 s
   without events. Check that the release really goes missing on the unit, that the trig keys
-  come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works, and
+  come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works (not testable until chains work on the unit), and
   whether a cleaner way exists (the firmware's own held-key state).
-- Everything from 0.9 to 0.10.
+- **Unit test of 0.10 (2026-11-22):** passed: boot, pads, live and grid recording, held-step
+  locks, running light, lane strip (no longer disappears), DRUM pages, mutes, FUNC + trig keys in
+  recording, settings per pattern, copy/paste, FUNC + NO reload, save/load, synth tracks.
+  Bugs found are under Open (pattern length, PTN/BANK LEDs, chains, "Drum Mode off" track).
 
 **Known limits**
 - A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode

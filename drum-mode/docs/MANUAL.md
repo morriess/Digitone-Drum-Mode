@@ -1,6 +1,6 @@
 # Drum Mode user manual
 
-**Drum Mode 0.10.3 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.10.4 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
@@ -8,7 +8,7 @@ record and program a whole kit on one MIDI track. The screen and the trig key LE
 each drum as it plays.
 
 > **Beta.** 0.10 works on a real Digitone (OS 1.44), with a few known bugs; the fixes in
-> 0.10.1 to 0.10.3 are tested in the emulator and wait for the unit. Back up your
+> 0.10.1 to 0.10.4 are tested in the emulator and wait for the unit. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -167,8 +167,8 @@ pad, the knobs only change the pad, not the page underneath.
 
 ### On the DRUM pages
 
-Press **LFO**, then press **LFO** again: after the LFO page come **Drum Notes** and
-**Drum Velocity**.
+Press **LFO**, then press **LFO** again: after the LFO page comes **Drum Notes**, and one
+more **LFO** shows **Drum Velocity** (the same page, switched).
 
 ![The Drum Notes page](ui/drum-notes-page.png)
 
@@ -398,11 +398,11 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22; the fixes in 0.10.1 to 0.10.3 not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22; the fixes in 0.10.1 to 0.10.4 not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.
-- **All MIDI tracks** get the two DRUM pages in their LFO list, including tracks without
+- **All MIDI tracks** get the DRUM page in their LFO list, including tracks without
   Drum Mode.
 - **Locks on drum steps apply to the whole step**, all drums on it. A **NOTE** lock changes the
   step's notes, so it can turn a drum into another one. A **velocity** lock is kept, but on

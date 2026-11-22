@@ -878,13 +878,18 @@ const struct core_projdata dm_projdata = { 0x44524d4bu /* "DRMK" */, CORE_PROJDA
                                            &dm_store, dm_loaded };
 
 /* ---- the DRUM pages --------------------------------------------------------------------------- */
-/* Pages 27 and 28 follow the MIDI tracks' LFO page (23), so LFO pressed again on a MIDI track steps to them. Not after
+/* 0.10.4: one page, 27, holds both DRUM pages (Drum Notes, then Drum Velocity), so Drum Mode claims one of the four mod
+ * pages (27-30: core takes 30, machines-dn1 28 and 29). LFO pressed on Drum Notes shows Drum Velocity on the same
+ * page (taken, dm_page_vel_on); pressed there, it goes on to the stock's next page. Page 27 follows the MIDI tracks'
+ * LFO page (23), so LFO pressed again on a MIDI track steps to it. Not after
  * MIDI Source (20): measured in digiemu, its FUNC + push A (CHAN on) stops working with any mod page after it; not
  * after TRIG (19): TRIG + pad selects a lane, and each TRIG press would step the page. Their knob boxes are empty
  * (id 0): Drum Mode draws the 8 lanes over them and takes the knobs while one is shown. */
 #define PAGE_MIDI_LFO   23
-struct core_page dm_page_notes = { 27, PAGE_MIDI_LFO, "DRMN", "Drum Notes", { 0 }, 0, 0, 0 };
-struct core_page dm_page_vel = { 28, PAGE_MIDI_LFO, "DRMV", "Drum Velocity", { 0 }, 0, 0, 0 };
+#define KEY_LFO         25              /* the LFO page key */
+struct core_page dm_page_notes = { 27, PAGE_MIDI_LFO, "DRUM", "Drum Notes", { 0 }, 0, 0, 0 };
+static int32_t dm_page_vel_on;          /* page 27 shows Drum Velocity */
+static int32_t dm_lfo_taken;            /* the LFO press that switched it: its repeats and release are ours too */
 
 /* 1 the notes page, 2 the velocity page, 0 neither, on screen with nothing over it. core_page_shown compares the
  * view with the one core noted in the descriptor, the last built, so this asks the shown view itself (core-dn1's pages.s and lists.c): the Brain's view stack (+0x54, and
@@ -907,7 +912,18 @@ static int32_t drum_page(void)
     cur = *(int32_t *)(v + 144);
     if (!beg || cur < 0 || beg + cur >= end)
         return 0;
-    return beg[cur] == dm_page_notes.idx ? 1 : beg[cur] == dm_page_vel.idx ? 2 : 0;
+    if (beg[cur] != dm_page_notes.idx) {
+        dm_page_vel_on = 0;             /* left the page: Drum Notes first next time */
+        dm_page_notes.title = "Drum Notes";
+        return 0;
+    }
+    return dm_page_vel_on ? 2 : 1;
+}
+
+/* The DRUM page's title follows what it shows (the stock heads the screen with the descriptor's title). */
+static void page_title(void)
+{
+    dm_page_notes.title = dm_page_vel_on ? "Drum Velocity" : "Drum Notes";
 }
 
 /* A knob on a DRUM page: knob A-H is lane 1-8. A new note plays at once (on, then off), as when a pad is held. */
@@ -965,6 +981,21 @@ int32_t dm_key(void *brain, void *ev)
 
     if (key == KEY_TRIG) {
         dm_trig_held = !up;             /* watched, never taken: the page key still works */
+        return 0;
+    }
+    if (key == KEY_LFO) {               /* 0.10.4: Drum Notes -> Drum Velocity on the one DRUM page */
+        if (dm_lfo_taken) {
+            if (up)
+                dm_lfo_taken = 0;
+            return 1;
+        }
+        if (!up && !(flags & CORE_KEY_REPEAT) && !(flags & CORE_KEY_FUNC) && drum_page() == 1) {
+            dm_page_vel_on = 1;
+            page_title();
+            dm_lfo_taken = 1;
+            dm_dirty = 1;
+            return 1;
+        }
         return 0;
     }
     if (key == KEY_PTN) {
@@ -1417,6 +1448,7 @@ static const char *const dm_note_names[12] = { "C", "C#", "D", "D#", "E", "F", "
  * order, each with the lane's name and its note (name and number) or velocity; a muted lane's velocity cell says
  * MUTE, and the selected lane's cell is inverted. Coordinates: x from the left, y from the bottom (a 5-pixel text's
  * y is its bottom row), so a row r from the top is y 63 - r. */
+#define DM_TITLE_Y      56
 static void draw_drum_page(void *bmp, int32_t page, int32_t track)
 {
     int32_t t = track - DM_FIRST, sel = selected_lane(t);
@@ -1425,6 +1457,11 @@ static void draw_drum_page(void *bmp, int32_t page, int32_t track)
         ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 30, 34, -1, "DRUM MODE IS OFF");
         ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 30, 24, -1, "HOLD A TRACK KEY");
         return;
+    }
+    if (page == 2) {                    /* 0.10.4: the stock's title bar says "Drum Notes" (read when the page opened) */
+        ((rect_fn)fw_fillrect)(bmp, 19, 54, 94, 63, 0);
+        ((text_fn)fw_textf)(bmp, (const void *)fw_font_title, 20, DM_TITLE_Y, -1, "Drum Velocity");
+        ((rect_fn)fw_fillrect)(bmp, 19, 54, 94, 63, -1);
     }
     for (int32_t l = 0; l < DM_LANES; l++) {
         int32_t x = 20 + 27 * (l & 3), top = 12 + 26 * (l >> 2);     /* the cell's top row from the screen's top */

@@ -1,12 +1,12 @@
 # Drum Mode UI additions
 
-Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10.3**.
+Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10.4**.
 For how to install and use it step by step, see the [user manual](../MANUAL.md).
 
 The screenshots are of the real firmware running in
 [digiemu](https://github.com/irpina/digiemu). The LED pictures are drawn from the LED
 colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-22; the fixes
-after it (0.10.1 to 0.10.3) have been tested in the emulator only.
+after it (0.10.1 to 0.10.4) have been tested in the emulator only.
 
 ## Contents
 
@@ -33,7 +33,7 @@ MIDI track with Drum Mode on (a "Drum Mode track"):
 | --- | --- | --- |
 | Mod Menu | a **DRUM MODE** tile that turns Drum Mode on or off for the selected MIDI track | 0.1 |
 | Screen, top-right corner | the **lane strip**: 8 boxes that light when a lane plays; short **messages**; the held pad's **info** | 0.2–0.7 |
-| Screen, two new pages | **Drum Notes** and **Drum Velocity**, behind the MIDI track's LFO page | 0.8 |
+| Screen, a new page | **Drum Notes** and **Drum Velocity** (one page, LFO switches), behind the MIDI track's LFO page | 0.8, one page 0.10.4 |
 | Trig keys | pads 1–8 play the lanes and select them; TRIG + pad selects silently; FUNC + pad mutes (not while recording); in GRID RECORDING the keys edit the selected lane, a held step is the stock's; PTN / BANK + trig keys stay the stock's | 0.1–0.9.3 |
 | Trig key LEDs | the pads' state and the selected lane, keys 9–16 as a running light; in GRID RECORDING the selected lane's steps | 0.7–0.9.1 |
 
@@ -127,9 +127,12 @@ seconds after you let go.
 
 ## The DRUM pages
 
-Two pages for setting all 8 lanes at once. On a Drum Mode track, press **LFO**: the LFO
-page shows `LFO (1/3)`, and pressing LFO again steps to **Drum Notes (2/3)** and then
-**Drum Velocity (3/3)**.
+Setting all 8 lanes at once. On a Drum Mode track, press **LFO**: the LFO page shows
+`LFO (1/2)`, and pressing LFO again steps to **Drum Notes (2/2)** and then **Drum
+Velocity**. That's one page showing two things (since 0.10.4): LFO on Drum Notes switches
+it to the velocities, and LFO on Drum Velocity goes on to the LFO page. The stock reads a
+page's title only when it opens, so Drum Mode writes `Drum Velocity` over the title bar
+itself.
 
 | Drum Notes | Drum Velocity |
 | --- | --- |
@@ -151,7 +154,7 @@ cell also says `MUTE`. Turning a knob changes the velocity and plays nothing.
 **The selected lane** (its pad, or TRIG + pad) is shown with its cell inverted, white with black
 text, on both pages.
 
-**On a MIDI track without Drum Mode** the two pages still appear in the LFO list (they
+**On a MIDI track without Drum Mode** the page still appears in the LFO list (it
 belong to all MIDI tracks), but show a hint and ignore the knobs:
 
 ![The DRUM page on a MIDI track without Drum Mode](drum-page-off.png)
@@ -160,9 +163,10 @@ belong to all MIDI tracks), but show a hint and ignore the knobs:
 push A that turns CHAN on. Behind TRIG, every lane select (TRIG + pad) would also flip
 the page. LFO was the cleanest place. (Details in [the design notes](../design.md).)
 
-**How they're made.** The pages are two extra pages with empty knob boxes. Drum Mode
-clears the boxes and draws the cells itself, and handles the knobs while a DRUM page is
-shown, so the pages use none of elekloader's 10 shared parameter slots. (Since 0.10 Drum
+**How it's made.** The DRUM page is one extra page (mod page 27) with empty knob boxes.
+Drum Mode clears the boxes and draws the cells itself, and handles the knobs while it is
+shown, so it uses none of elekloader's 10 shared parameter slots. One page, not two, so
+Drum Mode leaves pages 28 and 29 to other mods (machines-dn1, CTRL-PLUS). (Since 0.10 Drum
 Mode uses one, id 191, to keep each pattern's settings: it has no knob or page.)
 
 ## The trig keys
@@ -232,7 +236,7 @@ LEDs.
 ## What stays stock
 
 - Synth tracks and MIDI tracks without Drum Mode work exactly as before (apart from the
-  two extra pages in a MIDI track's LFO list).
+  extra DRUM page in a MIDI track's LFO list).
 - All other keys, pages and menus are stock, and so are FUNC + trig 9–16, FUNC + trig keys
   while recording, PTN / BANK + trig keys and the SCALE menu's trig keys.
 - Recorded and grid-programmed steps are normal MIDI trigs. With Drum Mode off you see
@@ -262,7 +266,7 @@ The rules the UI follows, which any future change should keep:
 - **The strip is small:** a glance indicator, not a replacement for real feedback.
 - **Locks on drum steps apply to the whole step** (all lanes on it). A NOTE lock changes its
   notes; a velocity lock has no effect, as Drum Mode plays the step at its lanes' velocity.
-- **All MIDI tracks get the two DRUM pages** in their LFO list, including tracks without
+- **All MIDI tracks get the DRUM page** in their LFO list, including tracks without
   Drum Mode.
 - **The LED colours are from the emulator's copy of the panel's colour table** (dark,
   red, dim red, white). They should match the unit, but that hasn't been checked on

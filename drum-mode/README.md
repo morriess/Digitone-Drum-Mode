@@ -11,7 +11,7 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
 > recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
-> bugs were found; 0.10.3 fixes the first ones and waits for the unit. See
+> bugs were found; 0.10.4 fixes the first ones and waits for the unit. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -19,7 +19,7 @@ Digitone mk1 core and its sequencer-events mod.
 [design notes](docs/design.md) (how it works inside, findings) and the
 [debugging log](docs/debugging.md).
 
-## What it does (0.10.3)
+## What it does (0.10.4)
 
 - **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
 - **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
@@ -29,7 +29,8 @@ Digitone mk1 core and its sequencer-events mod.
 - **Grid editing per lane:** in GRID RECORDING the 16 trig keys place and show the selected
   lane's steps; a held step takes the stock's locks, micro timing and copy/paste.
 - **Lane mutes** with FUNC + pad (outside recording).
-- **Two DRUM pages** behind the MIDI track's LFO key for all lanes' notes and velocities.
+- **A DRUM page** behind the MIDI track's LFO key for all lanes' notes, and LFO again for their
+  velocities (one mod page since 0.10.4).
 - **On screen and LEDs:** a lane strip that follows playback, the selected lane's pad lit, and
   keys 9–16 as a running light in time with the pattern.
 - **Settings per pattern and per track,** kits (notes and velocities) shared in the project,
@@ -108,9 +109,6 @@ unit)
   are the selected lane's steps, no sound (stock: a trig key places its note on the active step and
   moves one step on). *Kept as it is* (the user, 2026-11-22); the drum version is on the list of
   possible additions.
-- **The DRUM pages clash with DigiTables** (both claim mod page 27). DigiTables is OS 1.43 only
-  so far. *Possible fix:* pages 28 and 29 (29 clashes with CTRL-PLUS, which needs an older
-  core anyway; 30 is core's second TRIG page once a mod puts knobs there).
 - **ROOT on a held step shows the step's first note, not the selected lane's** (later). Since
   0.9.2 a step held in GRID RECORDING shows its note in the TRIG page's ROOT box, but on a step
   with several drums it's the first one (e.g. the kick, with the snare selected). *Planned:* draw
@@ -121,6 +119,9 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
+- **0.10.4: one DRUM page.** LFO, LFO: Drum Notes (2/2); LFO again: Drum Velocity on the same
+  page (its title written by Drum Mode); LFO again: back to the LFO page. Knobs edit as before
+  (passes in the emulator).
 - **0.10.3: a new pattern starts off.** Go to a pattern you haven't used with Drum Mode: Drum
   Mode is off there, the notes are the defaults, and A01 keeps its own. Turn it on and change a
   note: only that pattern changes (passes in the emulator).
@@ -161,6 +162,11 @@ unit)
 
 **Fixed** (details in the [debugging log](docs/debugging.md) and the
 [design notes](docs/design.md))
+- **The DRUM pages clashed with other mods' pages** (0.10.4). The Digitone mk1 has four mod
+  pages (27–30): core takes 30, machines-dn1 28 and 29, CTRL-PLUS 29, DigiTables 27 (OS 1.43
+  only). Drum Mode used 27 and 28, so it couldn't be combined with machines-dn1. Now Drum Notes
+  and Drum Velocity share page 27 (LFO on Drum Notes switches to Drum Velocity), and Drum Mode
+  links with machines-dn1 0.6, Filter-FX and CTRL-PLUS.
 - Recorded beats didn't play back on the unit: written into another pattern's data (0.8.2,
   confirmed on the unit).
 - The DRUM pages came up empty and the corner strip vanished after picking a pattern with BANK
@@ -182,7 +188,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 ```
 
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
-(core-dn1 5.3, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
+(core-dn1 5.4, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
 **D100** on the unit.
 

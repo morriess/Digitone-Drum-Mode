@@ -1,11 +1,11 @@
 {
  "id": "drummode",
- "version": "0.10.3",
+ "version": "0.10.4",
  "license": "GPL-2.0-or-later",
  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
  "category": "Sequencer",
  "author": "morriess",
- "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-lane drum sequencer on the track's own MIDI channel. 0.8: DRUM MODE in the Mod Menu (hold a track key) toggles it for the active MIDI track; trig keys 1-8 play the 8 lane notes (GM drum map by default) on the track's channel, several at once; hold a pad and turn A to set its note, B its velocity; FUNC + a pad mutes its lane on playback; in live recording (RECORD + PLAY) each pad hit is written at the nearest step as a normal MIDI trig, lanes on one step as its chord notes. Hold TRIG and press a pad to select a lane; in GRID RECORDING the 16 trig keys toggle the selected lane on the shown page's steps, and light red where it plays. Two DRUM pages behind LFO on a MIDI track (Drum Notes, Drum Velocity): knobs A-H set the 8 lanes' notes and velocities. The screen's corner shows the 8 lanes: lit while a pad is held, blinking as the sequencer plays them, a dash when muted. Saved with the project. OS 1.44 only: it names the live-record flag, the step setters, GRID RECORDING's flag and page, the LED setter and the MIDI senders by address. Needs core-dn1 5.3 and seq-events.",
+ "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-voice drum sequencer on the track's own MIDI channel, for an external drum machine or sampler. Beta. Turn it on per MIDI track and per pattern in the Mod Menu (hold a track key, DRUM MODE). Trig keys 1-8 are pads: they play the 8 voices (GM drum notes by default) and select the voice you edit; hold a pad and turn A for its note, B for its velocity, or set all 8 on the DRUM page behind LFO (Drum Notes, LFO again for Drum Velocity). FUNC + pad mutes a voice. Live recording (RECORD + PLAY) writes pad hits as normal MIDI trigs, several voices on one step as chord notes; in GRID RECORDING keys 1-16 edit the selected voice's steps (PAGE for longer patterns), and a held step keeps the stock's locks, micro timing and copy/paste. While playing, keys 9-16 show a running light; the screen corner shows the 8 voices as they play. Each pattern keeps its own Drum Mode settings (on/off, notes, velocities, mutes), saved with the project; FUNC + RECORD / FUNC + STOP copies a pattern with them. The stock trig key functions stay: pattern and bank select, chains, the SCALE menu's length. OS 1.44 only. Needs core-dn1 5.3 or later and seq-events. Uses mod page 27.",
  "device": "digitone-mk1",
  "os": "1.44",
  "sources": [
@@ -108,19 +108,6 @@
    ]
   },
   {
-   "to": "core_pages",
-   "order": 50,
-   "data": "00000000",
-   "relocs": [
-    [
-     0,
-     "abs32",
-     "sym:dm_page_vel",
-     0
-    ]
-   ]
-  },
-  {
    "to": "core_params",
    "order": 50,
    "data": "00000000",
@@ -139,8 +126,7 @@
   "names": [
    "projdata:DRMK",
    "param:191",
-   "page:27",
-   "page:28"
+   "page:27"
   ]
  },
  "requires": [

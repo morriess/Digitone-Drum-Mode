@@ -8,8 +8,8 @@
 set -euo pipefail
 
 ELEKLOADER_REPO="https://github.com/irpina/elekloader.git"
-ELEKLOADER_COMMIT="9281c991e27c1516b43749dfb39a53c2c057859b"   # core-dn1 5.3, seq-events-dn1 0.1
-VERSION_LABEL="D103"
+ELEKLOADER_COMMIT="d208dbd0bb790ac6a271156387248709901e8520"   # core-dn1 5.4, seq-events-dn1 0.1
+VERSION_LABEL="D104"
 
 here="$(cd "$(dirname "$0")" && pwd)"
 stock="${1:?usage: ./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx [output.syx]}"
@@ -42,9 +42,10 @@ build "$ek/mods/seq-events-dn1"
 rm -rf "$here/src/out"
 build "$here/src"
 
-core="$ek/mods/core-dn1/out/core-5.3-os1.44.elemod"
-seq="$ek/mods/seq-events-dn1/out/seq-events-0.1-os1.44.elemod"
-dm_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$here/src/mod.json")"
+version_of() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$1"; }
+core="$ek/mods/core-dn1/out/core-$(version_of "$ek/mods/core-dn1/mod.json")-os1.44.elemod"
+seq="$ek/mods/seq-events-dn1/out/seq-events-$(version_of "$ek/mods/seq-events-dn1/mod.json")-os1.44.elemod"
+dm_version="$(version_of "$here/src/mod.json")"
 dm="$here/src/out/drummode-$dm_version-os1.44.elemod"
 [ -f "$dm" ] || dm="$here/src/out/drummode-$dm_version.elemod"     # a mod for one OS version has no suffix
 

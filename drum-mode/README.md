@@ -92,6 +92,11 @@ unit)
   key events Drum Mode passes on (the replayed press/release), or the stock seeing PTN as
   released between presses. *To fix:* reproduce with real timing, compare with a non-Drum Mode
   track.
+- **"Drum Mode off" on screen and the track becomes unusable** (found on the unit, 0.10,
+  2026-11-22). On some MIDI tracks the screen shows Drum Mode turned off, and the track can't be
+  used after that. *Details still to get:* which tracks, what was pressed before, and what
+  "unusable" means (no sound, keys dead, UI stuck). May be linked to the UI hang with the Mod
+  Menu open seen once in the emulator (below).
 - **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) on a Drum Mode track: not
   checked; the trig keys may play pads, and the Drum Mode settings don't follow this route yet
   (FUNC + RECORD / FUNC + STOP does both).

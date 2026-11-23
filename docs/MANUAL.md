@@ -1,3 +1,5 @@
+![Drum Mode: 8 voices routed into one MIDI track, drawn like an FM algorithm](banner/drum-mode-manual.jpg)
+
 # Drum Mode user manual
 
 **Drum Mode 0.10.4 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**

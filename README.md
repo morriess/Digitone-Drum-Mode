@@ -238,7 +238,7 @@ Each test set takes a few minutes; screenshots land in its work folder. All 13 s
 | `docs/design.md` | Design, build plan and findings |
 | `docs/debugging.md` | The log of debugging on the unit |
 | `docs/ui/` | The screen UI explained, with screenshots |
-| `docs/banner/` | The README banner and the script that draws it |
+| `docs/banner/` | The README banner (water.py) and the manual banner (manual.py), with the scripts that draw them |
 
 Until 2026-11-23 all of this lived in a `drum-mode/` folder inside the repo, with a short README
 on top. That extra layer is gone: the folder's contents are now the repo itself, and everything

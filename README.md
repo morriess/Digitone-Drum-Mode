@@ -1,4 +1,4 @@
-![Drum Mode: 8 voices, 1 MIDI channel, 16 steps](drum-mode/docs/banner/drum-mode-banner.png)
+![Drum Mode: 8 voices per MIDI track, fully integrated](drum-mode/docs/banner/drum-mode-banner.jpg)
 
 # Digitone Drum Mode
 

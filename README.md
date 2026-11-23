@@ -64,10 +64,7 @@ Digitone mk1 core and its sequencer-events mod.
   sends its steps as MIDI (its voice silent), for up to 8 drum or MIDI tracks. Not more tracks:
   the format has exactly 4 synth + 4 MIDI. The hard part is timing each note and its note-off.
 
-**Later: announcement** (set aside 2026-11-22). A Reddit post and the elekloader Shop listing,
-once the unit test of 0.10.4 is done. A first try at the post and images (an overview, a demo GIF
-from the emulator, an edited photo of the unit) wasn't right yet; it's in the git history
-(commit 120dde9) if useful.
+**Later: the elekloader Shop listing**, once the unit test of 0.10.4 is done.
 
 **Possible additions after v1** (ideas from 2026-11-19, once the current features work on the
 unit)

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode in digiemu: what happens to a Drum Mode beat when Drum Mode is turned off, and on again.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_drum_off.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_drum_off.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Programs a beat in GRID RECORDING (kick on 1, 5, 9, 13; snare on 5, 13; closed hat on every odd step, so steps 1, 5,
 9 and 13 are chords), sets the kick's velocity to 90 and the snare's to 70, mutes the hat, and plays two bars after

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.8.2 in digiemu: live recording on a pattern other than A01.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_other_pattern.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_other_pattern.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 The project keeps a set of track edit objects per pattern, and the active pattern's set is the one to edit through.
 0.8 always wrote through A01's set and 0.8.1 through A01's or A02's: on another pattern the recorded beats went into

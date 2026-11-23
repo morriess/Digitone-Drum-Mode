@@ -55,12 +55,12 @@ project either. You build it from your own copy of the stock OS file.
 
   ```
   git clone https://github.com/morriess/Digitone-Drum-Mode.git
-  cd Digitone-Drum-Mode/drum-mode
+  cd Digitone-Drum-Mode
   ./build.sh /path/to/Digitone_and_Digitone_Keys_OS1.44.syx
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D100**).
+  **D104** for 0.10.4).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -84,8 +84,8 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 
 ### 4. Check it
 
-The Digitone starts as normal, and the OS version on its boot screen now reads **D100**
-instead of 1.44.
+The Digitone starts as normal, and the OS version on its boot screen now reads **D1xx**
+instead of 1.44 (D104 for 0.10.4).
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
 

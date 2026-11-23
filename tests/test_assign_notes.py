@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.3 in digiemu: assigning each pad's note and velocity, and keeping them with the project.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_assign_notes.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Holds a pad and turns A (its note, heard as it changes) and B (its velocity), checks the knobs are left to the page
 when no pad is held, then saves the project, changes everything, loads it back and checks the notes and Drum Mode

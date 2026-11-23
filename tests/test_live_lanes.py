@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Milestone 2 in digiemu: Drum Mode's live lanes.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_live_lanes.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_live_lanes.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Selects MIDI track A, turns Drum Mode on from the Mod Menu, plays trig keys and checks the MIDI the
 Digitone sends: each of trig 1-8 its lane's note on track A's channel, several at once, and the

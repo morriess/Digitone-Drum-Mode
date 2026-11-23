@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.9.1 in digiemu: keys 9-16 as a running light while playing.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_run_light.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_run_light.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Each of keys 9-16 stands for 2 steps of the 16-step page that plays, lit white for the first half of each of its
 steps: two blinks a key. A track's page of fewer steps (a short or odd length, or the last page of a longer track)

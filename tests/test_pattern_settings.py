@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.10 in digiemu: Drum Mode's settings per pattern and per track.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_pattern_settings.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_pattern_settings.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Each pattern keeps its own Drum Mode on/off, mutes, notes and velocities for each track. A pattern that has none yet
 takes a copy of the pattern the player came from (the choice being tried out). FUNC + RECORD copies the active

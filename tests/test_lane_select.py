@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.9 in digiemu: a pad selects its lane as it plays, and its key stays lit.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_lane_select.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_lane_select.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Pressing pad 1-8 (stopped, not recording) plays its drum and makes it the selected lane: its key stays lit dim white
 (red while muted). GRID RECORDING then places and shows that lane's steps only. During live recording a pad only plays

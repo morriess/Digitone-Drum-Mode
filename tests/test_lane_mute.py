@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.5 in digiemu: muting lanes.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_lane_mute.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Records a kick, a snare and a kick + open hat chord, then mutes lanes with FUNC + pad and checks playback leaves out
 exactly the muted lanes' notes (a chord keeps its other notes, a step of muted lanes plays nothing), that the pads

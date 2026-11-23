@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.9.3 in digiemu: the stock's own trig key functions on a Drum Mode track.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_stock_keys.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_stock_keys.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Pattern select (PTN then a trig key, or PTN held + a trig key), bank select (BANK, a trig key 9-16, then a pattern)
 and chains (PTN held + a trig key, then more trig keys while one is held) go to the stock, not to the pads. In GRID

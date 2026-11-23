@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.4 in digiemu: live recording the 8 pads.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_live_record.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Starts live recording on a Drum Mode track, hits pads at known moments of known steps (early in a step: that step;
 late: the next), a chord, then stops and checks the pattern holds normal MIDI trigs with the lanes' notes as the

@@ -3,7 +3,7 @@
 
 Run with digiemu's Python:
 
-    uv run --project $DIGIEMU python drum-mode/tests/<test>.py <firmware.syx>
+    uv run --project $DIGIEMU python tests/<test>.py <firmware.syx>
 
 DIGIEMU must point at a digiemu checkout with the patched Unicorn installed
 (tools/install-patched-unicorn.sh).

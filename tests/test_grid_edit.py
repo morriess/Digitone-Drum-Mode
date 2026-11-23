@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.7 in digiemu: lane select, grid editing in GRID RECORDING, and the trig-key LEDs.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_grid_edit.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_grid_edit.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Selects a lane with TRIG + pad, places and removes it on steps in GRID RECORDING (several lanes on one step make a
 chord, the last one out takes the trig), checks the LEDs show only the selected lane, edits page 2 of a 32-step track,

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.6 in digiemu: the lane strip blinks as the sequencer plays each lane.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_strip_playback.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Records a kick on step 2, a snare on 6 and a kick + open hat on 12, mutes the open hat, then plays and watches the
 corner strip frame by frame: each lane's box must light when its step plays (not when the sequencer fires it, one

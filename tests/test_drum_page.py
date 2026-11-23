@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 """Drum Mode 0.8 in digiemu: the DRUM pages behind LFO on a MIDI track.
 
-    uv run --project $DIGIEMU python drum-mode/tests/test_drum_page.py out/Digitone_OS1.44_DrumMode.syx [workdir]
+    uv run --project $DIGIEMU python tests/test_drum_page.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
 Steps LFO to Drum Notes and Drum Velocity, turns knobs there and checks the lanes' notes and velocities change (a new
 note plays at once), the pads then play them, CHAN still turns on (FUNC + push A on MIDI Source), the LFO page underneath is untouched, the cells show the values,

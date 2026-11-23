@@ -1,3 +1,5 @@
+![Drum Mode: 8 voices, 1 MIDI channel, 16 steps](docs/banner/drum-mode-banner.png)
+
 # Drum Mode
 
 A custom-firmware mod for the **Elektron Digitone mk1 (OS 1.44)** that turns one

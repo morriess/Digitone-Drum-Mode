@@ -10,7 +10,7 @@ record and program a whole kit on one MIDI track. The screen and the trig key LE
 each drum as it plays.
 
 > **Beta.** 0.10.4 works on a real Digitone (OS 1.44, tested 2026-11-24); 0.10.5 and 0.10.6 (page
-> counters, the running light on all 16 keys) are tested in the emulator; 0.10.5 also on the unit. Back up your
+> counters, the running light on all 16 keys) work on the unit too (2026-11-24). Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -401,7 +401,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22, 0.10.4 and 0.10.5 on 2026-11-24; 0.10.6 not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22, 0.10.4 to 0.10.6 on 2026-11-24); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

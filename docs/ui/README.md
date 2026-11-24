@@ -5,8 +5,8 @@ For how to install and use it step by step, see the [user manual](../MANUAL.md).
 
 The screenshots are of the real firmware running in
 [digiemu](https://github.com/irpina/digiemu). The LED pictures are drawn from the LED
-colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-22 and 0.10.4 and
-0.10.5 on 2026-11-24; 0.10.6 has been tested in the emulator only.
+colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-22 and 0.10.4 to
+0.10.6 on 2026-11-24.
 
 ## Contents
 

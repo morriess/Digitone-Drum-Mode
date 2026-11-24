@@ -14,7 +14,7 @@ Digitone mk1 core and its sequencer-events mod.
 > **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
 > recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
 > bugs were found and fixed; 0.10.4 passed its unit test on 2026-11-24. 0.10.6 (page counters,
-> the running light on all 16 keys, red and steady like the stock's) waits for the unit. See
+> the running light on all 16 keys, red and steady like the stock's) works on the unit too. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -121,11 +121,12 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
-- **0.10.6: the running light red and steady.** On the unit (0.10.5, 2026-11-24) the light was
+- **0.10.6: the running light red and steady.** *Unit (2026-11-24): works, also next to muted
+  lanes.* On the unit (0.10.5, 2026-11-24) the light was
   white and flickered: it was lit for half of each step. The stock's playhead (measured in the
   emulator on a MIDI track playing) is **red for the whole step** and moves straight on to the
   next key. Drum Mode now does the same (passes in the emulator).
-- **0.10.6: the LFO page says "LFO".** On the unit (0.10.5) it said "LFO (1/2)", but it is one
+- **0.10.6: the LFO page says "LFO".** *Unit (2026-11-24): works.* On the unit (0.10.5) it said "LFO (1/2)", but it is one
   page: the stock counts the DRUM page as page 2 of the LFO group. On a Drum Mode track Drum
   Mode now writes "LFO" (passes in the emulator).
 - **0.10.5: the DRUM page counter.** *Unit (2026-11-24): works:* Drum Notes (1/2), Drum

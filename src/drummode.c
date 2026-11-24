@@ -29,6 +29,8 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
+ * - 0.10.5: the DRUM page's title shows its own counter (Drum Notes 1/2, Drum Velocity 2/2); the running light uses
+ *   all 16 keys, one per step, over the pads for its half step.
  * - 0.10: Drum Mode's settings per pattern and per track (on/off, mutes, kit), the kits (notes, velocities) in the
  *   project, at most 10; a new pattern takes a copy of the one played before; FUNC + RECORD / STOP carries them.
  * - 0.9.4: a change to Drum Mode on/off, a mute, a lane note or a velocity reaches step 1 of the next run too.
@@ -533,13 +535,14 @@ static int32_t hit_step(int32_t track)
     return s;
 }
 
-/* 0.9.1: keys 9-16 as a running light while playing (not in GRID RECORDING). Each key stands for 2 steps of the
- * 16-step page that plays (steps 1-2 key 9 ... 15-16 key 16; a page of a longer track starts over at key 9), lit white
- * for the first half of each of its steps, so it blinks twice; a short or odd length leaves the keys after its last
- * step dark, and a key with one step blinks once. The step playing is the one before the clock's (the fired one), it started
+/* 0.9.1: a running light while playing (not in GRID RECORDING). 0.10.5: one key per step over all 16 keys (step 1
+ * key 1 ... step 16 key 16; a page of a longer track starts over at key 1), lit white for the first half of its step;
+ * a short length leaves the keys after its last step dark. On keys 1-8 it shows over the pad's own light for that
+ * half step, then the pad's state (held, played, selected, muted) shows again. (0.9.1-0.10.4: keys 9-16, 2 steps
+ * per key.) The step playing is the one before the clock's (the fired one), it started
  * playing when the clock moved to it; a step's length is the time between two clock steps (the track's speed and
  * swing), else a 16th. -> the key 8-15 (0-based) that is lit now, or -1. */
-volatile int32_t dm_run_key = -1;      /* the lit key 9-16 (0-based 8-15) or -1, for the tests */
+volatile int32_t dm_run_key = -1;      /* the lit key 1-16 (0-based 0-15) or -1, for the tests */
 volatile int32_t dm_run_len;            /* the track length it went by, for the tests */
 
 /* The step clock seen from the UI tick: seq-events' sq_clock (every step, trig or not; the fired step, one before the
@@ -578,7 +581,7 @@ static int32_t run_key(int32_t track)
     pos = (s - LEAD_STEPS) % len;
     if (pos < 0)
         pos += len;
-    return KEY_STEPS / 2 + (pos % 16) / 2;
+    return pos % 16;                    /* 0.10.5: one key per step, 1-16 */
 }
 
 /* Add a note to a step of a track as the stock's live recorder does: a trig if there is none (the note in slot 0,
@@ -1322,7 +1325,7 @@ void dm_tick(void *ctrl)
         last_track = track;
         last_stock = st;
     }
-    {                                   /* keys 9-16 follow the playing step (0.9.1): an LED frame when the lit key changes */
+    {                                   /* the running light follows the playing step: an LED frame when the lit key changes */
         static int32_t last_run = -2;
         int32_t track = fw_active_track, r = -1;
         if (drum_track(track)) {
@@ -1345,7 +1348,8 @@ void dm_tick(void *ctrl)
 /* The key-LED frame (core's ev_key_leds, before the stock views set theirs): on a Drum Mode track,
  * - in GRID RECORDING the shown page's steps: red where the selected lane plays, dark elsewhere; the playing step and
  *   steps past the track's length are left to the stock;
- * - else trig keys 1-8 as pads: white while held or just played, dim red when muted, dark otherwise; 9-16 dark. */
+ * - else trig keys 1-8 as pads: white while held or just played, dim red when muted, dark otherwise; 9-16 dark; and
+ *   over all 16 the running light (0.10.5: one key per step, white). */
 void dm_leds(void *mgr)
 {
     int32_t track = fw_active_track, t;
@@ -1371,7 +1375,7 @@ void dm_leds(void *mgr)
     int32_t run = run_key(track);
     for (int32_t k = 0; k < KEY_STEPS; k++) {
         int32_t c = k == run ? LED_WHITE : LED_DARK, muted = (dm.mutes[t] >> k) & 1, sel = k == selected_lane(t);
-        if (k < DM_LANES) {
+        if (k < DM_LANES && k != run) {    /* 0.10.5: the running light shows over the pad for its half step */
             if (((dm_lit_held[t] >> k) & 1) || dm_flash[t][k])
                 c = LED_WHITE;
             else if (sel)
@@ -1458,11 +1462,14 @@ static void draw_drum_page(void *bmp, int32_t page, int32_t track)
         ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 30, 24, -1, "HOLD A TRACK KEY");
         return;
     }
-    if (page == 2) {                    /* 0.10.4: the stock's title bar says "Drum Notes" (read when the page opened) */
-        ((rect_fn)fw_fillrect)(bmp, 19, 54, 94, 63, 0);
-        ((text_fn)fw_textf)(bmp, (const void *)fw_font_title, 20, DM_TITLE_Y, -1, "Drum Velocity");
-        ((rect_fn)fw_fillrect)(bmp, 19, 54, 94, 63, -1);
-    }
+    /* 0.10.5: Drum Mode writes the whole title on both views. The stock reads the title once, when the page opens, and
+     * adds its own counter for the LFO group ("Drum Notes (2/2)": LFO 1, DRUM 2), so it said 2/2 on Drum Notes and,
+     * once Drum Mode painted "Drum Velocity" over it, nothing there. DRUM counts its own two views: 1/2 and 2/2. The
+     * bar is inverted (light, dark text): clear it dark, write light, invert; x 19-118 leaves the bar's rounded end. */
+    ((rect_fn)fw_fillrect)(bmp, 19, 54, 118, 63, 0);
+    ((text_fn)fw_textf)(bmp, (const void *)fw_font_title, 20, DM_TITLE_Y, -1, "%s (%d/2)",
+                        page == 2 ? "Drum Velocity" : "Drum Notes", (int)page);
+    ((rect_fn)fw_fillrect)(bmp, 19, 54, 118, 63, -1);
     for (int32_t l = 0; l < DM_LANES; l++) {
         int32_t x = 20 + 27 * (l & 3), top = 12 + 26 * (l >> 2);     /* the cell's top row from the screen's top */
         int32_t y0 = 63 - (top + 24), y1 = 63 - (top + 1);

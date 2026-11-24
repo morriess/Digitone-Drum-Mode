@@ -1,12 +1,12 @@
 # Drum Mode UI additions
 
-Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10.4**.
+Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10.5**.
 For how to install and use it step by step, see the [user manual](../MANUAL.md).
 
 The screenshots are of the real firmware running in
 [digiemu](https://github.com/irpina/digiemu). The LED pictures are drawn from the LED
-colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-22; the fixes
-after it (0.10.1 to 0.10.4) have been tested in the emulator only.
+colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-22 and 0.10.4 on
+2026-11-24; 0.10.5 has been tested in the emulator only.
 
 ## Contents
 
@@ -35,7 +35,7 @@ MIDI track with Drum Mode on (a "Drum Mode track"):
 | Screen, top-right corner | the **lane strip**: 8 boxes that light when a lane plays; short **messages**; the held pad's **info** | 0.2–0.7 |
 | Screen, a new page | **Drum Notes** and **Drum Velocity** (one page, LFO switches), behind the MIDI track's LFO page | 0.8, one page 0.10.4 |
 | Trig keys | pads 1–8 play the lanes and select them; TRIG + pad selects silently; FUNC + pad mutes (not while recording); in GRID RECORDING the keys edit the selected lane, a held step is the stock's; PTN / BANK + trig keys stay the stock's | 0.1–0.9.3 |
-| Trig key LEDs | the pads' state and the selected lane, keys 9–16 as a running light; in GRID RECORDING the selected lane's steps | 0.7–0.9.1 |
+| Trig key LEDs | the pads' state and the selected lane, keys 1–16 as a running light (one per step); in GRID RECORDING the selected lane's steps | 0.7–0.10.5 |
 
 Drum Mode works on the 8 lanes of one MIDI track at a time:
 
@@ -128,11 +128,12 @@ seconds after you let go.
 ## The DRUM pages
 
 Setting all 8 lanes at once. On a Drum Mode track, press **LFO**: the LFO page shows
-`LFO (1/2)`, and pressing LFO again steps to **Drum Notes (2/2)** and then **Drum
-Velocity**. That's one page showing two things (since 0.10.4): LFO on Drum Notes switches
-it to the velocities, and LFO on Drum Velocity goes on to the LFO page. The stock reads a
-page's title only when it opens, so Drum Mode writes `Drum Velocity` over the title bar
-itself.
+`LFO (1/2)`, and pressing LFO again steps to **Drum Notes (1/2)** and then **Drum
+Velocity (2/2)**. That's one page showing two things (since 0.10.4): LFO on Drum Notes
+switches it to the velocities, and LFO on Drum Velocity goes on to the LFO page. The stock
+reads a page's title only when it opens and counts the DRUM page as page 2 of the LFO group,
+so Drum Mode writes the whole title bar itself, with its own counter for its two views
+(0.10.5).
 
 | Drum Notes | Drum Velocity |
 | --- | --- |
@@ -176,7 +177,7 @@ On a Drum Mode track the 16 trig keys work like this:
 | Keys | Outside GRID RECORDING | In GRID RECORDING |
 | --- | --- | --- |
 | Trig 1–8 | play lanes 1–8 (several at once) and select the lane pressed; recorded while live recording (which doesn't select) | the selected lane on/off on that step (a quick tap) |
-| Trig 9–16 | nothing (they show the running light) | the selected lane on/off on that step |
+| Trig 9–16 | nothing (the running light shows on all 16 keys) | the selected lane on/off on that step |
 | Hold a step | — | the stock's held trig: knobs lock the whole step, LEFT/RIGHT micro timing, RECORD copies it, STOP pastes onto another held step |
 | Hold a pad + turn A / B | the pad's note / velocity | (pads are steps here) |
 | TRIG (page key) held + trig 1–8 | select that lane, no sound | same |
@@ -226,7 +227,7 @@ mode.
 | Pad 1–8 held, or its lane just played | white |
 | Pad 1–8 of a muted lane | dim red |
 | Pad of the selected lane (0.9) | dim white; red if muted |
-| Keys 9–16 while playing (0.9.1) | a running light: each key 2 steps of the playing page, white for the first half of each step |
+| Keys 1–16 while playing (0.10.5) | a running light: key *n* is step *n* of the playing page, white for the first half of its step; on keys 1–8 it shows over the pad, then the pad's own light comes back |
 | Any other key | dark |
 
 Drum Mode sets its LEDs first in each LED update, so they take priority over the stock
@@ -289,7 +290,7 @@ All in [../../src/drummode.c](../../src/drummode.c):
 | `dm_tick` | the UI tick: turns played lanes into blinks, counts down blinks and messages, asks for a redraw and an LED update |
 | `dm_leds` | the trig key LEDs, in each LED update before the stock ones |
 | `dm_key` | the trig keys: pads, lane select, mutes, GRID RECORDING, what goes to the stock |
-| `run_key` | which of keys 9–16 is lit now (the running light) |
+| `run_key` | which of keys 1–16 is lit now (the running light) |
 | `pattern_follow`, `rearm` | the playing pattern's settings, and keeping a change in its lane value and kit |
 | `dm_enc` | the knobs: a held pad's note and velocity, and the DRUM pages |
 | `drum_page` | which DRUM page is shown, if any |

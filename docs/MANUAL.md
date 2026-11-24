@@ -2,15 +2,15 @@
 
 # Drum Mode user manual
 
-**Drum Mode 0.10.5 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.10.6 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.10.4 works on a real Digitone (OS 1.44, tested 2026-11-24); 0.10.5 (the DRUM page
-> counter, the running light on all 16 keys) is tested in the emulator and waits for the unit. Back up your
+> **Beta.** 0.10.4 works on a real Digitone (OS 1.44, tested 2026-11-24); 0.10.5 and 0.10.6 (page
+> counters, the running light on all 16 keys) are tested in the emulator; 0.10.5 also on the unit. Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -62,7 +62,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D105** for 0.10.5).
+  **D106** for 0.10.6).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -87,7 +87,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 ### 4. Check it
 
 The Digitone starts as normal, and the OS version on its boot screen now reads **D1xx**
-instead of 1.44 (D105 for 0.10.5).
+instead of 1.44 (D106 for 0.10.6).
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
 
@@ -279,9 +279,9 @@ and **dim red** when muted. The selected drum's pad stays **dim white** (**red**
 muted).
 
 While the sequencer plays, keys **1–16** are a running light that shows where the
-pattern is, one key per step (since 0.10.5): key 1 blinks **white** on step 1, key 2 on
-step 2, and so on up to key 16. On keys 1–8 the blink shows over the pad for half a step,
-then the pad's own light (white when played, dim white when selected, dim red when muted)
+pattern is, one key per step: key 1 lights **red** during step 1, key 2 during step 2, and
+so on up to key 16, like the stock's playhead (since 0.10.6). On keys 1–8 it shows over
+the pad for that step, then the pad's own light (white when played, dim white when selected, dim red when muted)
 comes back. On a longer pattern the keys follow the page that plays: steps 17–32 start
 again at key 1. On a shorter length the keys after the last step stay dark (13 steps: keys
 14–16). Dark when stopped; in GRID RECORDING the keys show the selected drum's steps
@@ -401,7 +401,7 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22, 0.10.4 on 2026-11-24; 0.10.5 not yet); not everything has been tried on hardware yet. The LED colours in
+- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22, 0.10.4 and 0.10.5 on 2026-11-24; 0.10.6 not yet); not everything has been tried on hardware yet. The LED colours in
   particular haven't been checked on a real unit.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.

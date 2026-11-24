@@ -3,11 +3,11 @@
 
     uv run --project $DIGIEMU python tests/test_run_light.py out/Digitone_OS1.44_DrumMode.syx [workdir]
 
-Key n stands for step n of the 16-step page that plays, lit white for the first half of its step. A track's page of
+Key n stands for step n of the 16-step page that plays, lit red for the whole step, as the stock's playhead (0.10.6). A track's page of
 fewer steps (a short length, or the last page of a longer track) leaves the keys after its last step dark. On keys 1-8
 the light shows over the pad's own light for its half step, and the pad's state (the selected lane's dim white) shows
 again after. Dark when stopped. Checked on 16 steps, 13-14 and 17-20 (a second page of a few steps), the blinks a 16th
-apart and key 1's on step 1's note. (0.9.1-0.10.4: keys 9-16, 2 steps a key.)
+apart and key 1's on step 1's note. (0.9.1-0.10.4: keys 9-16, 2 steps a key; until 0.10.5 white for half a step.)
 """
 import os
 import sys
@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from emu_session import Digitone          # noqa: E402
 
 WHITE = 20
+RED = 3
 DIM_WHITE = 21
 results = []
 
@@ -48,16 +49,20 @@ def main():
         t0 = d.s.now_ms()
         d.tap('PLAY', hold_ms=50, after_ms=20)
         blinks, cur, seen, pad_dim = [], None, set(), False
+        lit_n, total = [0], [0]
         while d.s.now_ms() - t0 < ms:
             d.wait(8)
             l = d.leds()
             r = d.peek32(d.symbols['dm_run_key'])
             r = r - (1 << 32) if r >= 1 << 31 else r
             k = r + 1 if r >= 0 else None
-            if k is not None and l.get(k - 1) == WHITE:
+            if k is not None and l.get(k - 1) == RED:
                 seen.add(k)
             if k != 1 and l.get(0) == DIM_WHITE:
                 pad_dim = True
+            if k is not None:
+                lit_n[0] += 1
+            total[0] += 1
             if k != cur and k is not None:
                 blinks.append((d.s.now_ms() - t0, k))
             cur = k
@@ -68,6 +73,7 @@ def main():
                 buf += bytes((x,))
                 if len(buf) >= 3 and buf[-3] & 0xF0 == 0x90 and buf[-1] > 0:
                     ons.append(t - t0)
+        d.lit_share = lit_n[0] / max(1, total[0])
         return blinks, ons, seen, pad_dim
 
     def loop_of(blinks, length):
@@ -95,14 +101,15 @@ def main():
 
     l = d.leds()
     check('stopped: keys 9-16 dark, key 1 the selected pad (dim white)',
-          all(l[k] != WHITE for k in range(8, 16)) and l.get(0) == DIM_WHITE, str([l.get(k) for k in range(16)]))
+          all(l[k] != RED for k in range(8, 16)) and l.get(0) == DIM_WHITE, str([l.get(k) for k in range(16)]))
 
     # 16 steps: 1 2 3 ... 16.
     blinks, ons, white, pad_dim = play(6500)
     loop = loop_of(blinks, 16)
     check('16 steps: keys 1-16 blink once each, in order', loop == expected(16), str(loop))
-    check('the running light is white on every key, 1-8 too', white >= set(range(1, 17)), str(sorted(white)))
+    check('the running light is red on every key, 1-8 too', white >= set(range(1, 17)), str(sorted(white)))
     check('key 1 shows the selected pad (dim white) between its blinks', pad_dim)
+    check('a key is lit the whole step, no dark gaps (steady, as the stock)', d.lit_share > 0.95, '%.2f' % d.lit_share)
     gaps = [b[0] - a[0] for a, b in zip(blinks[1:], blinks[2:])]
     avg = sum(gaps) / len(gaps) if gaps else 0
     check('a blink each 16th (86 BPM: 174 ms)', 160 < avg < 190, '%.0f ms' % avg)
@@ -112,7 +119,7 @@ def main():
     check('key 1 lights with step 1\'s note (within 60 ms)', later and all(x < 60 for x in near),
           'notes %s, key 1 %s' % ([round(x) for x in ons], [round(x) for x in starts9]))
     l = d.leds()
-    check('stopped again: no running light (keys 2-16 dark)', all(l.get(k) != WHITE for k in range(1, 16)), str([l.get(k) for k in range(16)]))
+    check('stopped again: no running light (keys 2-16 dark)', all(l.get(k) != RED for k in range(1, 16)), str([l.get(k) for k in range(16)]))
 
     # A shorter length (the knob gives 13-14 steps): keys 1-n, the keys after it dark.
     set_length(-12)

@@ -13,8 +13,8 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
 > recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
-> bugs were found and fixed; 0.10.4 passed its unit test on 2026-11-24 (one small bug), 0.10.5
-> fixes it and moves the running light to all 16 keys, and waits for the unit. See
+> bugs were found and fixed; 0.10.4 passed its unit test on 2026-11-24. 0.10.6 (page counters,
+> the running light on all 16 keys, red and steady like the stock's) waits for the unit. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -22,7 +22,7 @@ Digitone mk1 core and its sequencer-events mod.
 [design notes](docs/design.md) (how it works inside, findings) and the
 [debugging log](docs/debugging.md).
 
-## What it does (0.10.5)
+## What it does (0.10.6)
 
 - **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
 - **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
@@ -35,7 +35,8 @@ Digitone mk1 core and its sequencer-events mod.
 - **A DRUM page** behind the MIDI track's LFO key for all lanes' notes, and LFO again for their
   velocities (one mod page since 0.10.4).
 - **On screen and LEDs:** a lane strip that follows playback, the selected lane's pad lit, and
-  keys 1–16 as a running light in time with the pattern, one key per step (0.10.5).
+  keys 1–16 as a running light in time with the pattern: one key per step, red for the whole
+  step like the stock's playhead (0.10.6).
 - **Settings per pattern and per track,** kits (notes and velocities) shared in the project,
   at most 10; a new pattern starts with Drum Mode off and the default notes (0.10.3, being
   tried out).
@@ -94,17 +95,12 @@ unit)
   To look at again later.
 
 **Done** (asked by the user): a pad selects its lane, lit (0.9); keys 9–16 as a running light
-(0.9.1), moved to keys 1–16, one LED per step, over the pads for its half step (0.10.5, asked
-2026-11-24); settings per pattern and per track (0.10).
+(0.9.1), moved to keys 1–16, one LED per step (0.10.5, asked 2026-11-24), red and lit for the whole
+step like the stock's playhead (0.10.6); settings per pattern and per track (0.10).
 
 ## Known bugs
 
 **Open**
-- **"Drum Mode off" on screen and the track becomes unusable** (found on the unit, 0.10,
-  2026-11-22). On some MIDI tracks the screen shows Drum Mode turned off, and the track can't be
-  used after that. *Details still to get:* which tracks, what was pressed before, and what
-  "unusable" means (no sound, keys dead, UI stuck). May be linked to the UI hang with the Mod
-  Menu open seen once in the emulator (below).
 - **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. The SCALE menu uses
   them (handed to the stock in 0.10.2). Checked in the emulator (2026-11-22): PTN + trig (pattern
   copy/clear) is the stock's already (PTN held); the Sound Browser is for synth tracks only.
@@ -125,14 +121,17 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
-- **0.10.5: the DRUM page counter.** Drum Notes now says **(1/2)** and Drum Velocity **(2/2)**.
-  Found on the unit in 0.10.4: Drum Notes said 2/2 (the stock counts DRUM as page 2 of the LFO
-  group) and Drum Velocity said nothing (Drum Mode's title covered it). Drum Mode now writes the
-  whole title on both (passes in the emulator).
-- **0.10.5: the running light on keys 1–16.** While playing, key *n* blinks white on step *n*
-  (one LED per step, a longer pattern's next page starts again at key 1). On keys 1–8 it shows
-  over the pad for its half step; the pads' own lights (played, selected, muted) work as before
-  (passes in the emulator).
+- **0.10.6: the running light red and steady.** On the unit (0.10.5, 2026-11-24) the light was
+  white and flickered: it was lit for half of each step. The stock's playhead (measured in the
+  emulator on a MIDI track playing) is **red for the whole step** and moves straight on to the
+  next key. Drum Mode now does the same (passes in the emulator).
+- **0.10.6: the LFO page says "LFO".** On the unit (0.10.5) it said "LFO (1/2)", but it is one
+  page: the stock counts the DRUM page as page 2 of the LFO group. On a Drum Mode track Drum
+  Mode now writes "LFO" (passes in the emulator).
+- **0.10.5: the DRUM page counter.** *Unit (2026-11-24): works:* Drum Notes (1/2), Drum
+  Velocity (2/2).
+- **0.10.5: the running light on keys 1–16,** one LED per step. *Unit (2026-11-24): works,*
+  but white and flickery (0.10.6, above).
 - **0.10.4: one DRUM page.** *Unit (2026-11-24): works* (LFO switches LFO → Drum Notes → Drum
   Velocity → LFO, knobs edit), except the page counter (fixed in 0.10.5, above).
 - **0.10.3: a new pattern starts off.** *Unit (2026-11-24): seems to work.* Go to a pattern you haven't used with Drum Mode: Drum
@@ -175,8 +174,12 @@ unit)
 
 **Fixed** (details in the [debugging log](docs/debugging.md) and the
 [design notes](docs/design.md))
+- **"Drum Mode off" on screen and the track unusable** (0.10, 2026-11-22): not a bug. It was the
+  DRUM page on a track without Drum Mode (the page stays when you switch tracks), which shows
+  `DRUM MODE IS OFF` and takes no knobs. Press another page key or turn Drum Mode on (the user,
+  2026-11-24).
 - **The DRUM page counter** said 2/2 on Drum Notes and nothing on Drum Velocity (found on the
-  unit in 0.10.4, fixed in 0.10.5, to check).
+  unit in 0.10.4, fixed in 0.10.5, works on the unit).
 - **0.10.1 to 0.10.4 passed on the unit** (2026-11-24): PTN/BANK LEDs, pattern length in the
   SCALE menu, a new pattern starts off, one DRUM page, chains the manual's way.
 - **The DRUM pages clashed with other mods' pages** (0.10.4). The Digitone mk1 has four mod
@@ -207,7 +210,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.4, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**D105** on the unit (the label follows the version: D100 = 0.10, D105 = 0.10.5).
+**D106** on the unit (the label follows the version: D100 = 0.10, D106 = 0.10.6).
 
 ## Testing in the emulator
 
@@ -223,7 +226,7 @@ done
 ```
 
 Each test set takes a few minutes; screenshots land in its work folder. All 13 sets
-(221 checks) pass on 0.10.5.
+(222 checks) pass on 0.10.6.
 
 ## Layout
 
@@ -243,7 +246,7 @@ Each test set takes a few minutes; screenshots land in its work folder. All 13 s
 | `tests/test_drum_off.py` | A beat with Drum Mode on, off and on again: what plays, what's kept, step 1 at once (17 checks) |
 | `tests/test_other_pattern.py` | Recording and the DRUM pages on a pattern far from A01 (H02) (7 checks) |
 | `tests/test_lane_select.py` | A pad selects its lane, its key lit; not in live recording (15 checks) |
-| `tests/test_run_light.py` | The running light on keys 1–16: 16, short and longer lengths, on time, white over the pads (11 checks) |
+| `tests/test_run_light.py` | The running light on keys 1–16: 16, short and longer lengths, on time, red and steady over the pads (12 checks) |
 | `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording, PTN/BANK LEDs, SCALE menu (33 checks) |
 | `tests/test_pattern_settings.py` | Settings per pattern: a new pattern starts off, paste, save/load, the 10-kit limit (19 checks) |
 | `debug/` | The debug builds used on the unit (patches and a build script; see the debugging log) |

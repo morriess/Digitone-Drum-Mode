@@ -98,6 +98,10 @@ unit)
 ## Known bugs
 
 **Open**
+- **DRUM page counter wrong** (found on the unit, 0.10.4, 2026-11-24). Drum Notes shows "2/2" in
+  the corner and Drum Velocity shows no counter. *Expected:* 1/2 and 2/2. The stock draws the
+  counter for the LFO page group (LFO = 1, DRUM = 2), so it doesn't know about Drum Mode's
+  second view; Drum Mode will draw its own counter, like the title.
 - **"Drum Mode off" on screen and the track becomes unusable** (found on the unit, 0.10,
   2026-11-22). On some MIDI tracks the screen shows Drum Mode turned off, and the track can't be
   used after that. *Details still to get:* which tracks, what was pressed before, and what
@@ -123,9 +127,8 @@ unit)
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
-- **0.10.4: one DRUM page.** LFO, LFO: Drum Notes (2/2); LFO again: Drum Velocity on the same
-  page (its title written by Drum Mode); LFO again: back to the LFO page. Knobs edit as before
-  (passes in the emulator).
+- **0.10.4: one DRUM page.** *Unit (2026-11-24): works* (LFO switches LFO → Drum Notes → Drum
+  Velocity → LFO, knobs edit), except the page counter (Open).
 - **0.10.3: a new pattern starts off.** Go to a pattern you haven't used with Drum Mode: Drum
   Mode is off there, the notes are the defaults, and A01 keeps its own. Turn it on and change a
   note: only that pattern changes (passes in the emulator).

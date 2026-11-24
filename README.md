@@ -140,7 +140,7 @@ unit)
   trig keys showed the pads, not the stock's pattern and bank LEDs. 0.10.1 leaves the trig key
   LEDs to the stock while PTN or BANK is held, the pattern/bank select is open (its 4 seconds) or
   a chain's key is held (passes in the emulator).
-- **Pattern chains, the manual's way.** On the unit (0.10) holding PTN and pressing several trig
+- **Pattern chains, the manual's way.** *Unit (2026-11-24): works.* On the unit (0.10) holding PTN and pressing several trig
   keys played only the last pattern, but that isn't how the stock makes a chain (the test list
   was wrong): hold PTN, press the first pattern's trig key, **release PTN**, keep that key held
   and press the next ones (manual 10.10.1). That way passes in the emulator; to try on the unit,
@@ -148,7 +148,7 @@ unit)
 - **The 1.5-second rule (0.9.2):** after a bank pick (BANK + trig 16) the emulator never sent
   that key's release, so a trig key Drum Mode left to the stock counts as released after 1.5 s
   without events. Check that the release really goes missing on the unit, that the trig keys
-  come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works (not testable until chains work on the unit), and
+  come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works (chains now work on the unit), and
   whether a cleaner way exists (the firmware's own held-key state).
 - **Unit test of 0.10 (2026-11-22):** passed: boot, pads, live and grid recording, held-step
   locks, running light, lane strip (no longer disappears), DRUM pages, mutes, FUNC + trig keys in

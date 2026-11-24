@@ -136,7 +136,7 @@ unit)
   (FUNC + PAGE) the trig keys played pads instead of setting the number of steps; only PAGE and
   the knob worked. 0.10.2 leaves the trig keys and their LEDs to the stock while the SCALE menu is
   open (passes in the emulator, per track and per pattern length).
-- **0.10.1: the pattern/bank LEDs.** Found on the unit in 0.10: while PTN or BANK was held the
+- **0.10.1: the pattern/bank LEDs.** *Unit (2026-11-24): works.* Found on the unit in 0.10: while PTN or BANK was held the
   trig keys showed the pads, not the stock's pattern and bank LEDs. 0.10.1 leaves the trig key
   LEDs to the stock while PTN or BANK is held, the pattern/bank select is open (its 4 seconds) or
   a chain's key is held (passes in the emulator).

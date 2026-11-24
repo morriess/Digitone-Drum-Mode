@@ -145,7 +145,7 @@ unit)
   was wrong): hold PTN, press the first pattern's trig key, **release PTN**, keep that key held
   and press the next ones (manual 10.10.1). That way passes in the emulator; to try on the unit,
   also on a track without Drum Mode.
-- **The 1.5-second rule (0.9.2):** after a bank pick (BANK + trig 16) the emulator never sent
+- **The 1.5-second rule (0.9.2):** *Unit (2026-11-24): seems to work; final confirmation later.* After a bank pick (BANK + trig 16) the emulator never sent
   that key's release, so a trig key Drum Mode left to the stock counts as released after 1.5 s
   without events. Check that the release really goes missing on the unit, that the trig keys
   come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works (chains now work on the unit), and

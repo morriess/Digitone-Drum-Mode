@@ -129,7 +129,7 @@ unit)
 **To check on the unit**
 - **0.10.4: one DRUM page.** *Unit (2026-11-24): works* (LFO switches LFO → Drum Notes → Drum
   Velocity → LFO, knobs edit), except the page counter (Open).
-- **0.10.3: a new pattern starts off.** Go to a pattern you haven't used with Drum Mode: Drum
+- **0.10.3: a new pattern starts off.** *Unit (2026-11-24): seems to work.* Go to a pattern you haven't used with Drum Mode: Drum
   Mode is off there, the notes are the defaults, and A01 keeps its own. Turn it on and change a
   note: only that pattern changes (passes in the emulator).
 - **0.10.2: pattern length with the trig keys.** Found on the unit in 0.10: in the SCALE menu

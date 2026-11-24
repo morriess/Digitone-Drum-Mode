@@ -270,9 +270,8 @@ The rules the UI follows, which any future change should keep:
   notes; a velocity lock has no effect, as Drum Mode plays the step at its lanes' velocity.
 - **All MIDI tracks get the DRUM page** in their LFO list, including tracks without
   Drum Mode.
-- **The LED colours are from the emulator's copy of the panel's colour table** (dark,
-  red, dim red, white). They should match the unit, but that hasn't been checked on
-  hardware yet.
+- **The LED colours** (dark, red, dim red, white, dim white) come from the panel's colour
+  table as the emulator sees it; on the unit (2026-11-24) they look as described here.
 
 Nice to have, after hardware testing (see the [README](../../README.md#plans)):
 

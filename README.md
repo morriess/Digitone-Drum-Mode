@@ -11,10 +11,9 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Beta: working on the unit.** 0.10 was tested on the unit on 2026-11-22 (OS 1.44): pads,
-> recording, grid editing, running light, DRUM pages, mutes and settings per pattern work. A few
-> bugs were found and fixed; 0.10.4 passed its unit test on 2026-11-24. 0.10.6 (page counters,
-> the running light on all 16 keys, red and steady like the stock's) works on the unit too. See
+> **Beta: working on the unit.** 0.10.6 passed its unit test on 2026-11-24 (OS 1.44): pads,
+> recording, grid editing, the running light, DRUM pages, mutes, settings per pattern, pattern
+> and bank select and chains all work. No known bugs are open; a few choices are parked. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -111,57 +110,36 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
   are the selected lane's steps, no sound (stock: a trig key places its note on the active step and
   moves one step on). *Kept as it is* (the user, 2026-11-22); the drum version is on the list of
   possible additions.
-- **ROOT on a held step shows the step's first note, not the selected lane's** (later). Since
-  0.9.2 a step held in GRID RECORDING shows its note in the TRIG page's ROOT box, but on a step
-  with several drums it's the first one (e.g. the kick, with the snare selected). *Planned:* draw
-  the selected lane's note in the ROOT box while a step is held. Tried on 2026-11-19 (it worked
-  in the emulator) and set aside for later.
 - **The UI froze with the Mod Menu open (emulator only, cause unknown),** in one exact sequence
   of `tests/test_drum_off.py`. *Next:* watch for it on the unit. Details in
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
-- **0.10.6: the running light red and steady.** *Unit (2026-11-24): works, also next to muted
-  lanes.* On the unit (0.10.5, 2026-11-24) the light was
-  white and flickered: it was lit for half of each step. The stock's playhead (measured in the
-  emulator on a MIDI track playing) is **red for the whole step** and moves straight on to the
-  next key. Drum Mode now does the same (passes in the emulator).
-- **0.10.6: the LFO page says "LFO".** *Unit (2026-11-24): works.* On the unit (0.10.5) it said "LFO (1/2)", but it is one
-  page: the stock counts the DRUM page as page 2 of the LFO group. On a Drum Mode track Drum
-  Mode now writes "LFO" (passes in the emulator).
-- **0.10.5: the DRUM page counter.** *Unit (2026-11-24): works:* Drum Notes (1/2), Drum
-  Velocity (2/2).
-- **0.10.5: the running light on keys 1–16,** one LED per step. *Unit (2026-11-24): works,*
-  but white and flickery (0.10.6, above).
-- **0.10.4: one DRUM page.** *Unit (2026-11-24): works* (LFO switches LFO → Drum Notes → Drum
-  Velocity → LFO, knobs edit), except the page counter (fixed in 0.10.5, above).
-- **0.10.3: a new pattern starts off.** *Unit (2026-11-24): seems to work.* Go to a pattern you haven't used with Drum Mode: Drum
-  Mode is off there, the notes are the defaults, and A01 keeps its own. Turn it on and change a
-  note: only that pattern changes (passes in the emulator).
-- **0.10.2: pattern length with the trig keys.** *Unit (2026-11-24): works.* Found on the unit in 0.10: in the SCALE menu
-  (FUNC + PAGE) the trig keys played pads instead of setting the number of steps; only PAGE and
-  the knob worked. 0.10.2 leaves the trig keys and their LEDs to the stock while the SCALE menu is
-  open (passes in the emulator, per track and per pattern length).
-- **0.10.1: the pattern/bank LEDs.** *Unit (2026-11-24): works.* Found on the unit in 0.10: while PTN or BANK was held the
-  trig keys showed the pads, not the stock's pattern and bank LEDs. 0.10.1 leaves the trig key
-  LEDs to the stock while PTN or BANK is held, the pattern/bank select is open (its 4 seconds) or
-  a chain's key is held (passes in the emulator).
-- **Pattern chains, the manual's way.** *Unit (2026-11-24): works.* On the unit (0.10) holding PTN and pressing several trig
-  keys played only the last pattern, but that isn't how the stock makes a chain (the test list
-  was wrong): hold PTN, press the first pattern's trig key, **release PTN**, keep that key held
-  and press the next ones (manual 10.10.1). That way passes in the emulator; to try on the unit,
-  also on a track without Drum Mode.
-- **The 1.5-second rule (0.9.2):** *Unit (2026-11-24): seems to work; final confirmation later.* After a bank pick (BANK + trig 16) the emulator never sent
-  that key's release, so a trig key Drum Mode left to the stock counts as released after 1.5 s
-  without events. Check that the release really goes missing on the unit, that the trig keys
-  come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works (chains now work on the unit), and
+- **The 1.5-second rule (0.9.2):** *Unit (2026-11-24): seems to work; final confirmation later.*
+  After a bank pick (BANK + trig 16) the emulator never sent that key's release, so a trig key
+  Drum Mode left to the stock counts as released after 1.5 s without events. Check that the trig
+  keys come back to Drum Mode after a bank pick, that a chain held past 1.5 s still works, and
   whether a cleaner way exists (the firmware's own held-key state).
-- **Unit test of 0.10 (2026-11-22):** passed: boot, pads, live and grid recording, held-step
-  locks, running light, lane strip (no longer disappears), DRUM pages, mutes, FUNC + trig keys in
-  recording, settings per pattern, copy/paste, FUNC + NO reload, save/load, synth tracks.
-  Bugs found: the "Drum Mode off" track (Open), the PTN/BANK LEDs (0.10.1) and pattern length
-  (0.10.2), fixed and to check; chains to try again the manual's way. New patterns start off
-  with the default notes (0.10.3).
+
+**Unit test results**
+- **0.10.6 (2026-11-24): all pass.**
+  - The running light: keys 1–16, one per step, red for the whole step like the stock's
+    playhead (0.10.5 was white and lit half a step, which looked flickery). Looks good next to
+    muted lanes.
+  - The LFO page says "LFO" (the stock said "LFO (1/2)", counting DRUM as page 2).
+  - The DRUM page counter: Drum Notes (1/2), Drum Velocity (2/2) (0.10.4 said 2/2 on Drum Notes
+    and nothing on Drum Velocity).
+  - One DRUM page, LFO switching Drum Notes and Drum Velocity (0.10.4).
+  - A new pattern starts with Drum Mode off and the default notes (0.10.3).
+  - Pattern length with the trig keys in the SCALE menu (0.10.2).
+  - The stock's pattern and bank LEDs while PTN or BANK is held (0.10.1).
+  - Pattern chains, the manual's way: hold PTN, press the first pattern's key, release PTN, keep
+    that key held and press the next ones (manual 10.10.1).
+  - The ROOT box on a held step shows the right note.
+- **0.10 (2026-11-22):** passed: boot, pads, live and grid recording, held-step locks, running
+  light, lane strip, DRUM pages, mutes, FUNC + trig keys in recording, settings per pattern,
+  copy/paste, FUNC + NO reload, save/load, synth tracks. Found: the PTN/BANK LEDs, pattern
+  length in the SCALE menu, settings that looked global across patterns (all fixed above).
 
 **Known limits**
 - A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode
@@ -179,10 +157,10 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
   DRUM page on a track without Drum Mode (the page stays when you switch tracks), which shows
   `DRUM MODE IS OFF` and takes no knobs. Press another page key or turn Drum Mode on (the user,
   2026-11-24).
-- **The DRUM page counter** said 2/2 on Drum Notes and nothing on Drum Velocity (found on the
-  unit in 0.10.4, fixed in 0.10.5, works on the unit).
-- **0.10.1 to 0.10.4 passed on the unit** (2026-11-24): PTN/BANK LEDs, pattern length in the
-  SCALE menu, a new pattern starts off, one DRUM page, chains the manual's way.
+- **The DRUM page counter** and the LFO page's "(1/2)" (0.10.5, 0.10.6); the running light white
+  and flickery (0.10.6).
+- **The ROOT box on a held step** was planned to show the selected lane's note; on the unit
+  (2026-11-24) it shows correctly.
 - **The DRUM pages clashed with other mods' pages** (0.10.4). The Digitone mk1 has four mod
   pages (27–30): core takes 30, machines-dn1 28 and 29, CTRL-PLUS 29, DigiTables 27 (OS 1.43
   only). Drum Mode used 27 and 28, so it couldn't be combined with machines-dn1. Now Drum Notes

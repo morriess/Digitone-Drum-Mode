@@ -9,8 +9,7 @@ become drum pads, each playing its own note on the track's MIDI channel, so you 
 record and program a whole kit on one MIDI track. The screen and the trig key LEDs show
 each drum as it plays.
 
-> **Beta.** 0.10.4 works on a real Digitone (OS 1.44, tested 2026-11-24); 0.10.5 and 0.10.6 (page
-> counters, the running light on all 16 keys) work on the unit too (2026-11-24). Back up your
+> **Beta.** 0.10.6 works on a real Digitone (OS 1.44, tested 2026-11-24). Back up your
 > projects before installing. The stock OS can always be reinstalled (see
 > [Uninstalling and recovery](#uninstalling-and-recovery)).
 
@@ -378,6 +377,10 @@ That's right: on a Drum Mode track they only show where the pattern is while it 
 (the running light, which runs over all 16 keys). In GRID RECORDING they're steps 9–16. FUNC + 9–16 still do their stock
 jobs.
 
+**The screen says `DRUM MODE IS OFF` and the knobs do nothing.**
+You're on the DRUM page of a MIDI track without Drum Mode: the page stays on screen when
+you switch tracks. Press another page key, or turn Drum Mode on for this track.
+
 **`KIT MEM FULL` appears.**
 The project already has 10 different kits (sets of 8 notes and velocities), the most it
 can keep. The new note or velocity wasn't kept. Set a pattern you don't need back to the
@@ -401,8 +404,8 @@ Please report it, ideally with a photo of the screen, at the repository's
 
 - **OS 1.44 only.** Drum Mode uses firmware addresses that only fit OS 1.44. A new
   Elektron OS needs a new Drum Mode build.
-- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22, 0.10.4 to 0.10.6 on 2026-11-24); not everything has been tried on hardware yet. The LED colours in
-  particular haven't been checked on a real unit.
+- **Beta.** Tested in an emulator and on a unit (0.10 on 2026-11-22, 0.10.4 to 0.10.6 on
+  2026-11-24), by one user so far.
 - **The corner strip covers the tempo** in the top-right corner of the main screen while
   Drum Mode is on.
 - **All MIDI tracks** get the DRUM page in their LFO list, including tracks without
@@ -411,13 +414,21 @@ Please report it, ideally with a photo of the screen, at the repository's
   step's notes, so it can turn a drum into another one. A **velocity** lock is kept, but on
   playback Drum Mode plays the step at its drums' velocity setting (the loudest one), so the
   lock has no effect.
-- **Not yet checked with Drum Mode on:** MUTE mode (FUNC + BANK, then trig keys), STEP
-  RECORDING (RECORD + STOP) and pattern copy/paste (PTN + trig key, RECORD / STOP). The trig
-  keys may play pads there instead.
+- **Modes that work differently on a Drum Mode track:**
+  - **MUTE mode** (FUNC + BANK): the pads still play; on the stock the trig keys play nothing
+    there. Still to decide.
+  - **STEP RECORDING** (RECORD + STOP) works like GRID RECORDING: the keys are the selected
+    drum's steps, with no sound. A drum version of step recording is planned.
+  - **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) copies the steps but not
+    the Drum Mode settings. FUNC + RECORD / FUNC + STOP copies both.
 - **Combining with DigiArp MIDI** needs DigiArp rebuilt on core 5.3, in the fork
   [morriess/Digitone-MIDI-Arpeggiator, branch core-5.3](https://github.com/morriess/Digitone-MIDI-Arpeggiator/tree/core-5.3): the Mod Shop's version is built on an older
-  elekloader core and can't go into one firmware with Drum Mode. Other combinations are
-  untested.
+  elekloader core and can't go into one firmware with Drum Mode.
+- **Other mods:** Drum Mode passes elekloader's combine check with the OS 1.44 mods in the
+  Mod Shop (among them Filter-FX, machines, CTRL-PLUS, DigiChoke, DigiSolo and Mutiny), so
+  they can go into one firmware. That check doesn't show whether two mods get in each other's
+  way while playing; only Filter-FX has been tried with Drum Mode in the emulator. Mods made
+  for OS 1.43 only (DigiTables, DigiDoom, DigiSplash, Tone-FX 4.1a) can't be combined.
 
 ---
 

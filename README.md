@@ -132,7 +132,7 @@ unit)
 - **0.10.3: a new pattern starts off.** *Unit (2026-11-24): seems to work.* Go to a pattern you haven't used with Drum Mode: Drum
   Mode is off there, the notes are the defaults, and A01 keeps its own. Turn it on and change a
   note: only that pattern changes (passes in the emulator).
-- **0.10.2: pattern length with the trig keys.** Found on the unit in 0.10: in the SCALE menu
+- **0.10.2: pattern length with the trig keys.** *Unit (2026-11-24): works.* Found on the unit in 0.10: in the SCALE menu
   (FUNC + PAGE) the trig keys played pads instead of setting the number of steps; only PAGE and
   the knob worked. 0.10.2 leaves the trig keys and their LEDs to the stock while the SCALE menu is
   open (passes in the emulator, per track and per pattern length).

@@ -13,7 +13,7 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **Beta: working on the unit.** 0.10.6 passed its unit test on 2026-11-24 (OS 1.44): pads,
 > recording, grid editing, the running light, DRUM pages, mutes, settings per pattern, pattern
-> and bank select and chains all work. No known bugs are open; a few choices are parked. See
+> and bank select and chains all work. One bug is open (a pattern reload and the kits); a few choices are parked. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -109,6 +109,14 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
 ## Known bugs
 
 **Open**
+- **A pattern reload brings back the wrong kit** (found on the unit, 0.10.6, 2026-11-25: an older pattern
+  showed the newest kit). Drum Mode keeps the kits in one pool in the project (at most 10) and each pattern
+  only its kit's number, so a pattern save (FUNC + YES) keeps the number, not the notes. If that kit is
+  changed or freed afterwards, a reload (FUNC + NO, or SETTINGS > PATTERN > RELOAD FROM PROJ) gives Drum Mode
+  off with the default kit (the kit was freed; measured in the emulator: save with kick 40, change to 45,
+  reload: off, kick 36) or another pattern's newer kit (its number was reused). *Plan:* a kit a saved pattern
+  still points to is never edited in place or reused; an edit makes a copy, so the reload gets the saved
+  kit back. Also check the SETTINGS menu's reload, which core may not report to Drum Mode.
 - **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. The SCALE menu uses
   them (handed to the stock in 0.10.2). Checked in the emulator (2026-11-22): PTN + trig (pattern
   copy/clear) is the stock's already (PTN held); the Sound Browser is for synth tracks only.

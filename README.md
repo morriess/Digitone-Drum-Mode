@@ -70,6 +70,12 @@ Digitone mk1 core and its sequencer-events mod.
 passed and opened [pull request #85](https://github.com/elekloader/shop/pull/85); once a maintainer merges it,
 Drum Mode can be ticked on the Shop page. Later releases go in by themselves (daily check).
 
+**Modwerk:** not listed yet. Modwerk keeps its own catalogue; its Digitone support is a preview on core-dn1 2.2,
+and its rules refuse a module that `requires` another (Drum Mode needs core 5.3+ and seq-events, for playback,
+LEDs, pattern copy and the step events). A port to core 2.2 would mean leaving those out. Asked the maintainers on
+2026-11-25 whether the Digitone base moves to core 5.x with the sequencer events; if so, the module folder
+(manifest, screenshots, hardware report) follows.
+
 **Possible additions after v1** (ideas from 2026-11-19, once the current features work on the
 unit)
 - **Step recording for drums:** in STEP RECORDING, pad 1–8 places that lane's note on the active

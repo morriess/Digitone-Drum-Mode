@@ -65,7 +65,8 @@ Digitone mk1 core and its sequencer-events mod.
   sends its steps as MIDI (its voice silent), for up to 8 drum or MIDI tracks. Not more tracks:
   the format has exactly 4 synth + 4 MIDI. The hard part is timing each note and its note-off.
 
-**Later: the elekloader Shop listing**, once the unit test of 0.10.4 is done.
+**The elekloader Shop listing:** submitted with 0.10.6 (2026-11-25), as a pre-release with a card picture
+(`docs/banner/thumb.py`). Once it's merged, Drum Mode can be ticked on the Shop page.
 
 **Possible additions after v1** (ideas from 2026-11-19, once the current features work on the
 unit)

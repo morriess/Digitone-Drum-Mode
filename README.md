@@ -281,3 +281,8 @@ unit, then offer DigiArp's author the core 5.3 change as a pull request (see the
 
 Unofficial, experimental firmware. Not affiliated with or supported by Elektron.
 Back up your projects before flashing, and keep the stock OS file to restore.
+
+## Licence
+
+GPL-2.0-or-later, like elekloader, which Drum Mode builds on: see [LICENSE](LICENSE). Not made or supported
+by Elektron; no Elektron firmware is in this repository.

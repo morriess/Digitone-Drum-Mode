@@ -11,7 +11,7 @@ Inspired by the drum sequencers of the Elektron Digitakt and the Arturia
 BeatStep Pro. Built on [elekloader](https://github.com/irpina/elekloader)'s
 Digitone mk1 core and its sequencer-events mod.
 
-> **Beta: working on the unit.** 0.10.6 passed its unit test on 2026-11-24 (OS 1.44): pads,
+> **Beta: working on the unit.** 0.10.6 passed its unit test on 2026-11-24 (OS 1.44); 0.11.0 adds ratchets and note repeat (emulator): pads,
 > recording, grid editing, the running light, DRUM pages, mutes, settings per pattern, pattern
 > and bank select and chains all work. One bug is open (a pattern reload and the kits); a few choices are parked. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
@@ -21,7 +21,7 @@ Digitone mk1 core and its sequencer-events mod.
 [design notes](docs/design.md) (how it works inside, findings) and the
 [debugging log](docs/debugging.md).
 
-## What it does (0.10.6)
+## What it does (0.11.0)
 
 - **Drum Mode per MIDI track and per pattern:** hold the track key → Mod Menu → DRUM MODE.
 - **8 drum pads** on trig keys 1–8, each lane with its own note and velocity, all on the
@@ -31,6 +31,11 @@ Digitone mk1 core and its sequencer-events mod.
 - **Grid editing per lane:** in GRID RECORDING the 16 trig keys place and show the selected
   lane's steps; a held step takes the stock's locks, micro timing and copy/paste.
 - **Lane mutes** with FUNC + pad (outside recording).
+- **Ratchets (0.11):** a drum on a step plays 2, 3 or 4 times within it (hi-hat rolls, snare
+  fills), set per drum per step with knob E (ROLL) of the TRIG page on held steps in GRID
+  RECORDING.
+- **Note repeat (0.11):** knob G (RPT) of the TRIG page sets 1/16, 1/32 or 1/64; a held pad then
+  repeats in time while playing, and LIVE RECORDING writes what you hear (with its rolls).
 - **A DRUM page** behind the MIDI track's LFO key for all lanes' notes, and LFO again for their
   velocities (one mod page since 0.10.4).
 - **On screen and LEDs:** a lane strip that follows playback, the selected lane's pad lit, and
@@ -81,11 +86,6 @@ unit)
 - **Step recording for drums:** in STEP RECORDING, pad 1–8 places that lane's note on the active
   step and moves one step on, like the stock's keyboard (now it works like GRID RECORDING). To
   add or investigate later.
-- **Ratchets / rolls per step:** a step plays 2, 3 or 4 times within its 16th, for hi-hat rolls
-  and snare fills. The Digitone mk1 has no retrigs (the Digitakt does), so this fills a real
-  gap. Needs notes sent between steps, which DigiArp shows is possible.
-- **Note repeat on the pads:** hold a pad and it repeats at 1/8, 1/16 or 1/32 in time with the
-  tempo (MPC-style), and is recorded during live recording.
 - **Euclidean / fill generator per voice:** pick a voice, set e.g. 5 hits over 16 steps and an
   offset, and Drum Mode writes the steps.
 - **Different lengths per voice:** e.g. kick over 16 steps, hats over 12, percussion over 7, for
@@ -132,6 +132,15 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
+- **0.11.0: ratchets.** In GRID RECORDING select a drum (its pad), hold a step it plays and turn
+  knob E on the TRIG page: the box shows ROLL x2-x4 and the step's LED turns white. Playing, that
+  drum plays 2-4 times within the step, evenly; other drums on the step play once; a muted drum
+  doesn't roll. Removing the drum from the step takes its roll away (passes in the emulator).
+- **0.11.0: note repeat.** Knob G on the TRIG page (RPT: -, 16, 32, 64). While playing, a held pad
+  repeats in time and stops when you let go. Held in LIVE RECORDING, the steps you hold through
+  are recorded, at 32 or 64 with roll 2 or 4, and play back as heard (passes in the emulator).
+  Listen for how tight the extra hits are on the unit, and whether MIDI notes from Drum Mode's
+  own task and the stock's ever get in each other's way.
 - **The 1.5-second rule (0.9.2):** *Unit (2026-11-24): seems to work; final confirmation later.*
   After a bank pick (BANK + trig 16) the emulator never sent that key's release, so a trig key
   Drum Mode left to the stock counts as released after 1.5 s without events. Check that the trig
@@ -206,7 +215,7 @@ on Debian/Ubuntu: `apt install gcc-m68k-linux-gnu`).
 This fetches [elekloader](https://github.com/irpina/elekloader) at a fixed commit
 (core-dn1 5.4, seq-events-dn1 0.1), builds them and the mod in `src/`, checks they
 combine, and writes `out/Digitone_OS1.44_DrumMode.syx`, shown as OS version
-**D106** on the unit (the label follows the version: D100 = 0.10, D106 = 0.10.6).
+**D110** on the unit (the label follows the version: D100 = 0.10, D110 = 0.11.0).
 
 ## Testing in the emulator
 
@@ -222,7 +231,7 @@ done
 ```
 
 Each test set takes a few minutes; screenshots land in its work folder. All 13 sets
-(222 checks) pass on 0.10.6.
+(231 checks) pass on 0.11.0.
 
 ## Layout
 
@@ -242,6 +251,7 @@ Each test set takes a few minutes; screenshots land in its work folder. All 13 s
 | `tests/test_drum_off.py` | A beat with Drum Mode on, off and on again: what plays, what's kept, step 1 at once (17 checks) |
 | `tests/test_other_pattern.py` | Recording and the DRUM pages on a pattern far from A01 (H02) (7 checks) |
 | `tests/test_lane_select.py` | A pad selects its lane, its key lit; not in live recording (15 checks) |
+| `tests/test_roll.py` | Ratchets and note repeat: knob E on a held step, four even hits from the first bar, repeats on the grid that stop on release, recorded and played back (9 checks) |
 | `tests/test_run_light.py` | The running light on keys 1–16: 16, short and longer lengths, on time, red and steady over the pads (12 checks) |
 | `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording, PTN/BANK LEDs, SCALE menu (33 checks) |
 | `tests/test_pattern_settings.py` | Settings per pattern: a new pattern starts off, paste, save/load, the 10-kit limit (19 checks) |

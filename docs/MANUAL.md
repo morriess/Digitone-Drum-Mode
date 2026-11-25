@@ -2,7 +2,7 @@
 
 # Drum Mode user manual
 
-**Drum Mode 0.10.6 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
+**Drum Mode 0.11.0 for the Elektron Digitone mk1 / Digitone Keys, OS 1.44**
 
 Drum Mode turns a Digitone MIDI track into an 8-lane drum sequencer. Trig keys 1–8
 become drum pads, each playing its own note on the track's MIDI channel, so you can play,
@@ -24,11 +24,12 @@ each drum as it plays.
 7. [Live recording](#live-recording)
 8. [Programming steps on the grid](#programming-steps-on-the-grid)
 9. [Muting a drum](#muting-a-drum)
-10. [What the screen and LEDs show](#what-the-screen-and-leds-show)
-11. [Settings per pattern, saving and the stock OS](#settings-per-pattern-saving-and-the-stock-os)
-12. [Quick reference](#quick-reference)
-13. [Troubleshooting](#troubleshooting)
-14. [Limitations](#limitations)
+10. [Ratchets and note repeat](#ratchets-and-note-repeat)
+11. [What the screen and LEDs show](#what-the-screen-and-leds-show)
+12. [Settings per pattern, saving and the stock OS](#settings-per-pattern-saving-and-the-stock-os)
+13. [Quick reference](#quick-reference)
+14. [Troubleshooting](#troubleshooting)
+15. [Limitations](#limitations)
 
 ## What you need
 
@@ -61,7 +62,7 @@ project either. You build it from your own copy of the stock OS file.
   ```
 
   The firmware appears as `out/Digitone_OS1.44_DrumMode.syx` (it shows as OS version
-  **D106** for 0.10.6).
+  **D110** for 0.11.0).
 - **Later: the elekloader Mod Shop.** Once Drum Mode is listed there, you'll be able to
   tick it in the [Mod Shop](https://elekloader.github.io/shop/) and build the firmware in
   your browser from your own stock OS file.
@@ -86,7 +87,7 @@ them, but a backup costs a minute and covers you if anything goes wrong.
 ### 4. Check it
 
 The Digitone starts as normal, and the OS version on its boot screen now reads **D1xx**
-instead of 1.44 (D106 for 0.10.6).
+instead of 1.44 (D110 for 0.11.0).
 Hold any track key on its own: a **Mod Menu** opens with a **DRUM MODE** tile. Press
 **NO** to close it.
 
@@ -253,6 +254,38 @@ Digitone job (in GRID RECORDING it places a lock trig).
 - The pad itself still plays (and records) when you hit it.
 - Mutes are saved with the project.
 
+## Ratchets and note repeat
+
+Since 0.11, on a Drum Mode track the **TRIG** page has two boxes of Drum Mode's own: **ROLL**
+(knob **E**) and **RPT** (knob **G**).
+
+![The TRIG page with ROLL and RPT](ui/trig-roll.png)
+
+### Ratchets (ROLL)
+
+A ratchet plays a drum 2, 3 or 4 times within one step, evenly spaced: hi-hat rolls, snare
+fills, flams.
+
+1. Press the drum's pad to select it (or hold **TRIG** + the pad for silence).
+2. Press **RECORD** (stopped) for GRID RECORDING; put the drum on a step if it isn't there.
+3. Hold that step's trig key and turn **E**: the box shows **x2**, **x3** or **x4** (turn back
+   to **x1** for a single hit). Hold several steps to set them all at once.
+
+A step whose selected drum has a roll lights **white** instead of red. The roll belongs to that
+drum on that step only: other drums on the same step still play once. A muted drum doesn't roll.
+Taking the drum off the step (a quick tap) takes its roll with it. The rolls follow the track's
+speed and swing.
+
+### Note repeat (RPT)
+
+Turn **G** on the TRIG page to set the repeat rate: **-** (off), **16**, **32** or **64**. While the
+sequencer plays, a held pad then plays again on every 16th, 32nd or 64th note, in time with the
+steps, until you let go. Stopped, a pad plays once as usual.
+
+Hold a pad with repeat on during **LIVE RECORDING** and every step you hold through is recorded:
+at **16** one hit per step, at **32** a hit with roll 2, at **64** with roll 4. So the pattern plays
+back what you heard. The rate is per MIDI track and stays until the Digitone is switched off.
+
 ## What the screen and LEDs show
 
 ### The corner strip
@@ -350,6 +383,8 @@ On a Drum Mode track:
 | Pick a pattern or bank, chains | as usual: **PTN** / **BANK** + trig keys (a chain: hold **PTN**, first pattern's key, release **PTN**, keep that key held, next keys) |
 | Set the pattern length | as usual: **FUNC** + **PAGE**, then **PAGE** (total) or a trig key (steps) |
 | Use Drum Mode on another pattern | go there and turn it on (a new pattern starts with it off) |
+| A ratchet on a step | GRID RECORDING, select the drum, hold the step + turn **E** (TRIG page): x2-x4 |
+| Note repeat | knob **G** on the TRIG page (16 / 32 / 64), then hold a pad while playing |
 | Copy a pattern with its Drum Mode settings | **FUNC** + **RECORD**, go to the other pattern, **FUNC** + **STOP** |
 
 ## Troubleshooting

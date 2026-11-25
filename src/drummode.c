@@ -29,6 +29,9 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
+ * - 0.11.0: ratchets (ROLL, knob E of the TRIG page on held steps in GRID RECORDING: a drum plays 2-4 times in a
+ *   step, sent by Drum Mode's own note task between steps) and note repeat (RPT, knob G: a held pad repeats at 1/16,
+ *   1/32 or 1/64 while playing, recorded with its rolls in LIVE RECORDING).
  * - 0.10.6: the running light red for the whole step (the stock's playhead); the LFO page's title says "LFO" on a
  *   Drum Mode track, not "LFO (1/2)".
  * - 0.10.5: the DRUM page's title shows its own counter (Drum Notes 1/2, Drum Velocity 2/2); the running light uses
@@ -134,6 +137,9 @@ typedef void (*led_set_fn)(void *mgr, int32_t led, int32_t layer, int32_t colour
 #define KEY_STEPS       16
 #define ENC_A           1               /* ev_enc's encoders: 1-8, A-H */
 #define ENC_B           2
+#define ENC_E           5
+#define ENC_G           7
+#define PAGE_MIDI_TRIG  19              /* the MIDI tracks' TRIG page: knob E's box is empty on the stock */
 #define COUNTS          4               /* encoder counts a detent */
 
 
@@ -211,6 +217,38 @@ const struct core_param dm_lane_param = {
     DM_LANE_ID, 16, CORE_SLOT_LANE, 0, LV_MAX << 8, 0, 0, -1, -1, -1, 0,
     "Drum Mode", "Drum", "DRM", dm_lane_format, fw_str_empty, 0, CORE_LANE_NOLOCK
 };
+
+/* 0.11: ratchets. A second lane parameter (id 190) keeps, per step of a Drum Mode track, how many times each drum
+ * plays within the step: 2 bits per lane (lane l at bits 2l..2l+1), the count - 1, so 0 is a plain hit and 3 four
+ * hits. It is only ever a step's lock (core keeps it with the pattern as a lock row and drops it with its trig); the
+ * track's own value stays 0. Set with knob E of the TRIG page on held steps in GRID RECORDING (roll_turn), for the
+ * selected lane. */
+#define DM_ROLL_ID      190
+#define ROLL_MAX        4
+static void dm_roll_format(int32_t value, char *buf)
+{
+    dm_lane_format(value, buf);
+}
+const struct core_param dm_roll_param = {
+    DM_ROLL_ID, 16, CORE_SLOT_LANE, 0, 0xffff << 8, 0, 0, -1, -1, -1, 0,
+    "Drum Roll", "Drum", "RLL", dm_roll_format, fw_str_empty, 0, 0
+};
+/* How many times lane plays on step of track (1-4). Interrupt level or UI task. */
+static int32_t roll_get(int32_t track, int32_t step, int32_t lane)
+{
+    int32_t v = core_lane_lock(DM_ROLL_ID, track, step);
+    return v < 0 ? 1 : ((v >> (2 * lane)) & 3) + 1;
+}
+/* UI task: lane plays n times on step (1 takes its bits out; a lock left at 0 is cleared by writing 0). */
+static void roll_put(int32_t track, int32_t step, int32_t lane, int32_t n)
+{
+    int32_t v = core_lane_lock(DM_ROLL_ID, track, step);
+    if (v < 0)
+        v = 0;
+    v = (v & ~(3 << (2 * lane))) | (((n < 1 ? 1 : n > ROLL_MAX ? ROLL_MAX : n) - 1) << (2 * lane));
+    if (v || core_lane_lock(DM_ROLL_ID, track, step) >= 0)
+        core_lane_set(DM_ROLL_ID, track, step, v);
+}
 static int8_t dm_kit_of[DM_TRACKS];     /* the kit each track of the playing pattern uses, -1 none yet */
 static volatile uint8_t dm_unset;       /* bit t: the playing pattern has no settings for track t yet */
 volatile int32_t dm_cur_pat = -1;       /* the pattern dm belongs to, -1 none yet (after a load) */
@@ -477,6 +515,105 @@ static volatile uint8_t dm_step_vel[DM_TRACKS];        /* the velocity the step 
 static volatile uint8_t dm_seq_next[DM_TRACKS];
 static volatile uint8_t dm_seq_hits[DM_TRACKS];
 
+/* 0.11: notes between steps (ratchets, and the pads' note repeat). A note to send at a timeline time goes in dm_rq:
+ * slots 0-31 are filled by the sequencer's fire (interrupt level), 32-63 by the UI task, so each range has one writer;
+ * a slot is written, then marked waiting (state 1), and only the sender frees it. The render (ev_render_params, about
+ * 1500 times a second) wakes Drum Mode's own task when a note is due, and the task sends it through the port switch,
+ * as the pads do: the timeline moves on in steps of about 1/260 of a 16th (measured in digiemu), so a note goes out
+ * within a render block of its time. The task and its semaphore are DigiArp's (its fast.s: the OS 1.44 routines). */
+struct dm_rev {
+    volatile uint8_t state;             /* 0 free, 1 waiting */
+    int8_t channel;
+    uint8_t note, vel;                  /* vel 0: the note off */
+    uint32_t time;
+};
+#define RQ_SEQ          32
+#define RQ_ALL          64
+static struct dm_rev dm_rq[RQ_ALL];
+extern int dm_os_task_create(void *tcb, void (*fn)(void), int prio, void *stack, int size);
+extern void dm_os_task_start(void *tcb);
+extern void dm_os_sem_init(void *sem, int count);
+extern void dm_os_sem_pend(void *sem);
+extern void dm_os_sem_post(void *sem);
+static uint32_t dm_tcb[32], dm_stack[1024], dm_sem[4];
+static volatile int32_t dm_task_on, dm_task_woken;
+volatile int32_t dm_rq_sent;            /* notes the task sent, for the tests */
+volatile uint32_t dm_rq_last_time;      /* the timeline when it sent the last, for the tests */
+
+static void rq_put(int32_t from, int32_t to, uint32_t time, int32_t channel, int32_t note, int32_t vel)
+{
+    for (int32_t i = from; i < to; i++)
+        if (!dm_rq[i].state) {
+            dm_rq[i].channel = (int8_t)channel;
+            dm_rq[i].note = (uint8_t)note;
+            dm_rq[i].vel = (uint8_t)vel;
+            dm_rq[i].time = time;
+            dm_rq[i].state = 1;
+            return;
+        }
+}
+
+/* A hit and its note off, gate after it. */
+static void rq_hit(int32_t from, int32_t to, uint32_t time, uint32_t gate, int32_t channel, int32_t note, int32_t vel)
+{
+    rq_put(from, to, time, channel, note, vel);
+    rq_put(from, to, time + gate, channel, note, 0);
+}
+
+static void dm_task(void)
+{
+    for (;;) {
+        dm_os_sem_pend(dm_sem);
+        dm_task_woken = 0;
+        for (int32_t i = 0; i < RQ_ALL; i++) {
+            struct dm_rev *e = &dm_rq[i];
+            if (!e->state)
+                continue;
+            if (fw_transport != 1 && e->vel) {
+                e->state = 0;           /* stopped: a hit still to come is dropped, its note off still goes */
+                continue;
+            }
+            if (fw_transport == 1 && (int32_t)(fw_timeline - e->time) < 0)
+                continue;
+            if (e->vel)
+                FW_MIDI_NOTE_ON(e->channel, e->note, e->vel);
+            else
+                FW_MIDI_NOTE_OFF(e->channel, e->note);
+            dm_rq_sent++;
+            dm_rq_last_time = fw_timeline;
+            e->state = 0;
+        }
+    }
+}
+
+static void task_start(void)
+{
+    if (dm_task_on)
+        return;
+    dm_os_sem_init(dm_sem, 0);
+    dm_task_on = 1;
+    dm_os_task_create(dm_tcb, dm_task, 1, dm_stack, sizeof dm_stack);
+    dm_os_task_start(dm_tcb);
+}
+
+/* ev_render_params, interrupt level: wake the task when a note is due (or the transport stopped with notes left). */
+void dm_render(int16_t *words)
+{
+    (void)words;
+    if (!dm_task_on || dm_task_woken)
+        return;
+    for (int32_t i = 0; i < RQ_ALL; i++)
+        if (dm_rq[i].state && (fw_transport != 1 || (int32_t)(fw_timeline - dm_rq[i].time) >= 0)) {
+            dm_task_woken = 1;
+            dm_os_sem_post(dm_sem);
+            return;
+        }
+}
+
+/* The rolls of the step fired last, waiting for it to play: 2 bits per lane (count - 1), per track. */
+static volatile uint16_t dm_roll_next[DM_TRACKS];
+static uint8_t dm_roll_note[DM_TRACKS][DM_LANES], dm_roll_velo[DM_TRACKS][DM_LANES];
+
 volatile int32_t dm_rec_count;          /* hits recorded, for the tests */
 volatile int32_t dm_rec_last_step = -1;
 
@@ -733,6 +870,7 @@ static void grid_remove(int32_t track, int32_t key)
     if (!data || step >= track_len(track) || !step_has(data, step, note))
         return;
     remove_note(track, step, note);
+    roll_put(track, step, lane, 1);     /* 0.11: its roll goes with it */
     dm_grid_edits++;
     dm_flash[t][lane] = FLASH_TICKS;
     dm_dirty = 1;
@@ -748,6 +886,31 @@ void dm_gen_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
         return;
     pattern_follow();                   /* 0.10: a pattern change while playing reaches its first steps */
     f = &dm_fire[track - DM_FIRST];
+    {                                   /* 0.11: the step fired before plays now: its rolls' extra hits */
+        int32_t t = track - DM_FIRST, ch = midi_channel(track);
+        uint16_t rolls = dm_roll_next[t];
+        dm_roll_next[t] = 0;
+        if (step == f->step)
+            dm_roll_next[t] = rolls;    /* the same step fired again (the sequencer fires the first step when it
+                                         * stops and again at PLAY, measured in digiemu): not played yet */
+        else if (rolls && ch >= 0 && fw_transport == 1) {
+            /* The step's length: the time between the two fires before, which with swing is a step of the same
+             * parity (16ths alternate long and short), when they were two steps in a row; else a 16th. */
+            uint32_t len = TIMELINE_16TH, now = fw_timeline;
+            int32_t tl = track_len(track);
+            if (f->step >= 0 && f->prev_step >= 0 && f->step == (f->prev_step + 1) % tl) {
+                uint32_t dd = f->time - f->prev_time;
+                if (dd > TIMELINE_16TH / 8 && dd < TIMELINE_16TH * 16)
+                    len = dd;
+            }
+            for (int32_t l = 0; l < DM_LANES; l++) {
+                int32_t n = ((rolls >> (2 * l)) & 3) + 1;
+                uint32_t part = len / (uint32_t)n;
+                for (int32_t i = 1; i < n; i++)
+                    rq_hit(0, RQ_SEQ, now + part * (uint32_t)i, part / 2, ch, dm_roll_note[t][l], dm_roll_velo[t][l]);
+            }
+        }
+    }
     f->prev_step = f->step;
     f->prev_time = f->time;
     f->time = fw_timeline;
@@ -763,7 +926,6 @@ void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
     int32_t t = track - DM_FIRST, vel = 0, n_keep = 0;
     int32_t keep[SQ_NOTES];
     uint8_t mutes, lanes = 0;
-    (void)step;
     pattern_follow();                   /* 0.10: the playing pattern's settings */
     if (!drum_track(track))
         return;
@@ -794,6 +956,20 @@ void dm_fire_notes(int32_t track, int32_t step, int8_t notes[SQ_NOTES])
     }
     dm_step_vel[t] = (uint8_t)vel;
     dm_seq_next[t] = lanes;
+    {                                   /* 0.11: the playing lanes' rolls, for when this step plays */
+        uint16_t rolls = 0;
+        if (lanes) {
+            int32_t v = core_lane_lock(DM_ROLL_ID, track, step);
+            if (v > 0)
+                for (int32_t l = 0; l < DM_LANES; l++)
+                    if (((lanes >> l) & 1) && ((v >> (2 * l)) & 3)) {
+                        rolls |= (uint16_t)(v & (3 << (2 * l)));
+                        dm_roll_note[t][l] = dm.note[t][l];
+                        dm_roll_velo[t][l] = dm.velocity[t][l];
+                    }
+        }
+        dm_roll_next[t] = rolls;
+    }
 }
 
 void dm_fire_vel(int32_t track, int32_t step, int32_t *vel)
@@ -801,6 +977,91 @@ void dm_fire_vel(int32_t track, int32_t step, int32_t *vel)
     (void)step;
     if (drum_track(track) && dm_step_vel[track - DM_FIRST])
         *vel = dm_step_vel[track - DM_FIRST];
+}
+
+/* 0.11: note repeat. Knob G of the TRIG page on a Drum Mode track sets the track's rate (dm_rpt: 0 off, 1 = 1/16,
+ * 2 = 1/32, 3 = 1/64; kept until power-off). While the sequencer plays, a held pad plays again on each 16th, 32nd or
+ * 64th of the steps' grid (the first after half a beat of the rate has passed since the press), sent by the note
+ * task. In LIVE RECORDING each step the hold passes is recorded: the pad's note, and at 1/32 or 1/64 its roll (2 or
+ * 4), so the playback plays what was heard. */
+static uint8_t dm_rpt[DM_TRACKS];
+static uint32_t dm_rpt_next[KEY_STEPS];          /* the next repeat's timeline time, per held pad */
+static int8_t dm_rpt_step[KEY_STEPS];            /* the step recorded last for it, -1 none */
+static uint32_t dm_rpt_keys;                     /* bit k: pad k repeats */
+static const char *const dm_rpt_names[4] = { "-", "16", "32", "64" };
+volatile int32_t dm_rpt_hits;           /* repeats queued, for the tests */
+
+/* The track's step length now (its speed and swing as measured), else a 16th; and the grid's origin, the last fire. */
+static uint32_t step_len(int32_t track)
+{
+    struct dm_fire *f = &dm_fire[track - DM_FIRST];
+    uint32_t dd = f->time - f->prev_time;
+    return f->step >= 0 && f->prev_step >= 0 && dd > TIMELINE_16TH / 8 && dd < TIMELINE_16TH * 16 ? dd : TIMELINE_16TH;
+}
+
+static void rpt_start(int32_t key, int32_t track)
+{
+    int32_t t = track - DM_FIRST;
+    uint32_t rate, now = fw_timeline, origin = dm_fire[t].time, k;
+    if (!dm_rpt[t] || fw_transport != 1 || dm_fire[t].step < 0)
+        return;
+    rate = step_len(track) >> (dm_rpt[t] - 1);
+    k = (now - origin + rate / 2) / rate + 1;        /* the first grid point at least half a rate away */
+    dm_rpt_next[key] = origin + k * rate;
+    dm_rpt_step[key] = -1;
+    dm_rpt_keys |= 1u << key;
+}
+
+/* UI tick: queue each repeating pad's hits due within the next ~40 ms, and record in LIVE RECORDING. */
+static void rpt_tick(void)
+{
+    for (int32_t k = 0; k < KEY_STEPS; k++) {
+        struct dm_held *h = &dm_held[k];
+        int32_t t, step;
+        uint32_t rate;
+        if (!((dm_rpt_keys >> k) & 1))
+            continue;
+        if (h->track < 0 || fw_transport != 1 || !dm_rpt[h->track - DM_FIRST]) {
+            dm_rpt_keys &= ~(1u << k);
+            continue;
+        }
+        t = h->track - DM_FIRST;
+        rate = step_len(h->track) >> (dm_rpt[t] - 1);
+        while ((int32_t)(dm_rpt_next[k] - fw_timeline) < (int32_t)(TIMELINE_16TH / 3)) {
+            if (h->channel >= 0)
+                rq_hit(RQ_SEQ, RQ_ALL, dm_rpt_next[k], rate / 2, h->channel, h->note, dm.velocity[t][h->lane]);
+            dm_rpt_next[k] += rate;
+            dm_rpt_hits++;
+        }
+        if (live_recording() && (step = hit_step(h->track)) >= 0 && step != dm_rpt_step[k]) {
+            dm_rpt_step[k] = (int8_t)step;
+            record_note(h->track, step, h->note);
+            if (dm_rpt[t] > 1)
+                roll_put(h->track, step, h->lane, dm_rpt[t] == 2 ? 2 : 4);
+        }
+    }
+}
+
+/* Knob G of the TRIG page: the repeat rate. */
+static int32_t dm_rpt_acc;
+static void rpt_turn(int32_t track, int32_t counts)
+{
+    int32_t t = track - DM_FIRST, r = dm_rpt[t];
+    dm_rpt_acc += counts;
+    while (dm_rpt_acc >= COUNTS) {
+        dm_rpt_acc -= COUNTS;
+        r++;
+    }
+    while (dm_rpt_acc <= -COUNTS) {
+        dm_rpt_acc += COUNTS;
+        r--;
+    }
+    r = r < 0 ? 0 : r > 3 ? 3 : r;
+    if (r != dm_rpt[t]) {
+        dm_rpt[t] = (uint8_t)r;
+        say(r ? "RPT 1/%d" : "RPT OFF", 8 << r);
+    }
+    dm_dirty = 1;
 }
 
 static void lane_on(int32_t key, int32_t track, int32_t lane)
@@ -814,6 +1075,7 @@ static void lane_on(int32_t key, int32_t track, int32_t lane)
     dm_held[key].track = (int8_t)track;
     dm_held[key].note = dm.note[t][lane];
     dm_held[key].lane = (uint8_t)lane;
+    rpt_start(key, track);              /* 0.11: note repeat */
     dm_lit_held[t] |= (uint8_t)(1u << lane);
     dm_flash[t][lane] = FLASH_TICKS;
     dm_dirty = 1;
@@ -827,6 +1089,11 @@ static void lane_off(int32_t key)
     if (h->channel >= 0)
         FW_MIDI_NOTE_OFF(h->channel, h->note);
     dm_lit_held[h->track - DM_FIRST] &= (uint8_t)~(1u << h->lane);
+    if ((dm_rpt_keys >> key) & 1)       /* repeats already queued for it are dropped; their note offs still go */
+        for (int32_t i = RQ_SEQ; i < RQ_ALL; i++)
+            if (dm_rq[i].state && dm_rq[i].vel && dm_rq[i].note == h->note && dm_rq[i].channel == h->channel)
+                dm_rq[i].state = 0;
+    dm_rpt_keys &= ~(1u << key);
     h->track = -1;
     dm_dirty = 1;
 }
@@ -1126,6 +1393,56 @@ int32_t dm_key(void *brain, void *ev)
 /* ---- knobs ----------------------------------------------------------------------------------- */
 /* The UI task, each encoder turn (ev+12 the encoder 1-8, ev+16 the turn in counts, four a detent). While a pad is
  * held every knob is taken: A steps its lane's note and plays the new note at once, B its velocity. */
+/* 0.11: knob E of the TRIG page, steps held in GRID RECORDING: each held step that plays the selected lane gets its
+ * roll (1-4) turned by the knob's detents; the corner says the new count. */
+static int32_t dm_roll_acc;
+volatile int32_t dm_roll_edits;         /* for the tests */
+static int32_t roll_turn(int32_t track, int32_t counts)
+{
+    int32_t t = track - DM_FIRST, lane = selected_lane(t), note = dm.note[t][lane], steps = 0, shown = -1;
+    int32_t first = 16 * grid_page(track), len = track_len(track);
+    uint8_t *data = track_data(track_obj(track));
+    dm_roll_acc += counts;
+    while (dm_roll_acc >= COUNTS) {
+        dm_roll_acc -= COUNTS;
+        steps++;
+    }
+    while (dm_roll_acc <= -COUNTS) {
+        dm_roll_acc += COUNTS;
+        steps--;
+    }
+    if (!steps || !data)
+        return 0;
+    for (int32_t k = 0; k < KEY_STEPS; k++) {
+        int32_t step = first + k, n;
+        if (!((dm_grid_keys >> k) & 1) || step >= len || !step_has(data, step, note))
+            continue;
+        n = roll_get(track, step, lane) + steps;
+        n = n < 1 ? 1 : n > ROLL_MAX ? ROLL_MAX : n;
+        roll_put(track, step, lane, n);
+        dm_roll_edits++;
+        if (shown < 0)
+            shown = n;
+    }
+    if (shown > 0)
+        say("ROLL %d", shown);
+    dm_dirty = 1;
+    return 1;
+}
+
+/* The roll knob E shows: the first held step's for the selected lane in GRID RECORDING, else 0 (a dash). */
+static int32_t roll_shown(int32_t track)
+{
+    int32_t t = track - DM_FIRST, lane = selected_lane(t), first = 16 * grid_page(track);
+    uint8_t *data;
+    if (!grid_recording() || !dm_grid_keys || !(data = track_data(track_obj(track))))
+        return 0;
+    for (int32_t k = 0; k < KEY_STEPS; k++)
+        if ((dm_grid_keys >> k) & 1)
+            return step_has(data, first + k, dm.note[t][lane]) ? roll_get(track, first + k, lane) : 0;
+    return 0;
+}
+
 int32_t dm_enc(void *brain, void *ev)
 {
     int32_t enc = CORE_KEY_ID(ev), counts = (int32_t)CORE_KEY_FLAGS(ev), steps = 0;
@@ -1135,10 +1452,18 @@ int32_t dm_enc(void *brain, void *ev)
 
     if (dm_grid_keys) {                 /* steps held in GRID RECORDING: the knobs are the stock's locks (0.9.2) */
         dm_grid_long |= dm_grid_keys;
+        if (enc == ENC_E && drum_track(fw_active_track) && shown_page_idx() == PAGE_MIDI_TRIG) {
+            roll_turn(fw_active_track, counts);
+            return 1;                   /* 0.11: knob E, the selected lane's roll on the held steps */
+        }
         return 0;
     }
     if (k < 0 || !(dm_taken & (1u << k)) || dm_held[k].track < 0) {
         int32_t page = drum_track(fw_active_track) ? drum_page() : 0;
+        if (enc == ENC_G && drum_track(fw_active_track) && shown_page_idx() == PAGE_MIDI_TRIG) {
+            rpt_turn(fw_active_track, counts);
+            return 1;                   /* 0.11: knob G, the repeat rate */
+        }
         if (!page || enc < 1 || enc > 8)
             return 0;
         page_turn(page, enc, counts);
@@ -1291,6 +1616,8 @@ static void paste_check(void)
 
 void dm_tick(void *ctrl)
 {
+    task_start();                       /* 0.11: the task that sends notes between steps */
+    rpt_tick();
     if (pattern_follow()) {             /* the pattern changed (0.10): its settings are in dm */
         sq_rearm(0xf0u);
         dm_dirty = 1;
@@ -1378,7 +1705,8 @@ void dm_leds(void *mgr)
             int32_t step = first + k;
             if (step >= len || step == playing)
                 continue;
-            FW_LED_SET(mgr, k + 1, LED_LAYER, step_has(data, step, note) ? LED_RED : LED_DARK);
+            FW_LED_SET(mgr, k + 1, LED_LAYER, !step_has(data, step, note) ? LED_DARK
+                       : roll_get(track, step, selected_lane(t)) > 1 ? LED_WHITE : LED_RED);   /* 0.11: white, a roll */
         }
         return;
     }
@@ -1514,6 +1842,22 @@ void dm_draw(void *bmp, void *ctrl)
         ((rect_fn)fw_fillrect)(bmp, 19, 54, 92, 63, 0);
         ((text_fn)fw_textf)(bmp, (const void *)fw_font_title, 20, DM_TITLE_Y, -1, "LFO");
         ((rect_fn)fw_fillrect)(bmp, 19, 54, 92, 63, -1);
+    }
+    if (!page && drum_track(track) && shown_page_idx() == PAGE_MIDI_TRIG) {
+        /* 0.11: knob E's empty box on the MIDI TRIG page: ROLL, the held step's count for the selected lane in GRID
+         * RECORDING (x2-x4), else a dash. The box is the knob grid's fifth (bottom left), as the DRUM page's cells. */
+        int32_t n = roll_shown(track);
+        ((rect_fn)fw_fillrect)(bmp, 22, 0, 46, 24, 0);
+        ((rect_fn)fw_framerect)(bmp, 26, 6, 42, 23, -1);              /* the box, as G's and H's (x 77-93, 103-119) */
+        ((text_fn)fw_textf)(bmp, (const void *)fw_font5, n > 0 ? 30 : 32, 12, -1, n > 0 ? "x%d" : "-", (int)n);
+        ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 26, 0, -1, "ROLL");   /* the label under it, as LFO.T's */
+        {                               /* knob G's box: REPEAT, the rate (16, 32, 64) or a dash */
+            int32_t r = dm_rpt[track - DM_FIRST];
+            ((rect_fn)fw_fillrect)(bmp, 74, 0, 96, 24, 0);
+            ((rect_fn)fw_framerect)(bmp, 77, 6, 93, 23, -1);
+            ((text_fn)fw_textf)(bmp, (const void *)fw_font5, r ? 81 : 83, 12, -1, dm_rpt_names[r]);
+            ((text_fn)fw_textf)(bmp, (const void *)fw_font5, 78, 0, -1, "RPT");
+        }
     }
     if (page) {
         draw_drum_page(bmp, page, track);

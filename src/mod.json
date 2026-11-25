@@ -1,136 +1,158 @@
 {
- "id": "drummode",
- "version": "0.10.6",
- "license": "GPL-2.0-or-later",
- "title": "Drum Mode (Digitone MIDI track drum sequencer)",
- "category": "Sequencer",
- "author": "morriess",
- "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-voice drum sequencer on the track's own MIDI channel, for an external drum machine or sampler. Beta. Turn it on per MIDI track and per pattern in the Mod Menu (hold a track key, DRUM MODE). Trig keys 1-8 are pads: they play the 8 voices (GM drum notes by default) and select the voice you edit; hold a pad and turn A for its note, B for its velocity, or set all 8 on the DRUM page behind LFO (Drum Notes, LFO again for Drum Velocity). FUNC + pad mutes a voice. Live recording (RECORD + PLAY) writes pad hits as normal MIDI trigs, several voices on one step as chord notes; in GRID RECORDING keys 1-16 edit the selected voice's steps (PAGE for longer patterns), and a held step keeps the stock's locks, micro timing and copy/paste. While playing, keys 1-16 show a running light, one per step, red like the stock playhead; the screen corner shows the 8 voices as they play. Each pattern keeps its own Drum Mode settings (on/off, notes, velocities, mutes), saved with the project; FUNC + RECORD / FUNC + STOP copies a pattern with them. The stock trig key functions stay: pattern and bank select, chains, the SCALE menu's length. OS 1.44 only. Needs core-dn1 5.3 or later and seq-events. Uses mod page 27.",
- "device": "digitone-mk1",
- "os": "1.44",
- "sources": [
-  "drummode.c"
- ],
- "cflags": [
-  "-Os",
-  "-fno-tree-loop-distribute-patterns"
- ],
- "subscribe": [
-  {
-   "event": "ev_boot_ui",
-   "fn": "dm_boot",
-   "order": 50
-  },
-  {
-   "event": "ev_key",
-   "fn": "dm_key",
-   "order": 45
-  },
-  {
-   "event": "ev_enc",
-   "fn": "dm_enc",
-   "order": 45
-  },
-  {
-   "event": "ev_tick",
-   "fn": "dm_tick",
-   "order": 50
-  },
-  {
-   "event": "ev_draw",
-   "fn": "dm_draw",
-   "order": 50
-  },
-  {
-   "event": "ev_gen_trig",
-   "fn": "dm_gen_trig",
-   "order": 90
-  },
-  {
-   "event": "ev_fire_notes",
-   "fn": "dm_fire_notes",
-   "order": 90
-  },
-  {
-   "event": "ev_fire_vel",
-   "fn": "dm_fire_vel",
-   "order": 50
-  },
-  {
-   "event": "ev_key_leds",
-   "fn": "dm_leds",
-   "order": 50
-  },
-  {
-   "event": "ev_pattern_op",
-   "fn": "dm_pattern_op",
-   "order": 50
-  }
- ],
- "contribute": [
-  {
-   "to": "core_menu",
-   "order": 47,
-   "data": "00000000",
-   "relocs": [
-    [
-     0,
-     "abs32",
-     "sym:dm_menu",
-     0
+  "id": "drummode",
+  "version": "0.11.0",
+  "license": "GPL-2.0-or-later",
+  "title": "Drum Mode (Digitone MIDI track drum sequencer)",
+  "category": "Sequencer",
+  "author": "morriess",
+  "description": "Drum Mode turns a Digitone mk1 MIDI track into an 8-voice drum sequencer on the track's own MIDI channel, for an external drum machine or sampler. Beta. Turn it on per MIDI track and per pattern in the Mod Menu (hold a track key, DRUM MODE). Trig keys 1-8 are pads: they play the 8 voices (GM drum notes by default) and select the voice you edit; hold a pad and turn A for its note, B for its velocity, or set all 8 on the DRUM page behind LFO (Drum Notes, LFO again for Drum Velocity). FUNC + pad mutes a voice. Live recording (RECORD + PLAY) writes pad hits as normal MIDI trigs, several voices on one step as chord notes; in GRID RECORDING keys 1-16 edit the selected voice's steps (PAGE for longer patterns), and a held step keeps the stock's locks, micro timing and copy/paste. While playing, keys 1-16 show a running light, one per step, red like the stock playhead; the screen corner shows the 8 voices as they play. Each pattern keeps its own Drum Mode settings (on/off, notes, velocities, mutes), saved with the project; FUNC + RECORD / FUNC + STOP copies a pattern with them. The stock trig key functions stay: pattern and bank select, chains, the SCALE menu's length. OS 1.44 only. Needs core-dn1 5.3 or later and seq-events. Uses mod page 27. Ratchets per drum per step (ROLL, knob E of the TRIG page in GRID RECORDING) and note repeat on the pads (RPT, knob G).",
+  "device": "digitone-mk1",
+  "os": "1.44",
+  "sources": [
+    "drummode.c",
+    "rtos.s"
+  ],
+  "cflags": [
+    "-Os",
+    "-fno-tree-loop-distribute-patterns"
+  ],
+  "subscribe": [
+    {
+      "event": "ev_boot_ui",
+      "fn": "dm_boot",
+      "order": 50
+    },
+    {
+      "event": "ev_key",
+      "fn": "dm_key",
+      "order": 45
+    },
+    {
+      "event": "ev_enc",
+      "fn": "dm_enc",
+      "order": 45
+    },
+    {
+      "event": "ev_tick",
+      "fn": "dm_tick",
+      "order": 50
+    },
+    {
+      "event": "ev_draw",
+      "fn": "dm_draw",
+      "order": 50
+    },
+    {
+      "event": "ev_gen_trig",
+      "fn": "dm_gen_trig",
+      "order": 90
+    },
+    {
+      "event": "ev_fire_notes",
+      "fn": "dm_fire_notes",
+      "order": 90
+    },
+    {
+      "event": "ev_fire_vel",
+      "fn": "dm_fire_vel",
+      "order": 50
+    },
+    {
+      "event": "ev_key_leds",
+      "fn": "dm_leds",
+      "order": 50
+    },
+    {
+      "event": "ev_pattern_op",
+      "fn": "dm_pattern_op",
+      "order": 50
+    },
+    {
+      "event": "ev_render_params",
+      "fn": "dm_render",
+      "order": 60
+    }
+  ],
+  "contribute": [
+    {
+      "to": "core_menu",
+      "order": 47,
+      "data": "00000000",
+      "relocs": [
+        [
+          0,
+          "abs32",
+          "sym:dm_menu",
+          0
+        ]
+      ]
+    },
+    {
+      "to": "core_projdata",
+      "order": 50,
+      "data": "00000000",
+      "relocs": [
+        [
+          0,
+          "abs32",
+          "sym:dm_projdata",
+          0
+        ]
+      ]
+    },
+    {
+      "to": "core_pages",
+      "order": 50,
+      "data": "00000000",
+      "relocs": [
+        [
+          0,
+          "abs32",
+          "sym:dm_page_notes",
+          0
+        ]
+      ]
+    },
+    {
+      "to": "core_params",
+      "order": 50,
+      "data": "00000000",
+      "relocs": [
+        [
+          0,
+          "abs32",
+          "sym:dm_lane_param",
+          0
+        ]
+      ]
+    },
+    {
+      "to": "core_params",
+      "order": 51,
+      "data": "00000000",
+      "relocs": [
+        [
+          0,
+          "abs32",
+          "sym:dm_roll_param",
+          0
+        ]
+      ]
+    }
+  ],
+  "resources": {
+    "core": "5.3",
+    "names": [
+      "projdata:DRMK",
+      "param:191",
+      "page:27",
+      "param:190",
+      "knob:19:4",
+      "knob:19:6"
     ]
-   ]
   },
-  {
-   "to": "core_projdata",
-   "order": 50,
-   "data": "00000000",
-   "relocs": [
-    [
-     0,
-     "abs32",
-     "sym:dm_projdata",
-     0
-    ]
-   ]
-  },
-  {
-   "to": "core_pages",
-   "order": 50,
-   "data": "00000000",
-   "relocs": [
-    [
-     0,
-     "abs32",
-     "sym:dm_page_notes",
-     0
-    ]
-   ]
-  },
-  {
-   "to": "core_params",
-   "order": 50,
-   "data": "00000000",
-   "relocs": [
-    [
-     0,
-     "abs32",
-     "sym:dm_lane_param",
-     0
-    ]
-   ]
-  }
- ],
- "resources": {
-  "core": "5.3",
-  "names": [
-   "projdata:DRMK",
-   "param:191",
-   "page:27"
+  "requires": [
+    "core",
+    "seq-events"
   ]
- },
- "requires": [
-  "core",
-  "seq-events"
- ]
 }

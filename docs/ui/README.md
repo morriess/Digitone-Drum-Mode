@@ -1,6 +1,6 @@
 # Drum Mode UI additions
 
-Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.10.6**.
+Everything Drum Mode adds to the Digitone mk1's screen, keys and LEDs, as of **0.11.0**.
 For how to install and use it step by step, see the [user manual](../MANUAL.md).
 
 The screenshots are of the real firmware running in
@@ -17,12 +17,13 @@ colours the emulated panel received. 0.10 was tested on a real unit on 2026-11-2
    - [Messages](#messages)
    - [Pad info](#pad-info)
 4. [The DRUM pages](#the-drum-pages)
-5. [The trig keys](#the-trig-keys)
-6. [The trig key LEDs](#the-trig-key-leds)
-7. [What stays stock](#what-stays-stock)
-8. [Design rules](#design-rules)
-9. [Known limitations](#known-limitations)
-10. [Where it is in the code](#where-it-is-in-the-code)
+5. [ROLL and RPT on the TRIG page](#roll-and-rpt-on-the-trig-page)
+6. [The trig keys](#the-trig-keys)
+7. [The trig key LEDs](#the-trig-key-leds)
+8. [What stays stock](#what-stays-stock)
+9. [Design rules](#design-rules)
+10. [Known limitations](#known-limitations)
+11. [Where it is in the code](#where-it-is-in-the-code)
 
 ## Overview
 
@@ -170,6 +171,20 @@ Drum Mode clears the boxes and draws the cells itself, and handles the knobs whi
 shown, so it uses none of elekloader's 10 shared parameter slots. One page, not two, so
 Drum Mode leaves pages 28 and 29 to other mods (machines-dn1, CTRL-PLUS). (Since 0.10 Drum
 Mode uses one, id 191, to keep each pattern's settings: it has no knob or page.)
+
+## ROLL and RPT on the TRIG page
+
+On a Drum Mode track Drum Mode draws two boxes in the MIDI TRIG page's empty knob boxes (since
+0.11), framed and labelled like the stock's:
+
+| Box | Knob | Shows | Turned |
+| --- | --- | --- | --- |
+| **ROLL** | E | in GRID RECORDING with a step held: the selected drum's roll on it, **x1**-**x4**; else **-** | sets that roll on every held step that plays the drum (the corner says `ROLL n`) |
+| **RPT** | G | the track's note repeat rate: **-**, **16**, **32**, **64** | steps through them (the corner says `RPT 1/n`) |
+
+![ROLL with a held step](trig-roll.png) ![RPT set to 64](trig-repeat.png)
+
+In GRID RECORDING a step whose selected drum has a roll lights **white** (a plain step red).
 
 ## The trig keys
 

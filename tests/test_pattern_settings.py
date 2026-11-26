@@ -76,8 +76,8 @@ def main():
 
     store = S['dm_store']
     def kits():
-        b = d.mem(store, 20)
-        return b[5], sum(1 for r in b[8:18] if r), int.from_bytes(b[0:4], 'big')
+        b = d.mem(store, 20)                    # 0.11: 8 kits, refs at +8, the kits after a 40-byte head
+        return b[5], sum(1 for r in b[8:16] if r), int.from_bytes(b[0:4], 'big')
     used_a01 = kits()[1]
     go('2')
     check('A02 is active', pattern() == 1, str(pattern()))
@@ -132,15 +132,15 @@ def main():
     a02_off = (0,) + a02[1:]
     check('and A02 its own: Drum Mode off, kick 36, open hat muted', state() == a02_off, str(state()))
 
-    # The kits: at most 10 different note/velocity sets per project (core's project data is small). New kicks on
-    # A04-A16 make new kits until all 10 are in use; then a new note can't be kept and stays as it was.
+    # The kits: at most 8 different note/velocity sets per project (10 until 0.11; core's project data is small).
+    # New kicks on A04-A16 make new kits until all 8 are in use; then a new note can't be kept and stays as it was.
     go('1')
     refused = None
     kept = {36, 40}                             # the kick notes kits already hold (default/A02/A03, A01)
     for i, key in enumerate(('4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16')):
         go(key)
         toggle()                                # new patterns start off (0.10.3)
-        full = kits()[1] == 10
+        full = kits()[1] == 8
         kick_note(1 + i)                        # 37, 38, ... (40 is shared with A01's kit)
         d.wait(300)
         note = state()[2]
@@ -148,12 +148,12 @@ def main():
             refused = (key, note)               # no new kit: the note stayed on one a kit holds
         kept.add(note)
         n, used, size = kits()
-        if used > 10 or size > 20 + 16 * 10:
+        if used > 8 or size > 40 + 16 * 8:
             break
     n, used, size = kits()
-    check('never more than 10 kits, the block at most 180 bytes', used <= 10 and size <= 180,
+    check('never more than 8 kits, the block at most 168 bytes', used <= 8 and size <= 168,
           'kits %d, used %d, %d bytes' % (n, used, size))
-    check('with all 10 in use a new note is refused (it stays as it was)', refused is not None and used == 10,
+    check('with all 8 in use a new note is refused (it stays as it was)', refused is not None and used == 8,
           'refused on trig %s' % (refused,))
     check('the firmware is still running', not d.halted, str(d.halted))
 

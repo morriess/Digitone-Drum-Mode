@@ -13,7 +13,7 @@ Digitone mk1 core and its sequencer-events mod.
 
 > **Beta: working on the unit.** 0.10.6 passed its unit test on 2026-11-24 (OS 1.44); 0.11.0 adds ratchets and note repeat (emulator): pads,
 > recording, grid editing, the running light, DRUM pages, mutes, settings per pattern, pattern
-> and bank select and chains all work. One bug is open (a pattern reload and the kits); a few choices are parked. See
+> and bank select and chains all work. No known bugs are open; a few choices are parked. See
 > [Known bugs](#known-bugs) and [docs/debugging.md](docs/debugging.md).
 
 **Docs:** the [user manual](docs/MANUAL.md) (installing, every feature, troubleshooting), the
@@ -42,7 +42,7 @@ Digitone mk1 core and its sequencer-events mod.
   keys 1–16 as a running light in time with the pattern: one key per step, red for the whole
   step like the stock's playhead (0.10.6).
 - **Settings per pattern and per track,** kits (notes and velocities) shared in the project,
-  at most 10; a new pattern starts with Drum Mode off and the default notes (0.10.3, being
+  at most 8 (0.11; 10 before); a new pattern starts with Drum Mode off and the default notes (0.10.3, being
   tried out).
 - **The stock's own trig key functions stay:** pattern and bank select, chains, FUNC + trig in
   recording.
@@ -62,7 +62,7 @@ Digitone mk1 core and its sequencer-events mod.
   1. built-in kits in the firmware (e.g. GM, TR-808, TR-909 note layouts) plus the project's own
      kits: no storage needed, safe;
   2. a few named presets of your own in the project: little room (the ~480 bytes all mods share,
-     already used by the 10 kits);
+     already used by the 8 kits and their pins);
   3. a library across projects on the +Drive: core can read and write raw +Drive sectors, but
      Elektron's file system is there too, so first research whether a safe free area exists (a
      SysEx dump to the computer and back would be the workaround).
@@ -109,14 +109,6 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
 ## Known bugs
 
 **Open**
-- **A pattern reload brings back the wrong kit** (found on the unit, 0.10.6, 2026-11-25: an older pattern
-  showed the newest kit). Drum Mode keeps the kits in one pool in the project (at most 10) and each pattern
-  only its kit's number, so a pattern save (FUNC + YES) keeps the number, not the notes. If that kit is
-  changed or freed afterwards, a reload (FUNC + NO, or SETTINGS > PATTERN > RELOAD FROM PROJ) gives Drum Mode
-  off with the default kit (the kit was freed; measured in the emulator: save with kick 40, change to 45,
-  reload: off, kick 36) or another pattern's newer kit (its number was reused). *Plan:* a kit a saved pattern
-  still points to is never edited in place or reused; an edit makes a copy, so the reload gets the saved
-  kit back. Also check the SETTINGS menu's reload, which core may not report to Drum Mode.
 - **Trig keys while a menu is open** go to Drum Mode on a Drum Mode track. The SCALE menu uses
   them (handed to the stock in 0.10.2). Checked in the emulator (2026-11-22): PTN + trig (pattern
   copy/clear) is the stock's already (PTN held); the Sound Browser is for synth tracks only.
@@ -132,6 +124,11 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
   [docs/design.md](docs/design.md) ("Open: a UI hang in the emulator").
 
 **To check on the unit**
+- **0.11.0: a pattern reload brings back its own kit.** Save a pattern with FUNC + YES, change a
+  drum's note, then FUNC + NO: the saved note is back (also from SETTINGS > PATTERN > RELOAD FROM
+  PROJ). At most 8 kits now (10 before); with 8 pattern saves pinned, the oldest pin goes and the
+  corner says `PINS FULL`. A project saved with 0.10.x should open with its kits (passes in the
+  emulator; 0.10's ninth and tenth kit, if used, are dropped).
 - **0.11.0: ratchets.** In GRID RECORDING select a drum (its pad), hold a step it plays and turn
   knob E on the TRIG page: the box shows ROLL x2-x4 and the step's LED turns white. Playing, that
   drum plays 2-4 times within the step, evenly; other drums on the step play once; a muted drum
@@ -170,7 +167,8 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
 **Known limits**
 - A **NOTE lock** on a drum step changes its notes; a **velocity lock** is kept, but Drum Mode
   plays the step at its lanes' velocity, so it has no effect.
-- **At most 10 kits** per project (`KIT MEM FULL`), and the per-pattern settings take one of a
+- **At most 8 kits** per project (`KIT MEM FULL`; 10 until 0.11), and 8 saved pattern tracks keep
+  their kit pinned (`PINS FULL`: the oldest goes), and the per-pattern settings take one of a
   pattern's 80 lock rows.
 - **Saving on the stock OS** drops Drum Mode's settings (the steps stay).
 - **Pattern copy/paste with PTN + trig key** (then RECORD / STOP) copies the steps, but not the
@@ -179,6 +177,13 @@ step like the stock's playhead (0.10.6); settings per pattern and per track (0.1
 
 **Fixed** (details in the [debugging log](docs/debugging.md) and the
 [design notes](docs/design.md))
+- **A pattern reload brought back the wrong kit** (found on the unit in 0.10.6, fixed in 0.11.0,
+  to check). Patterns keep only their kit's number, so a saved pattern's kit could be changed or
+  reused afterwards, and a reload gave Drum Mode off or another pattern's newest kit. Now a pattern
+  save pins the kits it points to (never edited in place or freed: an edit makes a copy), at the
+  cost of two kits (8 instead of 10, for room for 8 pins). Also: core reports a reload before the
+  stock's checks, and 0.10 let go of the kits at once, so even a reload the stock refused ("Prj must
+  be re-saved!") lost the pattern's kit; 0.11 swaps the kits only once the pattern is read back.
 - **"Drum Mode off" on screen and the track unusable** (0.10, 2026-11-22): not a bug. It was the
   DRUM page on a track without Drum Mode (the page stays when you switch tracks), which shows
   `DRUM MODE IS OFF` and takes no knobs. Press another page key or turn Drum Mode on (the user,
@@ -231,7 +236,7 @@ done
 ```
 
 Each test set takes a few minutes; screenshots land in its work folder. All 13 sets
-(231 checks) pass on 0.11.0.
+(238 checks) pass on 0.11.0.
 
 ## Layout
 
@@ -251,6 +256,7 @@ Each test set takes a few minutes; screenshots land in its work folder. All 13 s
 | `tests/test_drum_off.py` | A beat with Drum Mode on, off and on again: what plays, what's kept, step 1 at once (17 checks) |
 | `tests/test_other_pattern.py` | Recording and the DRUM pages on a pattern far from A01 (H02) (7 checks) |
 | `tests/test_lane_select.py` | A pad selects its lane, its key lit; not in live recording (15 checks) |
+| `tests/test_reload.py` | A pattern reload brings back the saved kit; a refused reload changes nothing (7 checks) |
 | `tests/test_roll.py` | Ratchets and note repeat: knob E on a held step, four even hits from the first bar, repeats on the grid that stop on release, recorded and played back (9 checks) |
 | `tests/test_run_light.py` | The running light on keys 1–16: 16, short and longer lengths, on time, red and steady over the pads (12 checks) |
 | `tests/test_stock_keys.py` | Pattern/bank select, chains, held grid steps, FUNC + trig in recording, PTN/BANK LEDs, SCALE menu (33 checks) |

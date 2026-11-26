@@ -337,10 +337,14 @@ More detail, with every screen: [Drum Mode UI additions](ui/README.md).
   (below). *This is being tried out.*
 - **Copy and paste a pattern** with FUNC + RECORD and FUNC + STOP, and its Drum Mode
   settings come along.
-- **Up to 10 different kits per project.** A kit is a set of 8 notes and 8 velocities;
-  patterns and tracks with the same notes and velocities share one. With all 10 in use, a
+- **Up to 8 different kits per project** (10 before 0.11). A kit is a set of 8 notes and 8
+  velocities; patterns and tracks with the same notes and velocities share one. With all 8 in use, a
   new note or velocity isn't kept and the corner says `KIT MEM FULL`: set another pattern
   back to an existing kit to free one.
+- **Saving and reloading a pattern** (FUNC + YES / FUNC + NO, or SAVE TO PROJ / RELOAD FROM PROJ
+  in the SETTINGS menu) keeps its Drum Mode settings too: a reload brings back the notes and
+  velocities it was saved with (since 0.11). Drum Mode keeps the kits of the last 8 saved pattern
+  tracks; with more, the oldest is let go (`PINS FULL`) and its kit may change again.
 - **Saved in the patterns:** the steps themselves as normal MIDI trigs, and each pattern's
   Drum Mode settings. **Saved with the project:** the kits.
 - **A project made without Drum Mode, or with Drum Mode before 0.10,** opens with Drum Mode
@@ -417,8 +421,8 @@ You're on the DRUM page of a MIDI track without Drum Mode: the page stays on scr
 you switch tracks. Press another page key, or turn Drum Mode on for this track.
 
 **`KIT MEM FULL` appears.**
-The project already has 10 different kits (sets of 8 notes and velocities), the most it
-can keep. The new note or velocity wasn't kept. Set a pattern you don't need back to the
+The project already has 8 different kits (sets of 8 notes and velocities), the most it
+can keep (saved patterns keep theirs too). The new note or velocity wasn't kept. Set a pattern you don't need back to the
 same notes as another one, or reuse an existing kit, to free one up.
 
 **A pattern has the wrong drum setup.**

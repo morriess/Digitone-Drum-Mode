@@ -29,7 +29,7 @@
  *   trig goes when no note is left). The trig keys light red where the selected lane plays; the playing step is the
  *   stock's. Outside GRID RECORDING the pads light white while held or playing, dim red when muted, and the
  *   selected lane's dim white.
- * - 0.11.0: ratchets (ROLL, knob E of the TRIG page on held steps in GRID RECORDING: a drum plays 2-4 times in a
+ * - 0.11.0: a pattern reload brings back the saved pattern's kit (pins; at most 8 kits); ratchets (ROLL, knob E of the TRIG page on held steps in GRID RECORDING: a drum plays 2-4 times in a
  *   step, sent by Drum Mode's own note task between steps) and note repeat (RPT, knob G: a held pad repeats at 1/16,
  *   1/32 or 1/64 while playing, recorded with its rolls in LIVE RECORDING).
  * - 0.10.6: the running light red for the whole step (the stock's playhead); the LFO page's title says "LFO" on a
@@ -37,7 +37,7 @@
  * - 0.10.5: the DRUM page's title shows its own counter (Drum Notes 1/2, Drum Velocity 2/2); the running light uses
  *   all 16 keys, one per step, over the pads for its half step.
  * - 0.10: Drum Mode's settings per pattern and per track (on/off, mutes, kit), the kits (notes, velocities) in the
- *   project, at most 10; a new pattern takes a copy of the one played before; FUNC + RECORD / STOP carries them.
+ *   project, at most 8 (10 until 0.11); a new pattern takes a copy of the one played before; FUNC + RECORD / STOP carries them.
  * - 0.9.4: a change to Drum Mode on/off, a mute, a lane note or a velocity reaches step 1 of the next run too.
  * - 0.9.2: the stock keeps its trig key functions: pattern/bank select and chains (while its select view is open,
  *   PTN or BANK is held, or a trig key it took is still held), and in GRID RECORDING a held step is the stock's held
@@ -176,7 +176,7 @@ static struct dm_save dm;
  * - in each pattern, one core lane parameter (id 191, a value per track, saved with the pattern): the track's Drum
  *   Mode on/off, its 8 lanes' mutes and the number of its kit (LV_ below); 0 means the pattern has none yet;
  * - in the project ("DRMK", a variable block: core keeps all mods' project data in 480 bytes, DigiArp's takes 272):
- *   up to 10 kits (8 notes and 8 velocities), each with the number of pattern tracks using it, and the selected
+ *   up to 8 kits (8 notes and 8 velocities; 10 until 0.11), each with its number of uses (pattern tracks and pins), and the selected
  *   lanes. A kit used by one pattern track is edited in place, one used by more is copied first; identical kits
  *   are merged. A pattern without settings yet takes a copy of the one the player came from. */
 #define DM_LANE_ID      191
@@ -184,9 +184,10 @@ static struct dm_save dm;
 #define LV_ON           0x1000          /* Drum Mode on */
 #define LV_KIT_SHIFT    8               /* kit number, 4 bits */
 #define LV_MAX          0x3fff
-#define MAX_KITS        10
+#define MAX_KITS        8               /* 0.11: 8 (10 before), to make room for the saved patterns' pins */
 #define DM_PATTERNS     128
-#define KITS_VERSION    1
+#define KITS_VERSION    2               /* 0.11: pins; 1 is read and moved to 2 at load */
+#define MAX_PINS        8
 struct dm_kit {
     uint8_t note[DM_LANES];
     uint8_t velocity[DM_LANES];
@@ -196,10 +197,19 @@ struct dm_kitstore {
     uint8_t version;                    /* +4 */
     uint8_t nkits;                      /* +5  kits 0..nkits-1 are in the block */
     uint8_t selected[2];                /* +6  the selected lane per track, a nibble each */
-    uint8_t refs[12];                   /* +8  pattern tracks using each kit (10 used) */
-    struct dm_kit kit[MAX_KITS];        /* +20 */
+    uint8_t refs[12];                   /* +8  uses of each kit (8 used): pattern tracks, and pins */
+    uint8_t npins, pad[3];              /* +20 0.11 */
+    uint16_t pins[MAX_PINS];            /* +24 a saved pattern track's kit: pattern << 2 | track, kit << 12 */
+    struct dm_kit kit[9];               /* +40 8 used; the ninth keeps the block as big as 0.10's (180 bytes), so a
+                                         * version 1 block loads whole before it is moved */
 };
-#define KITS_HEAD       20
+#define KITS_HEAD       40
+#define KITS_HEAD_V1    20
+/* 0.11, the saved patterns' kits (pins): a pattern save (FUNC + YES, SAVE TO PROJ) keeps each track's lane value,
+ * the kit's number and not its notes. So the kit a saved pattern track uses gets a pin, which counts as a use: it is
+ * never edited in place (an edit copies it) nor freed, and a reload (FUNC + NO, RELOAD FROM PROJ) brings it back as it
+ * was. A pattern track saved again moves its pin to the new kit; with all 8 in use the oldest pin goes ("PINS FULL"),
+ * and that saved copy's kit may change again. (0.10: a reload gave Drum Mode off or another pattern's newest kit.) */
 static struct dm_kitstore dm_store;
 
 /* The lane parameter itself (core_params): a track value only, on no page or knob; 0-0x3fff, 0 none yet. */
@@ -368,7 +378,7 @@ static void kits_trim(void)
 }
 
 /* A kit holding track t's notes and velocities (dm): an identical one, else a free slot. Its use count goes up.
- * -> its number, or -1 when all 10 are in use. */
+ * -> its number, or -1 when all 8 are in use. */
 static int32_t kit_take(int32_t t)
 {
     int32_t free_k = -1;
@@ -394,6 +404,42 @@ static void kit_drop(int32_t k)
         dm_store.refs[k]--;
         kits_trim();
     }
+}
+
+static int32_t pin_find(int32_t key)
+{
+    for (int32_t i = 0; i < dm_store.npins; i++)
+        if ((dm_store.pins[i] & 0x1ff) == key)
+            return i;
+    return -1;
+}
+
+static void pin_drop(int32_t i)
+{
+    kit_drop(dm_store.pins[i] >> 12);
+    for (int32_t j = i + 1; j < dm_store.npins; j++)
+        dm_store.pins[j - 1] = dm_store.pins[j];
+    dm_store.npins--;
+}
+
+/* A saved pattern track's kit: kit -1 (no settings) takes its pin away. The UI task. */
+static void pin_set(int32_t pattern, int32_t t, int32_t kit)
+{
+    int32_t key = (pattern << 2) | t, i = pin_find(key);
+    if (i >= 0) {
+        if (kit >= 0 && (dm_store.pins[i] >> 12) == kit)
+            return;
+        pin_drop(i);
+    }
+    if (kit < 0 || kit >= MAX_KITS)
+        return;
+    if (dm_store.npins >= MAX_PINS) {
+        pin_drop(0);                    /* the oldest */
+        say("PINS FULL", 0);
+    }
+    dm_store.refs[kit]++;
+    dm_store.pins[dm_store.npins++] = (uint16_t)(key | (kit << 12));
+    kits_trim();
 }
 
 static int32_t lane_value(int32_t t)
@@ -441,7 +487,7 @@ static int32_t pattern_follow(void)
 }
 
 /* 0.10.2: a setting changed on a track of the playing pattern that has none yet: it gets its own now (a kit for its
- * notes, the lane value). -> 1 when kept; 0 with all 10 kits in use (plays dm's settings, keeps none). The UI task. */
+ * notes, the lane value). -> 1 when kept; 0 with all 8 kits in use (plays dm's settings, keeps none). The UI task. */
 static int32_t settle_track(int32_t t)
 {
     int32_t k = kit_take(t);
@@ -457,7 +503,7 @@ static int32_t settle_track(int32_t t)
 
 /* A setting of track changed in dm (Drum Mode on/off, a mute, a lane's note or velocity): the playing pattern keeps
  * it. Its kit is edited in place if only this pattern track uses it, else copied; an identical kit is shared. With
- * all 10 kits in use a new note or velocity can't be kept: dm goes back to the kit and the corner says so. Then
+ * all 8 kits in use a new note or velocity can't be kept: dm goes back to the kit and the corner says so. Then
  * step 1 is prepared again (0.9.4). The UI task. */
 static void rearm(int32_t track)
 {
@@ -1139,11 +1185,30 @@ static void dm_loaded(int32_t found)
     defaults();
     for (int32_t t = 0; t < DM_TRACKS; t++)
         dm_kit_of[t] = -1;
-    if (!found || dm_store.version != KITS_VERSION || dm_store.nkits > MAX_KITS)
-        store_reset();
-    else
-        for (int32_t k = dm_store.nkits; k < MAX_KITS; k++)
+    if (found && dm_store.version == 1 && dm_store.nkits <= 10) {
+        /* 0.10's block: refs at +8, kits at +20. Its kits move to +40; an 8th's and later uses end (those pattern
+         * tracks start without settings). No pins. */
+        uint8_t *b = (uint8_t *)&dm_store;
+        int32_t n = dm_store.nkits > MAX_KITS ? MAX_KITS : dm_store.nkits;
+        for (int32_t i = (int32_t)sizeof(struct dm_kit) * n - 1; i >= 0; i--)
+            b[KITS_HEAD + i] = b[KITS_HEAD_V1 + i];
+        for (int32_t k = n; k < 12; k++)
             dm_store.refs[k] = 0;
+        dm_store.npins = 0;
+        dm_store.version = KITS_VERSION;
+        kits_trim();
+    }
+    if (!found || dm_store.version != KITS_VERSION || dm_store.nkits > MAX_KITS || dm_store.npins > MAX_PINS)
+        store_reset();
+    else {
+        for (int32_t k = dm_store.nkits; k < 12; k++)
+            dm_store.refs[k] = 0;
+        int32_t n = 0;
+        for (int32_t i = 0; i < dm_store.npins; i++)      /* a pin to a kit that isn't there is dropped */
+            if ((dm_store.pins[i] >> 12) < dm_store.nkits)
+                dm_store.pins[n++] = dm_store.pins[i];
+        dm_store.npins = (uint8_t)n;
+    }
 }
 const struct core_projdata dm_projdata = { 0x44524d4bu /* "DRMK" */, CORE_PROJDATA_VARIABLE | sizeof dm_store,
                                            &dm_store, dm_loaded };
@@ -1550,23 +1615,33 @@ static int32_t dm_reload_ticks;
 
 void dm_pattern_op(int32_t op, int32_t index, int32_t what)
 {
-    (void)index;
+    if (op == CORE_PATTERN_SAVE && (what & CORE_PATTERN_SEQ) && dm_cur_pat >= 0 && index == dm_cur_pat) {
+        for (int32_t t = 0; t < DM_TRACKS; t++)     /* 0.11: pin the kits the saved copy points to */
+            pin_set(index, t, ((dm_unset >> t) & 1) ? -1 : dm_kit_of[t]);
+        return;
+    }
     if (op != CORE_PATTERN_RELOAD || !(what & CORE_PATTERN_SEQ) || dm_cur_pat < 0)
         return;
-    for (int32_t t = 0; t < DM_TRACKS; t++)
-        if (!((dm_unset >> t) & 1))
-            kit_drop(dm_kit_of[t]);
-    dm_unset = 0xf;                     /* nothing held until the reload is read */
-    dm_reload_ticks = RELOAD_TICKS;
+    dm_reload_ticks = RELOAD_TICKS;     /* read the pattern again a moment later */
 }
 
+/* 0.11: the kits the tracks used before are let go only now, after the new ones are taken: core calls ev_pattern_op
+ * before the stock's checks, so a reload the stock refuses ("Prj must be re-saved!") reads the same settings back and
+ * changes nothing (0.10 let them go at once, and a refused reload lost the pattern's kit). */
 static void reload_done(void)
 {
+    int8_t old[DM_TRACKS];
+    uint8_t old_unset = dm_unset;
+    for (int32_t t = 0; t < DM_TRACKS; t++)
+        old[t] = dm_kit_of[t];
     dm_cur_pat = -1;
     pattern_follow();
     for (int32_t t = 0; t < DM_TRACKS; t++)
         if (!((dm_unset >> t) & 1))
             dm_store.refs[dm_kit_of[t]]++;
+    for (int32_t t = 0; t < DM_TRACKS; t++)
+        if (!((old_unset >> t) & 1))
+            kit_drop(old[t]);
     kits_trim();
     sq_rearm(0xf0u);
     dm_dirty = 1;

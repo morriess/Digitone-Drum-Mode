@@ -64,7 +64,7 @@ behind LFO, mutes are FUNC + pad, and the screen grid is still a nice-to-have).
 | Item | Per | Where | Notes |
 | --- | --- | --- | --- |
 | Lane steps | pattern, track, step | the stock pattern data | a normal MIDI trig; the step's notes (a note + 7 intervals, the stock's chord) are the lanes on it |
-| Lane notes and velocities | kit | project data "DRMK" | up to 10 kits of 8 notes + 8 velocities; default GM map: 36 kick, 38 snare, 42 closed hat, 46 open hat, 39 clap, 45 low tom, 50 high tom, 49 crash |
+| Lane notes and velocities | kit | project data "DRMK" | up to 8 kits of 8 notes + 8 velocities (10 until 0.11), plus 8 pins for saved patterns' kits; default GM map: 36 kick, 38 snare, 42 closed hat, 46 open hat, 39 clap, 45 low tom, 50 high tom, 49 crash |
 | Kit number, lane mutes, Drum Mode on/off | pattern, track | core lane parameter 191, saved with the pattern | 0x2000 set, 0x1000 on, kit << 8, mutes (bit per lane) |
 | Selected lane | track | project data "DRMK" | |
 
@@ -295,7 +295,7 @@ both mods' tests pass; until 2026-11-19 the folder digiarp-core5 in this repo).
   bytes (+8), so 128 patterns' settings (about 9 KB) can't fit: a first try saved nothing. Instead
   each pattern keeps its tracks' on/off, mutes and kit number in one core lane parameter (id 191,
   CORE_LANE_NOLOCK, 0-0x3fff: 0x2000 set, 0x1000 on, kit << 8, mutes; core saves the 8 tracks'
-  values as one lock row of the pattern), and the project keeps up to 10 kits with use counts in a
+  values as one lock row of the pattern), and the project keeps up to 8 kits (10 until 0.11) with use counts (pattern tracks and saved-pattern pins) in a
   variable block "DRMK" (20 + 16 per kit, at most 180 bytes; with DigiArp 468 of 480). A mod can
   read only the playing pattern's lane values, so FUNC + RECORD keeps the copied pattern's settings
   in RAM, and a paste is confirmed by comparing the 8 tracks' data. Core's ev_pattern_op marks a
